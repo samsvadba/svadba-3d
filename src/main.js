@@ -1,729 +1,1056 @@
-import gsap from 'gsap'
-import { ScrollTrigger } from 'gsap/ScrollTrigger'
-import './style.css'
+@import url(
+  'https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Inter:wght@300;400;500&display=swap'
+);
 
-gsap.registerPlugin(ScrollTrigger)
+:root {
+  font-family:
+    Inter,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
 
-const experience = document.querySelector('#experience')
-const story = document.querySelector('.story')
+  color:
+    #f8f3e9;
 
-const world = document.createElement('div')
-world.className = 'cinematic-world'
+  background:
+    #8d887b;
 
-world.innerHTML = `
-  <div class="florence-film" aria-hidden="true">
-    <div class="florence-layer florence-layer--back"></div>
-    <div class="florence-layer florence-layer--mid"></div>
-    <div class="florence-layer florence-layer--front"></div>
+  font-synthesis:
+    none;
 
-    <div class="florence-light"></div>
+  text-rendering:
+    optimizeLegibility;
 
-    <div class="florence-cloud florence-cloud--a"></div>
-    <div class="florence-cloud florence-cloud--b"></div>
+  --cream:
+    #f7f0e3;
 
-    <div class="florence-bokeh"></div>
-    <div class="florence-shade"></div>
-  </div>
+  --gold:
+    #d6b578;
 
-  <div class="night-dust"></div>
-
-  <svg
-    class="love-paths"
-    viewBox="0 0 100 100"
-    preserveAspectRatio="none"
-    aria-hidden="true"
-  >
-    <path
-      class="love-path love-path--martin"
-      d="M 7 50 C 22 34, 34 31, 49 40"
-    />
-
-    <path
-      class="love-path love-path--simona"
-      d="M 93 54 C 78 36, 65 32, 51 40"
-    />
-
-    <path
-      class="love-path love-path--together"
-      d="M 50 40 C 57 31, 66 22, 76 20 C 84 19, 89 22, 94 27"
-    />
-  </svg>
-
-  <div class="love-star love-star--martin">
-    <span class="love-star__glow"></span>
-    <span class="love-star__core"></span>
-
-    <span class="love-star__label">
-      <strong>Hlohovec</strong>
-      <small>Martin</small>
-    </span>
-  </div>
-
-  <div class="love-star love-star--simona">
-    <span class="love-star__glow"></span>
-    <span class="love-star__core"></span>
-
-    <span class="love-star__label">
-      <strong>Cífer</strong>
-      <small>Simona</small>
-    </span>
-  </div>
-
-  <div class="love-pulse"></div>
-`
-
-experience.insertBefore(
-  world,
-  story
-)
-
-const florenceUrl =
-  'https://images.unsplash.com/photo-1758940886891-4ca718a3b1ff?auto=format&fit=crop&fm=jpg&q=86&w=2400'
-
-world
-  .querySelectorAll('.florence-layer')
-  .forEach((el) => {
-    el.style.backgroundImage =
-      `url("${florenceUrl}")`
-  })
-
-const film =
-  world.querySelector(
-    '.florence-film'
-  )
-
-const back =
-  world.querySelector(
-    '.florence-layer--back'
-  )
-
-const mid =
-  world.querySelector(
-    '.florence-layer--mid'
-  )
-
-const front =
-  world.querySelector(
-    '.florence-layer--front'
-  )
-
-const light =
-  world.querySelector(
-    '.florence-light'
-  )
-
-const clouds =
-  world.querySelectorAll(
-    '.florence-cloud'
-  )
-
-const bokeh =
-  world.querySelector(
-    '.florence-bokeh'
-  )
-
-const martin =
-  world.querySelector(
-    '.love-star--martin'
-  )
-
-const simona =
-  world.querySelector(
-    '.love-star--simona'
-  )
-
-const labels =
-  world.querySelectorAll(
-    '.love-star__label'
-  )
-
-const pulse =
-  world.querySelector(
-    '.love-pulse'
-  )
-
-const pathMartin =
-  world.querySelector(
-    '.love-path--martin'
-  )
-
-const pathSimona =
-  world.querySelector(
-    '.love-path--simona'
-  )
-
-const pathTogether =
-  world.querySelector(
-    '.love-path--together'
-  )
-
-function preparePath(path) {
-  const length =
-    path.getTotalLength()
-
-  path.style.strokeDasharray =
-    length
-
-  path.style.strokeDashoffset =
-    length
+  --dark:
+    #29281f;
 }
 
-[
-  pathMartin,
-  pathSimona,
-  pathTogether
-].forEach(
-  preparePath
-)
-
-gsap.set(
-  film,
-  {
-    autoAlpha: 0
-  }
-)
-
-gsap.set(
-  back,
-  {
-    scale: 1.03
-  }
-)
-
-gsap.set(
-  mid,
-  {
-    scale: 1.08,
-    yPercent: 1.5
-  }
-)
-
-gsap.set(
-  front,
-  {
-    scale: 1.14,
-    yPercent: 3
-  }
-)
-
-gsap.set(
-  [
-    martin,
-    simona
-  ],
-  {
-    autoAlpha: 0,
-    scale: 0.78
-  }
-)
-
-gsap.set(
-  martin,
-  {
-    left: '8%',
-    top: '49%'
-  }
-)
-
-gsap.set(
-  simona,
-  {
-    left: '92%',
-    top: '54%'
-  }
-)
-
-gsap.set(
-  pulse,
-  {
-    left: '50%',
-    top: '40%',
-    autoAlpha: 0,
-    scale: 0.2
-  }
-)
-
-/* =========================================
-   TEXT
-========================================= */
-
-const chapters =
-  gsap.utils.toArray(
-    '.chapter__inner'
-  )
-
-chapters.forEach(
-  (chapter) => {
-
-    gsap.fromTo(
-      chapter,
-
-      {
-        opacity: 0,
-        y: 34
-      },
-
-      {
-        opacity: 1,
-        y: 0,
-        ease: 'none',
-
-        scrollTrigger: {
-          trigger:
-            chapter.parentElement,
-
-          start:
-            'top 74%',
-
-          end:
-            'center 53%',
-
-          scrub: true
-        }
-      }
-    )
-
-    gsap.to(
-      chapter,
-
-      {
-        opacity: 0,
-        y: -24,
-        ease: 'none',
-
-        scrollTrigger: {
-          trigger:
-            chapter.parentElement,
-
-          start:
-            'center 43%',
-
-          end:
-            'bottom 20%',
-
-          scrub: true
-        }
-      }
-    )
-
-  }
-)
-
-/* =========================================
-   HLAVNÝ PRÍBEH
-========================================= */
-
-const tl =
-  gsap.timeline({
-
-    defaults: {
-      ease:
-        'power2.inOut'
-    },
-
-    scrollTrigger: {
-      trigger:
-        '#experience',
-
-      start:
-        'top top',
-
-      end:
-        'bottom bottom',
-
-      scrub: 1.2
-    }
-
-  })
-
-/* dve hviezdy */
-
-tl.to(
-  [
-    martin,
-    simona
-  ],
-  {
-    autoAlpha: 1,
-    scale: 1,
-    duration: 0.3
-  },
-  0.62
-)
-
-/* ich dve cesty */
-
-.to(
-  [
-    pathMartin,
-    pathSimona
-  ],
-  {
-    strokeDashoffset: 0,
-    duration: 0.85,
-    ease: 'none'
-  },
-  0.88
-)
-
-/* Martin ide zo svojho smeru */
-
-.to(
-  martin,
-  {
-    left: '48.2%',
-    top: '39%',
-    duration: 1
-  },
-  1.02
-)
-
-/* Simona zo svojho */
-
-.to(
-  simona,
-  {
-    left: '51.8%',
-    top: '41%',
-    duration: 1
-  },
-  1.02
-)
-
-/* Hlohovec/Cífer zmiznú */
-
-.to(
-  labels,
-  {
-    autoAlpha: 0,
-    y: 9,
-    duration: 0.3
-  },
-  1.48
-)
-
-/* stretnutie */
-
-.to(
-  pulse,
-  {
-    autoAlpha: 0.9,
-    scale: 1,
-    duration: 0.3
-  },
-  1.64
-)
-
-.to(
-  pulse,
-  {
-    autoAlpha: 0,
-    scale: 2.2,
-    duration: 0.48
-  },
-  1.84
-)
-
-/* =========================================
-   FLORENCIA
-========================================= */
-
-.to(
-  film,
-  {
-    autoAlpha: 1,
-    duration: 0.72
-  },
-  1.72
-)
-
-/* najvzdialenejšia vrstva */
-
-.to(
-  back,
-  {
-    scale: 1.09,
-    xPercent: -1,
-    yPercent: -1,
-
-    duration: 1.75,
-
-    ease:
-      'power1.inOut'
-  },
-  1.74
-)
-
-/* stred mesta */
-
-.to(
-  mid,
-  {
-    scale: 1.15,
-    xPercent: 1.3,
-    yPercent: -2.5,
-
-    duration: 1.75,
-
-    ease:
-      'power1.inOut'
-  },
-  1.74
-)
-
-/* popredie */
-
-.to(
-  front,
-  {
-    scale: 1.23,
-    xPercent: 2.2,
-    yPercent: -4.2,
-
-    duration: 1.75,
-
-    ease:
-      'power1.inOut'
-  },
-  1.74
-)
-
-/* zapadajúce slnko */
-
-.to(
-  light,
-  {
-    opacity: 0.66,
-    duration: 0.7
-  },
-  1.82
-)
-
-/* oblaky */
-
-.to(
-  clouds,
-  {
-    opacity: 0.8,
-    duration: 0.9
-  },
-  1.82
-)
-
-/* svetielka */
-
-.to(
-  bokeh,
-  {
-    opacity: 0.66,
-    duration: 0.85
-  },
-  1.9
-)
-
-/* obe hviezdy už idú spolu */
-
-.to(
-  martin,
-  {
-    left: '43%',
-    top: '25%',
-    scale: 0.82,
-    duration: 0.9
-  },
-  2
-)
-
-.to(
-  simona,
-  {
-    left: '47%',
-    top: '27%',
-    scale: 0.82,
-    duration: 0.9
-  },
-  2
-)
-
-/* spoločná dráha */
-
-.to(
-  pathTogether,
-  {
-    strokeDashoffset: 0,
-    duration: 1,
-    ease: 'none'
-  },
-  2
-)
-
-/* let nad Florenciou */
-
-.to(
-  martin,
-  {
-    left: '74%',
-    top: '19%',
-    scale: 0.68,
-    duration: 1
-  },
-  2.42
-)
-
-.to(
-  simona,
-  {
-    left: '78%',
-    top: '22%',
-    scale: 0.68,
-    duration: 1
-  },
-  2.42
-)
-
-/* =========================================
-   POVEDALA ÁNO
-========================================= */
-
-.set(
-  pulse,
-  {
-    left: '76%',
-    top: '21%',
-    scale: 0.2
-  },
-  2.75
-)
-
-.to(
-  pulse,
-  {
-    autoAlpha: 0.95,
-    scale: 0.9,
-    duration: 0.28
-  },
-  2.78
-)
-
-.to(
-  pulse,
-  {
-    autoAlpha: 0,
-    scale: 2.7,
-    duration: 0.55
-  },
-  3
-)
-
-/* =========================================
-   ODCHOD Z FLORENCIE
-========================================= */
-
-.to(
-  film,
-  {
-    autoAlpha: 0,
-    scale: 1.02,
-    duration: 0.72
-  },
-  3.08
-)
-
-.to(
-  [
-    martin,
-    simona
-  ],
-  {
-    left: '50%',
-    top: '45%',
-    autoAlpha: 0.18,
-    scale: 0.5,
-    duration: 0.72
-  },
-  3.08
-)
-
-.to(
-  [
-    pathMartin,
-    pathSimona,
-    pathTogether
-  ],
-  {
-    opacity: 0,
-    duration: 0.5
-  },
-  3.08
-)
-
-/* priestor pre ďalšie kapitoly */
-
-.to(
-  {},
-  {
-    duration: 2.2
-  },
-  3.7
-)
-
-/* =========================================
-   JEMNÝ POHYB MYŠOU NA PC
-========================================= */
-
-if (
-  window.matchMedia(
-    '(pointer: fine)'
-  ).matches
-) {
-
-  window.addEventListener(
-    'pointermove',
-    (e) => {
-
-      const x =
-        (
-          e.clientX /
-          window.innerWidth -
-          0.5
-        ) * 2
-
-      const y =
-        (
-          e.clientY /
-          window.innerHeight -
-          0.5
-        ) * 2
-
-      world.style.setProperty(
-        '--mx',
-        `${x * 5}px`
+* {
+  box-sizing:
+    border-box;
+}
+
+html {
+  margin: 0;
+
+  background:
+    #8d887b;
+
+  scroll-behavior:
+    smooth;
+}
+
+body {
+  margin: 0;
+
+  min-width:
+    320px;
+
+  overflow-x:
+    hidden;
+
+  background:
+    #8d887b;
+
+  color:
+    var(--cream);
+}
+
+body::-webkit-scrollbar {
+  width:
+    5px;
+}
+
+body::-webkit-scrollbar-track {
+  background:
+    #7c786d;
+}
+
+body::-webkit-scrollbar-thumb {
+  background:
+    rgba(
+      255,
+      245,
+      225,
+      0.35
+    );
+
+  border-radius:
+    999px;
+}
+
+::selection {
+  color:
+    #27251f;
+
+  background:
+    rgba(
+      236,
+      208,
+      158,
+      0.88
+    );
+}
+
+/* =========================================================
+   EXPERIENCE
+========================================================= */
+
+.experience {
+  position:
+    relative;
+
+  width:
+    100%;
+
+  height:
+    400vh;
+
+  background:
+    #898579;
+
+  isolation:
+    isolate;
+}
+
+/* =========================================================
+   THREE.JS CANVAS
+========================================================= */
+
+#scene {
+  position:
+    sticky;
+
+  top:
+    0;
+
+  z-index:
+    1;
+
+  display:
+    block;
+
+  width:
+    100%;
+
+  height:
+    100svh;
+
+  outline:
+    none;
+
+  touch-action:
+    pan-y;
+}
+
+/* =========================================================
+   FILM OVERLAYS
+========================================================= */
+
+.film-vignette {
+  position:
+    sticky;
+
+  top:
+    0;
+
+  z-index:
+    3;
+
+  width:
+    100%;
+
+  height:
+    100svh;
+
+  margin-top:
+    -100svh;
+
+  pointer-events:
+    none;
+
+  background:
+
+    linear-gradient(
+      180deg,
+
+      rgba(
+        34,
+        30,
+        22,
+        0.15
       )
+      0%,
 
-      world.style.setProperty(
-        '--my',
-        `${y * 4}px`
+      transparent
+      22%,
+
+      transparent
+      70%,
+
+      rgba(
+        35,
+        30,
+        22,
+        0.2
       )
+      100%
+    ),
 
-    }
-  )
+    radial-gradient(
+      ellipse
+      at center,
+
+      transparent
+      50%,
+
+      rgba(
+        40,
+        34,
+        25,
+        0.13
+      )
+      74%,
+
+      rgba(
+        30,
+        26,
+        20,
+        0.32
+      )
+      100%
+    );
+}
+
+.film-grain {
+  position:
+    sticky;
+
+  top:
+    0;
+
+  z-index:
+    4;
+
+  width:
+    100%;
+
+  height:
+    100svh;
+
+  margin-top:
+    -100svh;
+
+  pointer-events:
+    none;
+
+  opacity:
+    0.12;
+
+  mix-blend-mode:
+    soft-light;
+
+  background-image:
+
+    radial-gradient(
+      circle
+      at 20% 30%,
+
+      rgba(
+        255,
+        255,
+        255,
+        0.7
+      )
+      0 0.5px,
+
+      transparent
+      0.7px
+    ),
+
+    radial-gradient(
+      circle
+      at 75% 60%,
+
+      rgba(
+        25,
+        20,
+        15,
+        0.65
+      )
+      0 0.5px,
+
+      transparent
+      0.75px
+    );
+
+  background-size:
+    5px 5px,
+    7px 7px;
+
+  animation:
+    grain-shift
+    0.24s
+    steps(2)
+    infinite;
+}
+
+@keyframes grain-shift {
+
+  0% {
+    transform:
+      translate(
+        0,
+        0
+      );
+  }
+
+  25% {
+    transform:
+      translate(
+        -1px,
+        1px
+      );
+  }
+
+  50% {
+    transform:
+      translate(
+        1px,
+        -1px
+      );
+  }
+
+  75% {
+    transform:
+      translate(
+        1px,
+        1px
+      );
+  }
+
+  100% {
+    transform:
+      translate(
+        0,
+        0
+      );
+  }
 
 }
 
-window.addEventListener(
-  'resize',
-  () => {
-    ScrollTrigger.refresh()
+/* =========================================================
+   LOCATION LABELS
+========================================================= */
+
+.world-label {
+  position:
+    sticky;
+
+  top:
+    0;
+
+  z-index:
+    8;
+
+  width:
+    max-content;
+
+  height:
+    0;
+
+  pointer-events:
+    none;
+
+  opacity:
+    0;
+
+  transform:
+    translate(
+      -50%,
+      -50%
+    );
+}
+
+.world-label--martin {
+  left:
+    25%;
+
+  top:
+    48svh;
+}
+
+.world-label--simona {
+  left:
+    75%;
+
+  top:
+    52svh;
+}
+
+.world-label span,
+.world-label strong {
+  display:
+    block;
+
+  text-align:
+    center;
+}
+
+.world-label span {
+  margin-bottom:
+    5px;
+
+  font-size:
+    9px;
+
+  font-weight:
+    400;
+
+  letter-spacing:
+    0.3em;
+
+  text-transform:
+    uppercase;
+
+  color:
+    rgba(
+      255,
+      248,
+      235,
+      0.68
+    );
+}
+
+.world-label strong {
+  font-family:
+    "Cormorant Garamond",
+    Georgia,
+    serif;
+
+  font-size:
+    24px;
+
+  font-weight:
+    400;
+
+  font-style:
+    italic;
+
+  letter-spacing:
+    0.01em;
+
+  color:
+    rgba(
+      255,
+      248,
+      237,
+      0.96
+    );
+
+  text-shadow:
+    0 2px 16px
+    rgba(
+      35,
+      30,
+      22,
+      0.3
+    );
+}
+
+/* =========================================================
+   STORY
+========================================================= */
+
+.story {
+  position:
+    absolute;
+
+  inset:
+    0;
+
+  z-index:
+    10;
+
+  pointer-events:
+    none;
+}
+
+.chapter {
+  position:
+    relative;
+
+  width:
+    100%;
+
+  height:
+    100vh;
+
+  min-height:
+    100svh;
+
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  padding:
+    clamp(
+      26px,
+      7vw,
+      110px
+    );
+}
+
+.chapter__inner {
+  width:
+    min(
+      660px,
+      88vw
+    );
+
+  opacity:
+    0;
+
+  transform:
+    translateY(
+      32px
+    );
+
+  text-shadow:
+    0 3px 28px
+    rgba(
+      30,
+      28,
+      20,
+      0.2
+    );
+}
+
+.chapter__inner--center {
+  margin:
+    0 auto;
+
+  text-align:
+    center;
+}
+
+.chapter__inner--right {
+  margin-left:
+    auto;
+
+  text-align:
+    right;
+}
+
+/* =========================================================
+   TYPOGRAPHY
+========================================================= */
+
+h1,
+h2 {
+  margin:
+    0;
+
+  font-family:
+    "Cormorant Garamond",
+    Georgia,
+    serif;
+
+  font-weight:
+    400;
+
+  letter-spacing:
+    -0.045em;
+
+  line-height:
+    0.92;
+
+  text-wrap:
+    balance;
+
+  color:
+    #fff9ee;
+}
+
+h1 {
+  font-size:
+    clamp(
+      72px,
+      11vw,
+      158px
+    );
+}
+
+h2 {
+  font-size:
+    clamp(
+      58px,
+      8vw,
+      118px
+    );
+}
+
+p {
+  margin:
+    1.5rem 0 0;
+
+  max-width:
+    43ch;
+
+  font-size:
+    clamp(
+      14px,
+      1.1vw,
+      17px
+    );
+
+  font-weight:
+    300;
+
+  line-height:
+    1.75;
+
+  color:
+    rgba(
+      255,
+      248,
+      236,
+      0.74
+    );
+}
+
+.chapter__inner--center p {
+  margin-left:
+    auto;
+
+  margin-right:
+    auto;
+}
+
+.chapter__inner--right p {
+  margin-left:
+    auto;
+}
+
+.eyebrow {
+  margin:
+    0 0 1.15rem;
+
+  font-size:
+    9px;
+
+  font-weight:
+    400;
+
+  letter-spacing:
+    0.35em;
+
+  text-transform:
+    uppercase;
+
+  color:
+    rgba(
+      255,
+      240,
+      210,
+      0.74
+    );
+}
+
+.date {
+  margin-top:
+    1.7rem !important;
+
+  font-size:
+    11px;
+
+  letter-spacing:
+    0.3em;
+
+  text-transform:
+    uppercase;
+
+  color:
+    rgba(
+      255,
+      244,
+      223,
+      0.7
+    );
+}
+
+.hint {
+  position:
+    relative;
+
+  display:
+    inline-flex;
+
+  align-items:
+    center;
+
+  gap:
+    10px;
+
+  margin-top:
+    3rem !important;
+
+  font-size:
+    9px;
+
+  letter-spacing:
+    0.25em;
+
+  text-transform:
+    uppercase;
+
+  color:
+    rgba(
+      255,
+      249,
+      238,
+      0.48
+    );
+}
+
+.hint::after {
+  content:
+    "";
+
+  width:
+    36px;
+
+  height:
+    1px;
+
+  background:
+    linear-gradient(
+      90deg,
+
+      rgba(
+        255,
+        240,
+        211,
+        0.5
+      ),
+
+      transparent
+    );
+}
+
+/* =========================================================
+   CHAPTER SPECIFIC
+========================================================= */
+
+.chapter--1 {
+  align-items:
+    center;
+}
+
+.chapter--1
+.chapter__inner {
+  transform:
+    translateY(
+      14px
+    );
+}
+
+.chapter--2 {
+  align-items:
+    center;
+}
+
+.chapter--3 {
+  align-items:
+    center;
+}
+
+.chapter--4 {
+  align-items:
+    center;
+}
+
+/* =========================================================
+   NORMAL WEDDING SITE
+========================================================= */
+
+.wedding-site {
+  position:
+    relative;
+
+  z-index:
+    20;
+
+  min-height:
+    100svh;
+
+  display:
+    grid;
+
+  place-items:
+    center;
+
+  padding:
+    clamp(
+      70px,
+      10vw,
+      150px
+    );
+
+  color:
+    #2d2a22;
+
+  background:
+
+    radial-gradient(
+      circle
+      at 50% 0%,
+
+      rgba(
+        225,
+        204,
+        164,
+        0.36
+      ),
+
+      transparent
+      34%
+    ),
+
+    linear-gradient(
+      180deg,
+
+      #f4eee3
+      0%,
+
+      #ece3d4
+      100%
+    );
+}
+
+.wedding-site::before {
+  content:
+    "";
+
+  position:
+    absolute;
+
+  top:
+    0;
+
+  left:
+    50%;
+
+  width:
+    1px;
+
+  height:
+    80px;
+
+  transform:
+    translateX(
+      -50%
+    );
+
+  background:
+    linear-gradient(
+      to bottom,
+
+      transparent,
+
+      rgba(
+        70,
+        61,
+        47,
+        0.28
+      )
+    );
+}
+
+.wedding-site__inner {
+  width:
+    min(
+      920px,
+      92vw
+    );
+
+  text-align:
+    center;
+}
+
+.wedding-site h2 {
+  color:
+    #302c24;
+
+  font-size:
+    clamp(
+      62px,
+      9vw,
+      128px
+    );
+}
+
+.wedding-site p {
+  margin-left:
+    auto;
+
+  margin-right:
+    auto;
+
+  color:
+    rgba(
+      48,
+      44,
+      36,
+      0.68
+    );
+}
+
+.wedding-site
+.eyebrow {
+  color:
+    rgba(
+      77,
+      68,
+      54,
+      0.55
+    );
+}
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media
+(max-width: 700px) {
+
+  .experience {
+    height:
+      400svh;
   }
-)
 
-const preload =
-  new Image()
+  .chapter {
+    min-height:
+      100svh;
 
-preload.src =
-  florenceUrl
-
-preload.onload =
-  () => {
-    ScrollTrigger.refresh()
+    padding:
+      8vw 7vw;
   }
+
+  .chapter__inner,
+  .chapter__inner--right {
+    width:
+      88vw;
+
+    margin-left:
+      0;
+
+    text-align:
+      left;
+  }
+
+  .chapter__inner--center {
+    margin-left:
+      auto;
+
+    margin-right:
+      auto;
+
+    text-align:
+      center;
+  }
+
+  h1 {
+    font-size:
+      clamp(
+        70px,
+        21vw,
+        105px
+      );
+  }
+
+  h2 {
+    font-size:
+      clamp(
+        52px,
+        16vw,
+        82px
+      );
+  }
+
+  p {
+    max-width:
+      34ch;
+
+    font-size:
+      14px;
+  }
+
+  .eyebrow {
+    font-size:
+      8px;
+
+    letter-spacing:
+      0.28em;
+  }
+
+  .world-label--martin {
+    left:
+      24%;
+  }
+
+  .world-label--simona {
+    left:
+      76%;
+  }
+
+  .world-label strong {
+    font-size:
+      20px;
+  }
+
+  .world-label span {
+    font-size:
+      8px;
+  }
+
+  .film-grain {
+    opacity:
+      0.075;
+  }
+
+}
+
+/* =========================================================
+   REDUCED MOTION
+========================================================= */
+
+@media
+(prefers-reduced-motion: reduce) {
+
+  html {
+    scroll-behavior:
+      auto;
+  }
+
+  .film-grain {
+    animation:
+      none;
+  }
+
+  .chapter__inner {
+    transform:
+      none !important;
+  }
+
+}
