@@ -1,4 +1,5 @@
 import * as THREE from 'three'
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import './style.css'
@@ -18,14 +19,35 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
 renderer.setSize(window.innerWidth, window.innerHeight)
 renderer.outputColorSpace = THREE.SRGBColorSpace
 renderer.toneMapping = THREE.ACESFilmicToneMapping
-renderer.toneMappingExposure = 1.15
+renderer.toneMappingExposure = 1.12
 
 const scene = new THREE.Scene()
 
 scene.fog = new THREE.FogExp2(
   0x0f0d0c,
-  0.032
+  0.03
 )
+
+/* --------------------------------------------------
+   ENVIRONMENT
+-------------------------------------------------- */
+
+const pmremGenerator =
+  new THREE.PMREMGenerator(renderer)
+
+const environment =
+  pmremGenerator.fromScene(
+    new RoomEnvironment(),
+    0.04
+  ).texture
+
+scene.environment = environment
+
+pmremGenerator.dispose()
+
+/* --------------------------------------------------
+   CAMERA
+-------------------------------------------------- */
 
 const camera = new THREE.PerspectiveCamera(
   38,
@@ -34,130 +56,230 @@ const camera = new THREE.PerspectiveCamera(
   100
 )
 
-camera.position.set(0, 0.2, 11.5)
+camera.position.set(
+  0,
+  0.15,
+  10.8
+)
 
-scene.add(
+/* --------------------------------------------------
+   LIGHTS
+-------------------------------------------------- */
+
+const ambient =
   new THREE.AmbientLight(
-    0xfff2e0,
-    0.8
+    0xffead2,
+    0.55
   )
-)
 
-const warmLight = new THREE.PointLight(
-  0xffc98c,
-  65,
-  26
-)
+scene.add(ambient)
+
+const warmLight =
+  new THREE.PointLight(
+    0xffc878,
+    42,
+    28
+  )
 
 warmLight.position.set(
-  4.8,
-  5.5,
-  5.5
+  5,
+  6,
+  7
 )
 
 scene.add(warmLight)
 
-const softLight = new THREE.PointLight(
-  0xf4e6d8,
-  30,
-  22
+const frontLight =
+  new THREE.PointLight(
+    0xffefd9,
+    34,
+    25
+  )
+
+frontLight.position.set(
+  -4,
+  2.5,
+  7
 )
 
-softLight.position.set(
-  -4.5,
-  2,
-  5
-)
+scene.add(frontLight)
 
-scene.add(softLight)
-
-const rimLight = new THREE.PointLight(
-  0xd9c8ff,
-  28,
-  22
-)
+const rimLight =
+  new THREE.PointLight(
+    0xd8c1a0,
+    25,
+    20
+  )
 
 rimLight.position.set(
-  -3,
+  1,
   -4,
-  2
+  4
 )
 
 scene.add(rimLight)
 
-const topLight = new THREE.DirectionalLight(
-  0xffe5c3,
-  1.5
-)
+/* --------------------------------------------------
+   WEDDING BAND GEOMETRY
+-------------------------------------------------- */
 
-topLight.position.set(
-  0,
-  5,
-  2
-)
+function createBandGeometry() {
+  const outerRadius = 1.48
+  const innerRadius = 1.08
 
-scene.add(topLight)
+  const shape =
+    new THREE.Shape()
 
-const ringGeometry =
-  new THREE.TorusGeometry(
-    1.38,
-    0.10,
-    64,
-    240
+  shape.absarc(
+    0,
+    0,
+    outerRadius,
+    0,
+    Math.PI * 2,
+    false
   )
 
-const ringMaterialA =
-  new THREE.MeshPhysicalMaterial({
-    color: 0xd7ad68,
-    metalness: 1,
-    roughness: 0.12,
-    clearcoat: 1,
-    clearcoatRoughness: 0.08,
-    reflectivity: 1,
+  const hole =
+    new THREE.Path()
+
+  hole.absarc(
+    0,
+    0,
+    innerRadius,
+    0,
+    Math.PI * 2,
+    true
+  )
+
+  shape.holes.push(hole)
+
+  const geometry =
+    new THREE.ExtrudeGeometry(
+      shape,
+      {
+        depth: 0.34,
+        steps: 1,
+        curveSegments: 96,
+
+        bevelEnabled: true,
+        bevelSegments: 7,
+        bevelSize: 0.065,
+        bevelThickness: 0.065
+      }
+    )
+
+  geometry.translate(
+    0,
+    0,
+    -0.17
+  )
+
+  geometry.computeVertexNormals()
+
+  return geometry
+}
+
+const ringGeometry =
+  createBandGeometry()
+
+/* --------------------------------------------------
+   GOLD MATERIALS
+-------------------------------------------------- */
+
+function createMatteGold() {
+  return new THREE.MeshPhysicalMaterial({
+    color: 0xd7ac63,
+
+    metalness: 0.88,
+    roughness: 0.36,
+
+    clearcoat: 0.22,
+    clearcoatRoughness: 0.28,
+
+    reflectivity: 0.8,
+
     transparent: true,
     opacity: 1
   })
+}
 
-const ringMaterialB =
-  ringMaterialA.clone()
+function createPolishedGold() {
+  return new THREE.MeshPhysicalMaterial({
+    color: 0xe1b96f,
+
+    metalness: 0.94,
+    roughness: 0.16,
+
+    clearcoat: 0.5,
+    clearcoatRoughness: 0.12,
+
+    reflectivity: 1,
+
+    transparent: true,
+    opacity: 1
+  })
+}
+
+const matteGoldA =
+  createMatteGold()
+
+const polishedGoldA =
+  createPolishedGold()
+
+const matteGoldB =
+  createMatteGold()
+
+const polishedGoldB =
+  createPolishedGold()
+
+/* --------------------------------------------------
+   RINGS
+-------------------------------------------------- */
 
 const ringA =
   new THREE.Mesh(
     ringGeometry,
-    ringMaterialA
+    [
+      matteGoldA,
+      polishedGoldA
+    ]
   )
 
 ringA.position.set(
-  -0.82,
-  0.18,
-  0
+  -0.78,
+  0.42,
+  -0.58
 )
 
 ringA.rotation.set(
-  0.72,
-  -0.2,
-  0.38
+  0.82,
+  -0.12,
+  -0.27
 )
 
 const ringB =
   new THREE.Mesh(
     ringGeometry,
-    ringMaterialB
+    [
+      matteGoldB,
+      polishedGoldB
+    ]
   )
 
 ringB.position.set(
-  0.82,
-  -0.18,
-  -0.18
+  0.72,
+  -0.28,
+  0.1
 )
 
 ringB.rotation.set(
-  1.1,
-  0.28,
-  -0.42
+  1.07,
+  0.2,
+  0.22
 )
 
-const rig = new THREE.Group()
+const rig =
+  new THREE.Group()
 
 rig.add(
   ringA,
@@ -166,18 +288,22 @@ rig.add(
 
 scene.add(rig)
 
+/* --------------------------------------------------
+   SUBTLE HALO
+-------------------------------------------------- */
+
 const haloGeometry =
   new THREE.RingGeometry(
-    2.1,
-    4.6,
+    2.3,
+    5,
     96
   )
 
 const haloMaterial =
   new THREE.MeshBasicMaterial({
-    color: 0xc49a63,
+    color: 0xb98d52,
     transparent: true,
-    opacity: 0.025,
+    opacity: 0.018,
     side: THREE.DoubleSide,
     depthWrite: false
   })
@@ -188,13 +314,15 @@ const halo =
     haloMaterial
   )
 
-halo.position.z = -2.8
-halo.rotation.x =
-  Math.PI * 0.5
+halo.position.z = -3
 
 scene.add(halo)
 
-const particlesCount = 1100
+/* --------------------------------------------------
+   PARTICLES
+-------------------------------------------------- */
+
+const particlesCount = 850
 
 const positions =
   new Float32Array(
@@ -229,10 +357,10 @@ particlesGeometry.setAttribute(
 
 const particlesMaterial =
   new THREE.PointsMaterial({
-    color: 0xe6cba4,
-    size: 0.022,
+    color: 0xe2c391,
+    size: 0.019,
     transparent: true,
-    opacity: 0.4,
+    opacity: 0.3,
     depthWrite: false
   })
 
@@ -244,12 +372,17 @@ const particles =
 
 scene.add(particles)
 
+/* --------------------------------------------------
+   TEXT CHAPTERS
+-------------------------------------------------- */
+
 const chapters =
   gsap.utils.toArray(
     '.chapter__inner'
   )
 
 chapters.forEach((chapter) => {
+
   gsap.fromTo(
     chapter,
     {
@@ -260,43 +393,70 @@ chapters.forEach((chapter) => {
       opacity: 1,
       y: 0,
       ease: 'none',
+
       scrollTrigger: {
         trigger:
           chapter.parentElement,
-        start: 'top 72%',
-        end: 'center 50%',
+
+        start:
+          'top 72%',
+
+        end:
+          'center 50%',
+
         scrub: true
       }
     }
   )
 
-  gsap.to(chapter, {
-    opacity: 0,
-    y: -34,
-    ease: 'none',
-    scrollTrigger: {
-      trigger:
-        chapter.parentElement,
-      start: 'center 42%',
-      end: 'bottom 18%',
-      scrub: true
+  gsap.to(
+    chapter,
+    {
+      opacity: 0,
+      y: -34,
+      ease: 'none',
+
+      scrollTrigger: {
+        trigger:
+          chapter.parentElement,
+
+        start:
+          'center 42%',
+
+        end:
+          'bottom 18%',
+
+        scrub: true
+      }
     }
-  })
+  )
+
 })
+
+/* --------------------------------------------------
+   SCROLL CINEMATIC
+-------------------------------------------------- */
 
 const timeline =
   gsap.timeline({
+
     defaults: {
-      ease:
-        'power2.inOut'
+      ease: 'power2.inOut'
     },
 
     scrollTrigger: {
-      trigger: '#experience',
-      start: 'top top',
-      end: 'bottom bottom',
+      trigger:
+        '#experience',
+
+      start:
+        'top top',
+
+      end:
+        'bottom bottom',
+
       scrub: 1.4
     }
+
   })
 
 timeline
@@ -304,8 +464,7 @@ timeline
   .to(
     camera.position,
     {
-      z: 9.2,
-      y: 0,
+      z: 9,
       duration: 1
     }
   )
@@ -313,8 +472,8 @@ timeline
   .to(
     ringA.position,
     {
-      x: -0.48,
-      y: 0.08,
+      x: -0.55,
+      y: 0.28,
       duration: 1
     },
     '<'
@@ -323,8 +482,8 @@ timeline
   .to(
     ringB.position,
     {
-      x: 0.48,
-      y: -0.08,
+      x: 0.55,
+      y: -0.18,
       duration: 1
     },
     '<'
@@ -334,18 +493,23 @@ timeline
     rig.rotation,
     {
       y:
-        Math.PI * 0.55,
-      x: 0.12,
-      duration: 1.15
+        Math.PI * 0.3,
+
+      x:
+        0.05,
+
+      duration:
+        1.2
     }
   )
 
   .to(
     camera.position,
     {
-      x: 1.7,
-      y: 0.6,
-      z: 7.7,
+      x: 1.3,
+      y: 0.5,
+      z: 7.5,
+
       duration: 1.1
     }
   )
@@ -354,8 +518,11 @@ timeline
     rig.rotation,
     {
       y:
-        Math.PI * 1.2,
-      z: 0.14,
+        Math.PI * 0.72,
+
+      z:
+        0.1,
+
       duration: 1.1
     },
     '<'
@@ -364,9 +531,10 @@ timeline
   .to(
     camera.position,
     {
-      x: -1.5,
-      y: -0.4,
-      z: 6.7,
+      x: -1.15,
+      y: -0.35,
+      z: 6.5,
+
       duration: 1.1
     }
   )
@@ -374,7 +542,7 @@ timeline
   .to(
     ringA.rotation,
     {
-      z: 1.4,
+      z: 0.62,
       duration: 1
     },
     '<'
@@ -383,7 +551,7 @@ timeline
   .to(
     ringB.rotation,
     {
-      z: -1.35,
+      z: -0.5,
       duration: 1
     },
     '<'
@@ -392,9 +560,10 @@ timeline
   .to(
     ringA.position,
     {
-      x: -0.12,
-      y: 0,
-      z: 0.04,
+      x: -0.15,
+      y: 0.05,
+      z: -0.05,
+
       duration: 1.1
     }
   )
@@ -402,9 +571,10 @@ timeline
   .to(
     ringB.position,
     {
-      x: 0.12,
-      y: 0,
-      z: -0.04,
+      x: 0.15,
+      y: -0.05,
+      z: 0.08,
+
       duration: 1.1
     },
     '<'
@@ -414,8 +584,9 @@ timeline
     camera.position,
     {
       x: 0,
-      y: 0.15,
-      z: 5.2,
+      y: 0.1,
+      z: 5,
+
       duration: 1.2
     }
   )
@@ -424,9 +595,13 @@ timeline
     rig.rotation,
     {
       y:
-        Math.PI * 2.1,
-      x: -0.08,
-      duration: 1.2
+        Math.PI * 1.35,
+
+      x:
+        -0.06,
+
+      duration:
+        1.2
     },
     '<'
   )
@@ -441,11 +616,13 @@ timeline
 
   .to(
     [
-      ringMaterialA,
-      ringMaterialB
+      matteGoldA,
+      polishedGoldA,
+      matteGoldB,
+      polishedGoldB
     ],
     {
-      opacity: 0.12,
+      opacity: 0.1,
       duration: 0.8
     }
   )
@@ -459,7 +636,25 @@ timeline
     '<'
   )
 
+/* --------------------------------------------------
+   RESPONSIVE
+-------------------------------------------------- */
+
+function updateScale() {
+
+  const mobile =
+    window.innerWidth < 700
+
+  rig.scale.setScalar(
+    mobile
+      ? 0.82
+      : 1
+  )
+
+}
+
 function resize() {
+
   camera.aspect =
     window.innerWidth /
     window.innerHeight
@@ -477,6 +672,9 @@ function resize() {
       2
     )
   )
+
+  updateScale()
+
 }
 
 window.addEventListener(
@@ -484,37 +682,44 @@ window.addEventListener(
   resize
 )
 
+updateScale()
+
+/* --------------------------------------------------
+   RENDER
+-------------------------------------------------- */
+
 const clock =
   new THREE.Clock()
 
 function render() {
+
   const t =
     clock.getElapsedTime()
 
   particles.rotation.y =
-    t * 0.004
+    t * 0.003
 
   particles.rotation.x =
-    Math.sin(t * 0.08) *
-    0.025
+    Math.sin(
+      t * 0.08
+    ) * 0.02
 
   rig.position.y =
-    Math.sin(t * 0.6) *
-    0.045
-
-  ringA.rotation.y +=
-    0.00055
-
-  ringB.rotation.y -=
-    0.00045
-
-  halo.rotation.z =
-    t * 0.012
+    Math.sin(
+      t * 0.55
+    ) * 0.035
 
   warmLight.position.x =
-    4.8 +
-    Math.sin(t * 0.7) *
-      0.6
+    5 +
+    Math.sin(
+      t * 0.55
+    ) * 0.8
+
+  frontLight.position.y =
+    2.5 +
+    Math.sin(
+      t * 0.4
+    ) * 0.4
 
   renderer.render(
     scene,
@@ -524,6 +729,7 @@ function render() {
   requestAnimationFrame(
     render
   )
+
 }
 
 render()
