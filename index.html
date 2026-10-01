@@ -6,7 +6,7 @@
       name="viewport"
       content="width=device-width, initial-scale=1.0, viewport-fit=cover"
     />
-    <meta name="theme-color" content="#11100f" />
+    <meta name="theme-color" content="#8b826e" />
     <meta
       name="description"
       content="Simona & Martin — 30. 04. 2027"
@@ -17,95 +17,164 @@
 
   <body>
     <main id="app">
-      <section class="experience" id="experience">
+
+      <section
+        class="experience"
+        id="experience"
+      >
+
         <canvas id="scene"></canvas>
 
+        <div
+          class="film-grain"
+          aria-hidden="true"
+        ></div>
+
+        <div
+          class="film-vignette"
+          aria-hidden="true"
+        ></div>
+
+        <div
+          class="world-label world-label--martin"
+          aria-hidden="true"
+        >
+          <span>Hlohovec</span>
+          <strong>Martin</strong>
+        </div>
+
+        <div
+          class="world-label world-label--simona"
+          aria-hidden="true"
+        >
+          <span>Cífer</span>
+          <strong>Simona</strong>
+        </div>
+
         <div class="story">
-          <section class="chapter chapter--1">
-            <div class="chapter__inner">
-              <p class="eyebrow">30 · 04 · 2027</p>
+
+          <section
+            class="chapter chapter--1"
+          >
+            <div
+              class="chapter__inner chapter__inner--center"
+            >
+
+              <p class="eyebrow">
+                Simona & Martin
+              </p>
 
               <h1>
-                S
-                <span>&</span>
-                M
+                Jeden príbeh.
               </h1>
 
-              <p class="hint">Posuňte sa nižšie</p>
-            </div>
-          </section>
-
-          <section class="chapter chapter--2">
-            <div class="chapter__inner">
-              <p class="eyebrow">Simona & Martin</p>
-
-              <h2>
-                Dva príbehy.<br />
-                Jedna cesta.
-              </h2>
-            </div>
-          </section>
-
-          <section class="chapter chapter--3">
-            <div class="chapter__inner">
-              <p class="eyebrow">
-                01 · 04 · 2026 · Florencia
+              <p class="date">
+                30 · 04 · 2027
               </p>
 
-              <h2>Povedala áno.</h2>
-            </div>
-          </section>
-
-          <section class="chapter chapter--4">
-            <div class="chapter__inner">
-              <p class="eyebrow">
-                30 · 04 · 2027 · 15:00
+              <p class="hint">
+                Posuň nižšie
               </p>
 
-              <h2>Tu si povieme áno.</h2>
-
-              <p>Kostol sv. Jakuba · Trnava</p>
             </div>
           </section>
 
-          <section class="chapter chapter--5">
+          <section
+            class="chapter chapter--2"
+          >
             <div class="chapter__inner">
-              <p class="eyebrow">Šúrovce</p>
+
+              <p class="eyebrow">
+                Hlohovec · Cífer
+              </p>
 
               <h2>
-                A potom budeme oslavovať.
+                Dva začiatky.
               </h2>
 
-              <p>Zemiansky dvor</p>
+              <p>
+                Dve miesta. Dve cesty,
+                ktoré ešte netušili,
+                že raz budú pokračovať spolu.
+              </p>
+
             </div>
           </section>
 
-          <section class="chapter chapter--6">
+          <section
+            class="chapter chapter--3"
+          >
+            <div
+              class="chapter__inner chapter__inner--right"
+            >
+
+              <p class="eyebrow">
+                Niekde medzi tým
+              </p>
+
+              <h2>
+                A potom sa stretli.
+              </h2>
+
+            </div>
+          </section>
+
+          <section
+            class="chapter chapter--4"
+          >
             <div class="chapter__inner">
-              <p class="eyebrow">Simona & Martin</p>
 
-              <h2>Tešíme sa na vás.</h2>
+              <p class="eyebrow">
+                Odvtedy
+              </p>
 
-              <p class="hint">Pokračujte ↓</p>
+              <h2>
+                Jedným smerom.
+              </h2>
+
+              <p>
+                Toto je len začiatok cesty.
+                Ďalšia kapitola nás zavedie
+                do Florencie.
+              </p>
+
             </div>
           </section>
+
         </div>
       </section>
 
-      <section class="wedding-site" id="wedding-site">
-        <div class="wedding-site__inner">
-          <p class="eyebrow">30 · 04 · 2027</p>
+      <section
+        class="wedding-site"
+        id="wedding-site"
+      >
 
-          <h2>Naša svadba</h2>
+        <div class="wedding-site__inner">
+
+          <p class="eyebrow">
+            Simona & Martin
+          </p>
+
+          <h2>
+            Pokračovanie príbehu
+          </h2>
 
           <p>
-            Toto je miesto, kam neskôr napojíme existujúcu svadobnú stránku —
-            program, miesta, ubytovanie a RSVP.
+            Sem neskôr plynulo nadviažeme
+            Florenciou, Trnavou, Šúrovcami
+            a samotnou svadobnou stránkou.
           </p>
+
         </div>
+
       </section>
+
     </main>
 
-    <script type="module" src="/src/main.js"></script>
+    <script
+      type="module"
+      src="/src/main.js"
+    ></script>
+
   </body>
 </html>
