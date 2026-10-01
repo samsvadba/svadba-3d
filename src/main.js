@@ -6,7 +6,7 @@ import './style.css'
 gsap.registerPlugin(ScrollTrigger)
 
 /* =========================================================
-   BASIC SETUP
+   SETUP
 ========================================================= */
 
 const canvas = document.querySelector('#scene')
@@ -18,45 +18,29 @@ const renderer = new THREE.WebGLRenderer({
   powerPreference: 'high-performance'
 })
 
-renderer.setPixelRatio(
-  Math.min(window.devicePixelRatio, 2)
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+renderer.setSize(window.innerWidth, window.innerHeight)
+renderer.outputColorSpace = THREE.SRGBColorSpace
+renderer.toneMapping = THREE.ACESFilmicToneMapping
+renderer.toneMappingExposure = 1.08
+
+const scene = new THREE.Scene()
+
+scene.fog = new THREE.FogExp2(
+  0x080706,
+  0.018
 )
 
-renderer.setSize(
-  window.innerWidth,
-  window.innerHeight
+const camera = new THREE.PerspectiveCamera(
+  40,
+  window.innerWidth / window.innerHeight,
+  0.1,
+  100
 )
-
-renderer.outputColorSpace =
-  THREE.SRGBColorSpace
-
-renderer.toneMapping =
-  THREE.ACESFilmicToneMapping
-
-renderer.toneMappingExposure =
-  1.12
-
-const scene =
-  new THREE.Scene()
-
-scene.fog =
-  new THREE.FogExp2(
-    0x080706,
-    0.026
-  )
-
-const camera =
-  new THREE.PerspectiveCamera(
-    40,
-    window.innerWidth /
-      window.innerHeight,
-    0.1,
-    100
-  )
 
 camera.position.set(
   0,
-  0.15,
+  0.2,
   10.5
 )
 
@@ -64,46 +48,99 @@ camera.position.set(
    LIGHTS
 ========================================================= */
 
-const ambient =
+scene.add(
   new THREE.AmbientLight(
-    0xffead2,
-    0.35
+    0xffead5,
+    0.24
   )
-
-scene.add(ambient)
-
-const warmLight =
-  new THREE.PointLight(
-    0xffb85f,
-    34,
-    24
-  )
-
-warmLight.position.set(
-  4,
-  4,
-  5
 )
 
-scene.add(warmLight)
-
-const softLight =
-  new THREE.PointLight(
-    0xffead0,
-    20,
-    20
-  )
-
-softLight.position.set(
-  -4,
-  1,
-  5
+const cityLight = new THREE.PointLight(
+  0xffa85a,
+  22,
+  18
 )
 
-scene.add(softLight)
+cityLight.position.set(
+  -1,
+  1.2,
+  4
+)
+
+scene.add(cityLight)
+
+const moonLight = new THREE.DirectionalLight(
+  0xd7d9df,
+  0.45
+)
+
+moonLight.position.set(
+  3,
+  5,
+  4
+)
+
+scene.add(moonLight)
 
 /* =========================================================
-   STAR TEXTURE
+   BACKGROUND STAR FIELD
+========================================================= */
+
+const backgroundStarCount =
+  window.innerWidth < 700
+    ? 420
+    : 700
+
+const backgroundPositions =
+  new Float32Array(
+    backgroundStarCount * 3
+  )
+
+for (
+  let i = 0;
+  i < backgroundStarCount;
+  i++
+) {
+  backgroundPositions[i * 3] =
+    (Math.random() - 0.5) * 30
+
+  backgroundPositions[i * 3 + 1] =
+    (Math.random() - 0.5) * 18
+
+  backgroundPositions[i * 3 + 2] =
+    -Math.random() * 18
+}
+
+const backgroundGeometry =
+  new THREE.BufferGeometry()
+
+backgroundGeometry.setAttribute(
+  'position',
+  new THREE.BufferAttribute(
+    backgroundPositions,
+    3
+  )
+)
+
+const backgroundMaterial =
+  new THREE.PointsMaterial({
+    color: 0xf5d9ae,
+    size: 0.018,
+    transparent: true,
+    opacity: 0.4,
+    depthWrite: false
+  })
+
+const backgroundStars =
+  new THREE.Points(
+    backgroundGeometry,
+    backgroundMaterial
+  )
+
+scene.add(backgroundStars)
+
+/* =========================================================
+   REALISTIC STAR SPRITE
 ========================================================= */
 
 function createStarTexture() {
@@ -121,7 +158,7 @@ function createStarTexture() {
   const center =
     size / 2
 
-  const glow =
+  const gradient =
     ctx.createRadialGradient(
       center,
       center,
@@ -131,44 +168,38 @@ function createStarTexture() {
       center
     )
 
-  glow.addColorStop(
+  gradient.addColorStop(
     0,
     'rgba(255,255,255,1)'
   )
 
-  glow.addColorStop(
-    0.025,
-    'rgba(255,250,235,1)'
+  gradient.addColorStop(
+    0.018,
+    'rgba(255,255,248,1)'
   )
 
-  glow.addColorStop(
-    0.07,
-    'rgba(255,227,177,0.95)'
+  gradient.addColorStop(
+    0.055,
+    'rgba(255,238,205,0.92)'
   )
 
-  glow.addColorStop(
-    0.16,
-    'rgba(255,191,108,0.55)'
+  gradient.addColorStop(
+    0.15,
+    'rgba(255,196,125,0.38)'
   )
 
-  glow.addColorStop(
-    0.32,
-    'rgba(255,164,77,0.16)'
+  gradient.addColorStop(
+    0.34,
+    'rgba(255,167,86,0.09)'
   )
 
-  glow.addColorStop(
+  gradient.addColorStop(
     1,
-    'rgba(255,140,50,0)'
+    'rgba(255,140,60,0)'
   )
 
-  ctx.fillStyle = glow
-
-  ctx.fillRect(
-    0,
-    0,
-    size,
-    size
-  )
+  ctx.fillStyle = gradient
+  ctx.fillRect(0, 0, size, size)
 
   const horizontal =
     ctx.createLinearGradient(
@@ -184,92 +215,42 @@ function createStarTexture() {
   )
 
   horizontal.addColorStop(
-    0.48,
-    'rgba(255,230,190,0)'
+    0.495,
+    'rgba(255,240,215,0)'
   )
 
   horizontal.addColorStop(
-    0.5,
-    'rgba(255,255,255,0.9)'
-  )
-
-  horizontal.addColorStop(
-    0.52,
-    'rgba(255,230,190,0)'
-  )
-
-  horizontal.addColorStop(
-    1,
-    'rgba(255,255,255,0)'
-  )
-
-  ctx.fillStyle =
-    horizontal
-
-  ctx.fillRect(
-    0,
-    center - 1,
-    size,
-    2
-  )
-
-  const vertical =
-    ctx.createLinearGradient(
-      center,
-      0,
-      center,
-      size
-    )
-
-  vertical.addColorStop(
-    0,
-    'rgba(255,255,255,0)'
-  )
-
-  vertical.addColorStop(
-    0.49,
-    'rgba(255,240,210,0)'
-  )
-
-  vertical.addColorStop(
     0.5,
     'rgba(255,255,255,0.65)'
   )
 
-  vertical.addColorStop(
-    0.51,
-    'rgba(255,240,210,0)'
+  horizontal.addColorStop(
+    0.505,
+    'rgba(255,240,215,0)'
   )
 
-  vertical.addColorStop(
+  horizontal.addColorStop(
     1,
     'rgba(255,255,255,0)'
   )
 
-  ctx.fillStyle =
-    vertical
+  ctx.fillStyle = horizontal
 
   ctx.fillRect(
-    center - 1,
     0,
-    2,
-    size
+    center - 0.8,
+    size,
+    1.6
   )
 
-  const texture =
-    new THREE.CanvasTexture(c)
-
-  texture.colorSpace =
-    THREE.SRGBColorSpace
-
-  return texture
+  return new THREE.CanvasTexture(c)
 }
 
 const starTexture =
   createStarTexture()
 
 /* =========================================================
-   LABEL TEXTURE
+   LABEL
 ========================================================= */
 
 function createLabelTexture(
@@ -292,31 +273,30 @@ function createLabelTexture(
     c.height
   )
 
-  ctx.textAlign =
-    'center'
+  ctx.textAlign = 'center'
 
   ctx.fillStyle =
-    'rgba(236,213,178,0.88)'
+    'rgba(225,200,164,0.8)'
 
   ctx.font =
-    '300 32px Arial'
+    '300 30px Arial'
 
   ctx.fillText(
     place.toUpperCase(),
     512,
-    110
+    112
   )
 
   ctx.fillStyle =
-    'rgba(255,245,230,0.55)'
+    'rgba(255,246,234,0.5)'
 
   ctx.font =
-    '300 24px Arial'
+    '300 23px Arial'
 
   ctx.fillText(
     name,
     512,
-    160
+    158
   )
 
   const texture =
@@ -329,13 +309,13 @@ function createLabelTexture(
 }
 
 /* =========================================================
-   CREATE MAIN STORY STAR
+   STORY STAR
 ========================================================= */
 
 function createStoryStar(
   place,
   name,
-  color
+  tint
 ) {
   const group =
     new THREE.Group()
@@ -343,9 +323,9 @@ function createStoryStar(
   const glowMaterial =
     new THREE.SpriteMaterial({
       map: starTexture,
-      color,
+      color: tint,
       transparent: true,
-      opacity: 1,
+      opacity: 0.82,
       depthWrite: false,
       blending:
         THREE.AdditiveBlending
@@ -357,8 +337,8 @@ function createStoryStar(
     )
 
   glow.scale.set(
-    2.1,
-    2.1,
+    1.25,
+    1.25,
     1
   )
 
@@ -381,8 +361,8 @@ function createStoryStar(
     )
 
   core.scale.set(
-    0.42,
-    0.42,
+    0.24,
+    0.24,
     1
   )
 
@@ -395,9 +375,8 @@ function createStoryStar(
           place,
           name
         ),
-
       transparent: true,
-      opacity: 0.72,
+      opacity: 0.75,
       depthWrite: false
     })
 
@@ -407,13 +386,13 @@ function createStoryStar(
     )
 
   label.scale.set(
-    3.2,
-    0.88,
+    2.55,
+    0.7,
     1
   )
 
   label.position.y =
-    -1.05
+    -0.8
 
   group.add(label)
 
@@ -428,19 +407,27 @@ function createStoryStar(
 }
 
 /* =========================================================
-   MARTIN STAR
+   MARTIN + SIMONA
 ========================================================= */
+
+const isMobile =
+  window.innerWidth < 700
+
+const startSpread =
+  isMobile
+    ? 1.35
+    : 3.5
 
 const martin =
   createStoryStar(
     'Hlohovec',
     'Martin',
-    0xffc56f
+    0xffc674
   )
 
 martin.group.position.set(
-  -3.7,
-  0.7,
+  -startSpread,
+  0.55,
   0
 )
 
@@ -448,21 +435,17 @@ scene.add(
   martin.group
 )
 
-/* =========================================================
-   SIMONA STAR
-========================================================= */
-
 const simona =
   createStoryStar(
     'Cífer',
     'Simona',
-    0xffe3ba
+    0xffe7c4
   )
 
 simona.group.position.set(
-  3.7,
-  -0.55,
-  -0.15
+  startSpread,
+  -0.45,
+  -0.1
 )
 
 scene.add(
@@ -470,621 +453,31 @@ scene.add(
 )
 
 /* =========================================================
-   BACKGROUND STAR FIELD
-========================================================= */
-
-const starCount =
-  window.innerWidth < 700
-    ? 520
-    : 850
-
-const positions =
-  new Float32Array(
-    starCount * 3
-  )
-
-for (
-  let i = 0;
-  i < starCount;
-  i++
-) {
-  positions[i * 3] =
-    (Math.random() - 0.5) *
-    30
-
-  positions[i * 3 + 1] =
-    (Math.random() - 0.5) *
-    18
-
-  positions[i * 3 + 2] =
-    -Math.random() * 20
-}
-
-const starsGeometry =
-  new THREE.BufferGeometry()
-
-starsGeometry.setAttribute(
-  'position',
-  new THREE.BufferAttribute(
-    positions,
-    3
-  )
-)
-
-const starsMaterial =
-  new THREE.PointsMaterial({
-    color: 0xffe0b0,
-    size: 0.023,
-    transparent: true,
-    opacity: 0.48,
-    depthWrite: false
-  })
-
-const starField =
-  new THREE.Points(
-    starsGeometry,
-    starsMaterial
-  )
-
-scene.add(starField)
-
-/* =========================================================
-   STAR TRAILS
-========================================================= */
-
-function createTrail(
-  points,
-  color
-) {
-  const curve =
-    new THREE.CatmullRomCurve3(
-      points
-    )
-
-  const geometry =
-    new THREE.TubeGeometry(
-      curve,
-      100,
-      0.006,
-      6,
-      false
-    )
-
-  const material =
-    new THREE.MeshBasicMaterial({
-      color,
-      transparent: true,
-      opacity: 0,
-      depthWrite: false,
-      blending:
-        THREE.AdditiveBlending
-    })
-
-  const mesh =
-    new THREE.Mesh(
-      geometry,
-      material
-    )
-
-  scene.add(mesh)
-
-  return {
-    mesh,
-    material
-  }
-}
-
-const martinTrail =
-  createTrail(
-    [
-      new THREE.Vector3(
-        -4.2,
-        0.8,
-        -0.5
-      ),
-
-      new THREE.Vector3(
-        -3,
-        0.5,
-        -0.2
-      ),
-
-      new THREE.Vector3(
-        -1.6,
-        0.25,
-        0
-      ),
-
-      new THREE.Vector3(
-        -0.2,
-        0.05,
-        0.1
-      )
-    ],
-
-    0xd89c4f
-  )
-
-const simonaTrail =
-  createTrail(
-    [
-      new THREE.Vector3(
-        4.2,
-        -0.65,
-        -0.5
-      ),
-
-      new THREE.Vector3(
-        3,
-        -0.4,
-        -0.2
-      ),
-
-      new THREE.Vector3(
-        1.5,
-        -0.2,
-        0
-      ),
-
-      new THREE.Vector3(
-        0.2,
-        -0.05,
-        0.1
-      )
-    ],
-
-    0xe7bd83
-  )
-
-/* =========================================================
-   FLORENCE
+   FLORENCE ROOT
 ========================================================= */
 
 const florenceRoot =
   new THREE.Group()
 
-const florence =
-  new THREE.Group()
-
-florenceRoot.add(
-  florence
-)
-
 florenceRoot.position.set(
   0,
-  -1.5,
-  -2
+  -0.95,
+  -1.4
 )
 
 scene.add(
   florenceRoot
 )
 
-const florenceMaterials = []
-
-function cityMaterial(
-  color,
-  opacity = 0
-) {
-  const material =
-    new THREE.MeshStandardMaterial({
-      color,
-      metalness: 0,
-      roughness: 0.92,
-      transparent: true,
-      opacity
-    })
-
-  florenceMaterials.push(
-    material
-  )
-
-  return material
-}
-
-function edgeMaterial() {
-  const material =
-    new THREE.LineBasicMaterial({
-      color: 0xc99a60,
-      transparent: true,
-      opacity: 0
-    })
-
-  florenceMaterials.push(
-    material
-  )
-
-  return material
-}
-
-function addEdges(mesh) {
-  const edges =
-    new THREE.EdgesGeometry(
-      mesh.geometry,
-      22
-    )
-
-  const line =
-    new THREE.LineSegments(
-      edges,
-      edgeMaterial()
-    )
-
-  line.position.copy(
-    mesh.position
-  )
-
-  line.rotation.copy(
-    mesh.rotation
-  )
-
-  line.scale.copy(
-    mesh.scale
-  )
-
-  florence.add(line)
-}
-
 /* =========================================================
-   FLORENCE BUILDINGS
+   SKY / HORIZON GLOW
 ========================================================= */
 
-const cityDark =
-  0x171311
-
-const buildingData = [
-  [-4.5, -0.05, 1.2, 1.15, 0.7],
-  [-3.5, 0.05, 0.85, 1.4, 0.8],
-  [-2.6, -0.04, 0.9, 1.18, 0.72],
-  [-1.8, 0.03, 0.95, 1.35, 0.78],
-  [-0.9, -0.05, 0.7, 1.05, 0.7],
-  [0.9, -0.05, 0.8, 1.15, 0.74],
-  [1.8, 0.02, 0.95, 1.4, 0.8],
-  [2.8, -0.04, 0.8, 1.18, 0.72],
-  [3.7, 0.05, 0.95, 1.32, 0.8],
-  [4.6, -0.05, 1.05, 1.15, 0.72]
-]
-
-buildingData.forEach(
-  ([
-    x,
-    y,
-    width,
-    height,
-    depth
-  ]) => {
-
-    const geometry =
-      new THREE.BoxGeometry(
-        width,
-        height,
-        depth
-      )
-
-    const building =
-      new THREE.Mesh(
-        geometry,
-        cityMaterial(cityDark)
-      )
-
-    building.position.set(
-      x,
-      y,
-      0
-    )
-
-    florence.add(
-      building
-    )
-
-    addEdges(
-      building
-    )
-  }
-)
-
-/* =========================================================
-   DUOMO - BASE
-========================================================= */
-
-const cathedralBase =
-  new THREE.Mesh(
-    new THREE.BoxGeometry(
-      1.75,
-      1.25,
-      1
-    ),
-
-    cityMaterial(
-      0x1b1714
-    )
-  )
-
-cathedralBase.position.set(
-  -0.05,
-  0.18,
-  0.1
-)
-
-florence.add(
-  cathedralBase
-)
-
-addEdges(
-  cathedralBase
-)
-
-/* =========================================================
-   DUOMO DRUM
-========================================================= */
-
-const drum =
-  new THREE.Mesh(
-    new THREE.CylinderGeometry(
-      0.67,
-      0.67,
-      0.55,
-      32
-    ),
-
-    cityMaterial(
-      0x201915
-    )
-  )
-
-drum.position.set(
-  -0.05,
-  1.03,
-  0.1
-)
-
-florence.add(
-  drum
-)
-
-addEdges(
-  drum
-)
-
-/* =========================================================
-   DUOMO DOME
-========================================================= */
-
-const dome =
-  new THREE.Mesh(
-    new THREE.SphereGeometry(
-      0.77,
-      48,
-      24,
-      0,
-      Math.PI * 2,
-      0,
-      Math.PI / 2
-    ),
-
-    cityMaterial(
-      0x3b2118
-    )
-  )
-
-dome.position.set(
-  -0.05,
-  1.3,
-  0.1
-)
-
-dome.scale.y =
-  1.18
-
-florence.add(
-  dome
-)
-
-/* dome ribs */
-
-for (
-  let i = 0;
-  i < 8;
-  i++
-) {
-  const angle =
-    (i / 8) *
-    Math.PI * 2
-
-  const rib =
-    new THREE.Mesh(
-      new THREE.TorusGeometry(
-        0.79,
-        0.007,
-        5,
-        60,
-        Math.PI / 2
-      ),
-
-      cityMaterial(
-        0xb17c48
-      )
-    )
-
-  rib.rotation.y =
-    angle
-
-  rib.rotation.z =
-    Math.PI / 2
-
-  rib.position.set(
-    -0.05,
-    1.31,
-    0.1
-  )
-
-  rib.scale.y =
-    1.18
-
-  florence.add(
-    rib
-  )
-}
-
-/* =========================================================
-   DUOMO LANTERN
-========================================================= */
-
-const lantern =
-  new THREE.Mesh(
-    new THREE.CylinderGeometry(
-      0.13,
-      0.17,
-      0.34,
-      12
-    ),
-
-    cityMaterial(
-      0x211914
-    )
-  )
-
-lantern.position.set(
-  -0.05,
-  2.22,
-  0.1
-)
-
-florence.add(
-  lantern
-)
-
-const lanternTop =
-  new THREE.Mesh(
-    new THREE.ConeGeometry(
-      0.13,
-      0.26,
-      12
-    ),
-
-    cityMaterial(
-      0x8d633f
-    )
-  )
-
-lanternTop.position.set(
-  -0.05,
-  2.48,
-  0.1
-)
-
-florence.add(
-  lanternTop
-)
-
-/* =========================================================
-   GIOTTO BELL TOWER
-========================================================= */
-
-const tower =
-  new THREE.Mesh(
-    new THREE.BoxGeometry(
-      0.48,
-      2.75,
-      0.5
-    ),
-
-    cityMaterial(
-      0x211b17
-    )
-  )
-
-tower.position.set(
-  1.15,
-  0.82,
-  0.08
-)
-
-florence.add(
-  tower
-)
-
-addEdges(
-  tower
-)
-
-const towerTop =
-  new THREE.Mesh(
-    new THREE.BoxGeometry(
-      0.57,
-      0.18,
-      0.58
-    ),
-
-    cityMaterial(
-      0x9a7048
-    )
-  )
-
-towerTop.position.set(
-  1.15,
-  2.28,
-  0.08
-)
-
-florence.add(
-  towerTop
-)
-
-/* =========================================================
-   FLORENCE WARM WINDOWS
-========================================================= */
-
-const windowMaterial =
-  new THREE.MeshBasicMaterial({
-    color: 0xffb85f,
-    transparent: true,
-    opacity: 0
-  })
-
-florenceMaterials.push(
-  windowMaterial
-)
-
-for (
-  let i = 0;
-  i < 22;
-  i++
-) {
-  const windowMesh =
-    new THREE.Mesh(
-      new THREE.PlaneGeometry(
-        0.035,
-        0.055
-      ),
-
-      windowMaterial
-    )
-
-  windowMesh.position.set(
-    -4.4 +
-      Math.random() * 8.8,
-
-    -0.25 +
-      Math.random() * 0.75,
-
-    0.43
-  )
-
-  florence.add(
-    windowMesh
-  )
-}
-
-/* =========================================================
-   FLORENCE HAZE
-========================================================= */
-
-function createGlowTexture() {
+function createHorizonTexture() {
   const c =
     document.createElement('canvas')
 
-  c.width = 512
+  c.width = 1024
   c.height = 512
 
   const ctx =
@@ -1092,45 +485,49 @@ function createGlowTexture() {
 
   const gradient =
     ctx.createRadialGradient(
-      256,
-      256,
+      512,
+      390,
       0,
-      256,
-      256,
-      256
+      512,
+      390,
+      470
     )
 
   gradient.addColorStop(
     0,
-    'rgba(210,145,76,0.32)'
+    'rgba(205,123,58,0.42)'
   )
 
   gradient.addColorStop(
-    0.35,
-    'rgba(170,105,55,0.11)'
+    0.25,
+    'rgba(158,84,38,0.2)'
+  )
+
+  gradient.addColorStop(
+    0.58,
+    'rgba(78,43,28,0.08)'
   )
 
   gradient.addColorStop(
     1,
-    'rgba(80,40,20,0)'
+    'rgba(10,8,7,0)'
   )
 
-  ctx.fillStyle =
-    gradient
+  ctx.fillStyle = gradient
 
   ctx.fillRect(
     0,
     0,
-    512,
-    512
+    c.width,
+    c.height
   )
 
   return new THREE.CanvasTexture(c)
 }
 
-const florenceGlowMaterial =
+const horizonMaterial =
   new THREE.SpriteMaterial({
-    map: createGlowTexture(),
+    map: createHorizonTexture(),
     transparent: true,
     opacity: 0,
     depthWrite: false,
@@ -1138,41 +535,800 @@ const florenceGlowMaterial =
       THREE.AdditiveBlending
   })
 
-florenceMaterials.push(
-  florenceGlowMaterial
-)
-
-const florenceGlow =
+const horizonGlow =
   new THREE.Sprite(
-    florenceGlowMaterial
+    horizonMaterial
   )
 
-florenceGlow.scale.set(
-  10,
-  5.5,
+horizonGlow.scale.set(
+  12,
+  6,
   1
 )
 
-florenceGlow.position.set(
+horizonGlow.position.set(
   0,
-  0.5,
-  -1
+  1,
+  -3.2
 )
 
 florenceRoot.add(
-  florenceGlow
-)
-
-/* start invisible */
-
-florence.scale.set(
-  0.82,
-  0.82,
-  0.82
+  horizonGlow
 )
 
 /* =========================================================
-   TEXT CHAPTER ANIMATION
+   MATERIAL COLLECTIONS
+========================================================= */
+
+const cityMaterials = []
+const edgeMaterials = []
+const lightMaterials = []
+
+function makeCityMaterial(
+  color,
+  opacity = 0
+) {
+  const material =
+    new THREE.MeshStandardMaterial({
+      color,
+      roughness: 0.96,
+      metalness: 0,
+      transparent: true,
+      opacity,
+      side: THREE.DoubleSide
+    })
+
+  cityMaterials.push(material)
+
+  return material
+}
+
+function makeEdgeMaterial(
+  opacity = 0
+) {
+  const material =
+    new THREE.LineBasicMaterial({
+      color: 0xa57449,
+      transparent: true,
+      opacity
+    })
+
+  edgeMaterials.push(material)
+
+  return material
+}
+
+/* =========================================================
+   BUILDING SHAPE
+========================================================= */
+
+function createBuilding({
+  x,
+  y,
+  width,
+  height,
+  roof = 'flat',
+  z = 0,
+  color = 0x14110f,
+  outline = true
+}) {
+  const shape =
+    new THREE.Shape()
+
+  if (roof === 'gable') {
+    shape.moveTo(
+      -width / 2,
+      0
+    )
+
+    shape.lineTo(
+      width / 2,
+      0
+    )
+
+    shape.lineTo(
+      width / 2,
+      height * 0.76
+    )
+
+    shape.lineTo(
+      0,
+      height
+    )
+
+    shape.lineTo(
+      -width / 2,
+      height * 0.76
+    )
+
+    shape.closePath()
+  } else {
+    shape.moveTo(
+      -width / 2,
+      0
+    )
+
+    shape.lineTo(
+      width / 2,
+      0
+    )
+
+    shape.lineTo(
+      width / 2,
+      height
+    )
+
+    shape.lineTo(
+      -width / 2,
+      height
+    )
+
+    shape.closePath()
+  }
+
+  const geometry =
+    new THREE.ShapeGeometry(shape)
+
+  const mesh =
+    new THREE.Mesh(
+      geometry,
+      makeCityMaterial(color)
+    )
+
+  mesh.position.set(
+    x,
+    y,
+    z
+  )
+
+  florenceRoot.add(mesh)
+
+  if (outline) {
+    const edges =
+      new THREE.EdgesGeometry(
+        geometry
+      )
+
+    const line =
+      new THREE.LineSegments(
+        edges,
+        makeEdgeMaterial()
+      )
+
+    line.position.copy(
+      mesh.position
+    )
+
+    florenceRoot.add(line)
+  }
+
+  return mesh
+}
+
+/* =========================================================
+   FAR CITY LAYER
+========================================================= */
+
+const farLayer =
+  new THREE.Group()
+
+florenceRoot.add(
+  farLayer
+)
+
+const farBuildings = [
+  [-5.2, 0.0, 1.4, 1.25, 'gable'],
+  [-4.1, 0.0, 1.0, 1.5, 'flat'],
+  [-3.2, 0.0, 1.15, 1.25, 'gable'],
+  [-2.3, 0.0, 1.0, 1.55, 'flat'],
+  [-1.35, 0.0, 0.9, 1.28, 'gable'],
+  [1.4, 0.0, 1.0, 1.36, 'gable'],
+  [2.4, 0.0, 1.15, 1.55, 'flat'],
+  [3.45, 0.0, 1.05, 1.25, 'gable'],
+  [4.5, 0.0, 1.1, 1.5, 'flat'],
+  [5.45, 0.0, 1.25, 1.2, 'gable']
+]
+
+farBuildings.forEach(
+  ([
+    x,
+    y,
+    width,
+    height,
+    roof
+  ]) => {
+    const mesh =
+      createBuilding({
+        x,
+        y,
+        width,
+        height,
+        roof,
+        z: -1.9,
+        color: 0x100e0d,
+        outline: false
+      })
+
+    farLayer.add(mesh)
+  }
+)
+
+/* =========================================================
+   MID CITY LAYER
+========================================================= */
+
+const middleBuildings = [
+  [-4.5, -0.15, 1.25, 1.6, 'gable'],
+  [-3.45, -0.15, 0.95, 1.3, 'flat'],
+  [-2.5, -0.15, 1.1, 1.55, 'gable'],
+  [-1.55, -0.15, 0.8, 1.1, 'flat'],
+  [1.65, -0.15, 0.9, 1.2, 'gable'],
+  [2.55, -0.15, 1.0, 1.5, 'flat'],
+  [3.55, -0.15, 1.2, 1.32, 'gable'],
+  [4.65, -0.15, 1.1, 1.58, 'flat']
+]
+
+middleBuildings.forEach(
+  ([
+    x,
+    y,
+    width,
+    height,
+    roof
+  ]) => {
+    createBuilding({
+      x,
+      y,
+      width,
+      height,
+      roof,
+      z: -1,
+      color: 0x181310
+    })
+  }
+)
+
+/* =========================================================
+   FOREGROUND ROOFS
+========================================================= */
+
+const foregroundBuildings = [
+  [-4.7, -0.62, 1.5, 1.35, 'flat'],
+  [-3.35, -0.62, 1.3, 1.15, 'gable'],
+  [-2.15, -0.62, 1.25, 1.45, 'flat'],
+  [2.2, -0.62, 1.4, 1.35, 'gable'],
+  [3.5, -0.62, 1.35, 1.5, 'flat'],
+  [4.85, -0.62, 1.5, 1.25, 'gable']
+]
+
+foregroundBuildings.forEach(
+  ([
+    x,
+    y,
+    width,
+    height,
+    roof
+  ]) => {
+    createBuilding({
+      x,
+      y,
+      width,
+      height,
+      roof,
+      z: -0.15,
+      color: 0x0d0b0a
+    })
+  }
+)
+
+/* =========================================================
+   DUOMO
+========================================================= */
+
+const duomo =
+  new THREE.Group()
+
+duomo.position.set(
+  -0.15,
+  0.15,
+  -0.35
+)
+
+florenceRoot.add(
+  duomo
+)
+
+/* cathedral body */
+
+const cathedralShape =
+  new THREE.Shape()
+
+cathedralShape.moveTo(
+  -1.15,
+  0
+)
+
+cathedralShape.lineTo(
+  1.15,
+  0
+)
+
+cathedralShape.lineTo(
+  1.15,
+  1.05
+)
+
+cathedralShape.lineTo(
+  0.68,
+  1.05
+)
+
+cathedralShape.lineTo(
+  0,
+  1.38
+)
+
+cathedralShape.lineTo(
+  -0.68,
+  1.05
+)
+
+cathedralShape.lineTo(
+  -1.15,
+  1.05
+)
+
+cathedralShape.closePath()
+
+const cathedralGeometry =
+  new THREE.ShapeGeometry(
+    cathedralShape
+  )
+
+const cathedral =
+  new THREE.Mesh(
+    cathedralGeometry,
+    makeCityMaterial(
+      0x211813
+    )
+  )
+
+duomo.add(cathedral)
+
+const cathedralEdges =
+  new THREE.LineSegments(
+    new THREE.EdgesGeometry(
+      cathedralGeometry
+    ),
+    makeEdgeMaterial()
+  )
+
+duomo.add(
+  cathedralEdges
+)
+
+/* drum */
+
+const drum =
+  new THREE.Mesh(
+    new THREE.CylinderGeometry(
+      0.72,
+      0.72,
+      0.48,
+      48
+    ),
+    makeCityMaterial(
+      0x261a14
+    )
+  )
+
+drum.rotation.x =
+  Math.PI / 2
+
+drum.position.set(
+  0,
+  1.52,
+  0
+)
+
+duomo.add(drum)
+
+/* dome */
+
+const domeRadius =
+  0.95
+
+const dome =
+  new THREE.Mesh(
+    new THREE.SphereGeometry(
+      domeRadius,
+      64,
+      32,
+      0,
+      Math.PI * 2,
+      0,
+      Math.PI / 2
+    ),
+    makeCityMaterial(
+      0x563022
+    )
+  )
+
+dome.position.set(
+  0,
+  1.72,
+  0
+)
+
+dome.scale.y =
+  1.28
+
+duomo.add(dome)
+
+/* dome ribs */
+
+for (
+  let rib = 0;
+  rib < 8;
+  rib++
+) {
+  const angle =
+    (rib / 8) *
+    Math.PI * 2
+
+  const points = []
+
+  for (
+    let i = 0;
+    i <= 28;
+    i++
+  ) {
+    const phi =
+      (i / 28) *
+      (Math.PI / 2)
+
+    const x =
+      domeRadius *
+      Math.sin(phi) *
+      Math.cos(angle)
+
+    const y =
+      domeRadius *
+      Math.cos(phi) *
+      1.28
+
+    const z =
+      domeRadius *
+      Math.sin(phi) *
+      Math.sin(angle)
+
+    points.push(
+      new THREE.Vector3(
+        x,
+        y,
+        z
+      )
+    )
+  }
+
+  const ribGeometry =
+    new THREE.BufferGeometry()
+      .setFromPoints(points)
+
+  const ribMaterial =
+    new THREE.LineBasicMaterial({
+      color: 0xb77645,
+      transparent: true,
+      opacity: 0
+    })
+
+  edgeMaterials.push(
+    ribMaterial
+  )
+
+  const ribLine =
+    new THREE.Line(
+      ribGeometry,
+      ribMaterial
+    )
+
+  ribLine.position.copy(
+    dome.position
+  )
+
+  duomo.add(
+    ribLine
+  )
+}
+
+/* lantern */
+
+const lantern =
+  new THREE.Mesh(
+    new THREE.CylinderGeometry(
+      0.13,
+      0.18,
+      0.3,
+      16
+    ),
+    makeCityMaterial(
+      0x2b2019
+    )
+  )
+
+lantern.position.set(
+  0,
+  2.94,
+  0
+)
+
+duomo.add(lantern)
+
+const lanternRoof =
+  new THREE.Mesh(
+    new THREE.ConeGeometry(
+      0.14,
+      0.24,
+      16
+    ),
+    makeCityMaterial(
+      0x8f603b
+    )
+  )
+
+lanternRoof.position.set(
+  0,
+  3.2,
+  0
+)
+
+duomo.add(
+  lanternRoof
+)
+
+/* =========================================================
+   GIOTTO TOWER
+========================================================= */
+
+const tower =
+  new THREE.Group()
+
+tower.position.set(
+  1.4,
+  0.15,
+  -0.22
+)
+
+florenceRoot.add(
+  tower
+)
+
+const towerBody =
+  new THREE.Mesh(
+    new THREE.BoxGeometry(
+      0.48,
+      2.9,
+      0.42
+    ),
+    makeCityMaterial(
+      0x201915
+    )
+  )
+
+towerBody.position.y =
+  1.45
+
+tower.add(
+  towerBody
+)
+
+const towerEdges =
+  new THREE.LineSegments(
+    new THREE.EdgesGeometry(
+      towerBody.geometry
+    ),
+    makeEdgeMaterial()
+  )
+
+towerEdges.position.copy(
+  towerBody.position
+)
+
+tower.add(
+  towerEdges
+)
+
+for (
+  let i = 0;
+  i < 4;
+  i++
+) {
+  const ledge =
+    new THREE.Mesh(
+      new THREE.BoxGeometry(
+        0.58,
+        0.065,
+        0.5
+      ),
+      makeCityMaterial(
+        0x60452f
+      )
+    )
+
+  ledge.position.y =
+    0.55 + i * 0.65
+
+  tower.add(ledge)
+}
+
+const towerRoof =
+  new THREE.Mesh(
+    new THREE.BoxGeometry(
+      0.6,
+      0.13,
+      0.53
+    ),
+    makeCityMaterial(
+      0x8f6844
+    )
+  )
+
+towerRoof.position.y =
+  2.94
+
+tower.add(
+  towerRoof
+)
+
+/* =========================================================
+   WINDOWS
+========================================================= */
+
+function seededValue(i) {
+  const x =
+    Math.sin(
+      i * 91.17
+    ) * 43758.5453
+
+  return x -
+    Math.floor(x)
+}
+
+const windowMaterial =
+  new THREE.MeshBasicMaterial({
+    color: 0xffb96a,
+    transparent: true,
+    opacity: 0
+  })
+
+lightMaterials.push(
+  windowMaterial
+)
+
+for (
+  let i = 0;
+  i < 38;
+  i++
+) {
+  const x =
+    -4.7 +
+    seededValue(i) *
+      9.4
+
+  const y =
+    -0.18 +
+    seededValue(i + 40) *
+      1.05
+
+  const windowLight =
+    new THREE.Mesh(
+      new THREE.PlaneGeometry(
+        0.035,
+        0.055
+      ),
+      windowMaterial
+    )
+
+  windowLight.position.set(
+    x,
+    y,
+    -0.05
+  )
+
+  florenceRoot.add(
+    windowLight
+  )
+}
+
+/* =========================================================
+   CITY HAZE
+========================================================= */
+
+function createMistTexture() {
+  const c =
+    document.createElement('canvas')
+
+  c.width = 512
+  c.height = 256
+
+  const ctx =
+    c.getContext('2d')
+
+  const gradient =
+    ctx.createRadialGradient(
+      256,
+      128,
+      0,
+      256,
+      128,
+      250
+    )
+
+  gradient.addColorStop(
+    0,
+    'rgba(214,154,100,0.16)'
+  )
+
+  gradient.addColorStop(
+    0.45,
+    'rgba(153,97,61,0.08)'
+  )
+
+  gradient.addColorStop(
+    1,
+    'rgba(20,15,12,0)'
+  )
+
+  ctx.fillStyle = gradient
+  ctx.fillRect(0, 0, 512, 256)
+
+  return new THREE.CanvasTexture(c)
+}
+
+const mistMaterial =
+  new THREE.SpriteMaterial({
+    map: createMistTexture(),
+    transparent: true,
+    opacity: 0,
+    depthWrite: false
+  })
+
+const mist =
+  new THREE.Sprite(
+    mistMaterial
+  )
+
+mist.scale.set(
+  11,
+  4.2,
+  1
+)
+
+mist.position.set(
+  0,
+  0.8,
+  -1.5
+)
+
+florenceRoot.add(
+  mist
+)
+
+/* =========================================================
+   INITIAL FLORENCE STATE
+========================================================= */
+
+const florenceBaseScale =
+  isMobile
+    ? 0.38
+    : 0.72
+
+florenceRoot.scale.setScalar(
+  florenceBaseScale
+)
+
+/* =========================================================
+   HTML CHAPTER ANIMATION
 ========================================================= */
 
 const chapters =
@@ -1181,16 +1337,13 @@ const chapters =
   )
 
 chapters.forEach(
-  (chapter) => {
-
+  chapter => {
     gsap.fromTo(
       chapter,
-
       {
         opacity: 0,
         y: 42
       },
-
       {
         opacity: 1,
         y: 0,
@@ -1199,13 +1352,10 @@ chapters.forEach(
         scrollTrigger: {
           trigger:
             chapter.parentElement,
-
           start:
             'top 72%',
-
           end:
             'center 50%',
-
           scrub: true
         }
       }
@@ -1213,7 +1363,6 @@ chapters.forEach(
 
     gsap.to(
       chapter,
-
       {
         opacity: 0,
         y: -34,
@@ -1222,13 +1371,10 @@ chapters.forEach(
         scrollTrigger: {
           trigger:
             chapter.parentElement,
-
           start:
             'center 42%',
-
           end:
             'bottom 18%',
-
           scrub: true
         }
       }
@@ -1263,57 +1409,21 @@ const story =
   })
 
 /* ---------------------------------------------------------
-   1 - TWO SEPARATE STARS
+   1 — TWO SEPARATE LIVES
 --------------------------------------------------------- */
 
 story
 
   .to(
-    martinTrail.material,
-    {
-      opacity: 0.24,
-      duration: 0.7
-    }
-  )
-
-  .to(
-    simonaTrail.material,
-    {
-      opacity: 0.24,
-      duration: 0.7
-    },
-    '<'
-  )
-
-  .to(
     martin.group.position,
     {
-      x: -2.65,
-      y: 0.45,
-      duration: 1
-    }
-  )
+      x:
+        isMobile
+          ? -1.0
+          : -2.6,
 
-  .to(
-    simona.group.position,
-    {
-      x: 2.65,
-      y: -0.35,
-      duration: 1
-    },
-    '<'
-  )
+      y: 0.42,
 
-/* ---------------------------------------------------------
-   2 - THEIR PATHS APPROACH
---------------------------------------------------------- */
-
-  .to(
-    martin.group.position,
-    {
-      x: -1.15,
-      y: 0.18,
-      z: 0.15,
       duration: 1.2
     }
   )
@@ -1321,9 +1431,40 @@ story
   .to(
     simona.group.position,
     {
-      x: 1.15,
-      y: -0.14,
+      x:
+        isMobile
+          ? 1.0
+          : 2.6,
+
+      y: -0.32,
+
+      duration: 1.2
+    },
+    '<'
+  )
+
+/* ---------------------------------------------------------
+   2 — THEIR PATHS APPROACH
+--------------------------------------------------------- */
+
+  .to(
+    martin.group.position,
+    {
+      x: -0.56,
+      y: 0.17,
       z: 0.15,
+
+      duration: 1.2
+    }
+  )
+
+  .to(
+    simona.group.position,
+    {
+      x: 0.56,
+      y: -0.13,
+      z: 0.15,
+
       duration: 1.2
     },
     '<'
@@ -1333,32 +1474,34 @@ story
     camera.position,
     {
       z: 9.2,
-      duration: 1.2
+      duration: 1.1
     },
     '<'
   )
 
 /* ---------------------------------------------------------
-   3 - MEETING
+   3 — MEETING
 --------------------------------------------------------- */
 
   .to(
     martin.group.position,
     {
-      x: -0.24,
+      x: -0.18,
       y: 0.08,
       z: 0.25,
-      duration: 1.25
+
+      duration: 1.15
     }
   )
 
   .to(
     simona.group.position,
     {
-      x: 0.24,
+      x: 0.18,
       y: -0.08,
       z: 0.25,
-      duration: 1.25
+
+      duration: 1.15
     },
     '<'
   )
@@ -1368,51 +1511,61 @@ story
       martin.labelMaterial,
       simona.labelMaterial
     ],
-
     {
       opacity: 0,
-      duration: 0.55
+      duration: 0.5
     },
     '<'
   )
 
+/* ---------------------------------------------------------
+   4 — WARM LIGHT APPEARS
+--------------------------------------------------------- */
+
   .to(
-    camera.position,
+    horizonMaterial,
     {
-      z: 8,
+      opacity: 0.48,
+      duration: 1
+    }
+  )
+
+  .to(
+    mistMaterial,
+    {
+      opacity: 0.35,
       duration: 1
     },
     '<'
   )
 
 /* ---------------------------------------------------------
-   4 - FLORENCE EMERGES
+   5 — FLORENCE EMERGES FROM DARKNESS
 --------------------------------------------------------- */
 
   .to(
-    florenceGlowMaterial,
+    cityMaterials,
     {
-      opacity: 0.42,
-      duration: 1
-    }
-  )
-
-  .to(
-    florenceMaterials,
-    {
-      opacity: 0.78,
+      opacity: 0.94,
       duration: 1.5
     },
     '<'
   )
 
   .to(
-    florence.scale,
+    edgeMaterials,
     {
-      x: 1,
-      y: 1,
-      z: 1,
+      opacity: 0.3,
       duration: 1.5
+    },
+    '<'
+  )
+
+  .to(
+    lightMaterials,
+    {
+      opacity: 0.55,
+      duration: 1.4
     },
     '<'
   )
@@ -1420,9 +1573,10 @@ story
   .to(
     florenceRoot.position,
     {
-      y: -1.12,
-      z: -0.7,
-      duration: 1.6
+      y: -0.72,
+      z: -0.55,
+
+      duration: 1.5
     },
     '<'
   )
@@ -1430,79 +1584,124 @@ story
   .to(
     camera.position,
     {
-      x: 0.45,
+      z: 7.1,
       y: 0.15,
-      z: 7,
-      duration: 1.6
+
+      duration: 1.5
     },
     '<'
   )
 
 /* ---------------------------------------------------------
-   5 - CAMERA ENTERS FLORENCE
+   6 — STARS MOVE TOGETHER ABOVE FLORENCE
 --------------------------------------------------------- */
-
-  .to(
-    camera.position,
-    {
-      x: -0.45,
-      y: 0.35,
-      z: 5.9,
-      duration: 1.5
-    }
-  )
-
-  .to(
-    florenceRoot.rotation,
-    {
-      y: -0.07,
-      duration: 1.5
-    },
-    '<'
-  )
 
   .to(
     martin.group.position,
     {
       x: -0.15,
-      y: 1.9,
-      z: 0.2,
-      duration: 1.4
-    },
-    '<'
+      y: 1.65,
+      z: 0.35,
+
+      duration: 1.25
+    }
   )
 
   .to(
     simona.group.position,
     {
       x: 0.15,
-      y: 1.72,
-      z: 0.2,
-      duration: 1.4
+      y: 1.52,
+      z: 0.35,
+
+      duration: 1.25
+    },
+    '<'
+  )
+
+  .to(
+    camera.position,
+    {
+      x: 0.16,
+      y: 0.32,
+      z: 5.9,
+
+      duration: 1.35
     },
     '<'
   )
 
 /* ---------------------------------------------------------
-   6 - "POVEDALA ÁNO."
+   7 — CAMERA GLIDES THROUGH FLORENCE
 --------------------------------------------------------- */
 
   .to(
-    [
-      martin.glow,
-      simona.glow
-    ],
-
+    florenceRoot.position,
     {
-      duration: 0.7
+      x: -0.1,
+      y: -0.58,
+      z: -0.15,
+
+      duration: 1.35
     }
   )
 
   .to(
-    florenceGlowMaterial,
+    camera.position,
     {
-      opacity: 0.58,
+      x: -0.16,
+      y: 0.42,
+      z: 5.1,
+
+      duration: 1.35
+    },
+    '<'
+  )
+
+  .to(
+    farLayer.position,
+    {
+      x: 0.18,
+      duration: 1.35
+    },
+    '<'
+  )
+
+/* ---------------------------------------------------------
+   8 — "POVEDALA ÁNO."
+--------------------------------------------------------- */
+
+  .to(
+    horizonMaterial,
+    {
+      opacity: 0.66,
       duration: 0.55
+    }
+  )
+
+  .to(
+    windowMaterial,
+    {
+      opacity: 0.78,
+      duration: 0.55
+    },
+    '<'
+  )
+
+  .to(
+    martin.glowMaterial,
+    {
+      opacity: 1,
+      duration: 0.45
+    },
+    '<'
+  )
+
+  .to(
+    simona.glowMaterial,
+    {
+      opacity: 1,
+      duration: 0.45
     },
     '<'
   )
@@ -1511,39 +1710,84 @@ story
     camera.position,
     {
       x: 0,
-      y: 0.45,
-      z: 5.35,
+      y: 0.48,
+      z: 4.8,
+
       duration: 1
     }
   )
 
 /* ---------------------------------------------------------
-   7 - LEAVING FLORENCE
+   9 — FLORENCE FADES AWAY
 --------------------------------------------------------- */
 
   .to(
-    florenceMaterials,
+    cityMaterials,
     {
-      opacity: 0.06,
-      duration: 1.4
+      opacity: 0.05,
+      duration: 1.35
     }
   )
 
   .to(
-    florenceGlowMaterial,
+    edgeMaterials,
     {
       opacity: 0,
-      duration: 1.2
+      duration: 1.1
     },
     '<'
   )
 
   .to(
-    florenceRoot.position,
+    windowMaterial,
     {
-      z: -4,
-      y: -1.45,
-      duration: 1.3
+      opacity: 0,
+      duration: 1
+    },
+    '<'
+  )
+
+  .to(
+    horizonMaterial,
+    {
+      opacity: 0,
+      duration: 1.1
+    },
+    '<'
+  )
+
+  .to(
+    mistMaterial,
+    {
+      opacity: 0,
+      duration: 1.1
+    },
+    '<'
+  )
+
+/* ---------------------------------------------------------
+   10 — THEY CONTINUE TOGETHER
+--------------------------------------------------------- */
+
+  .to(
+    martin.group.position,
+    {
+      x: -0.13,
+      y: 0.08,
+      z: 0,
+
+      duration: 1
+    }
+  )
+
+  .to(
+    simona.group.position,
+    {
+      x: 0.13,
+      y: -0.08,
+      z: 0,
+
+      duration: 1
     },
     '<'
   )
@@ -1554,76 +1798,15 @@ story
       x: 0,
       y: 0,
       z: 7,
-      duration: 1.2
-    },
-    '<'
-  )
 
-/* ---------------------------------------------------------
-   8 - BOTH CONTINUE TOGETHER
---------------------------------------------------------- */
-
-  .to(
-    martin.group.position,
-    {
-      x: -0.18,
-      y: 0.08,
-      z: 0,
       duration: 1
-    }
-  )
-
-  .to(
-    simona.group.position,
-    {
-      x: 0.18,
-      y: -0.08,
-      z: 0,
-      duration: 1
-    },
-    '<'
-  )
-
-  .to(
-    [
-      martinTrail.material,
-      simonaTrail.material
-    ],
-
-    {
-      opacity: 0,
-      duration: 0.8
     },
     '<'
   )
 
 /* =========================================================
-   RESPONSIVE
+   RESIZE
 ========================================================= */
-
-function updateResponsive() {
-  const mobile =
-    window.innerWidth < 700
-
-  const storyScale =
-    mobile
-      ? 0.75
-      : 1
-
-  martin.group.scale.setScalar(
-    storyScale
-  )
-
-  simona.group.scale.setScalar(
-    storyScale
-  )
-
-  florenceRoot.scale.setScalar(
-    mobile
-      ? 0.66
-      : 1
-  )
-}
 
 function resize() {
   camera.aspect =
@@ -1643,16 +1826,12 @@ function resize() {
       2
     )
   )
-
-  updateResponsive()
 }
 
 window.addEventListener(
   'resize',
   resize
 )
-
-updateResponsive()
 
 /* =========================================================
    RENDER LOOP
@@ -1662,63 +1841,63 @@ const clock =
   new THREE.Clock()
 
 function render() {
-  const time =
+  const t =
     clock.getElapsedTime()
 
   const martinPulse =
     1 +
     Math.sin(
-      time * 2.1
-    ) *
-    0.045
+      t * 2
+    ) * 0.035
 
   const simonaPulse =
     1 +
     Math.sin(
-      time * 1.9 + 1
-    ) *
-    0.045
+      t * 1.85 + 0.8
+    ) * 0.035
 
   martin.glow.scale.set(
-    2.1 * martinPulse,
-    2.1 * martinPulse,
+    1.25 * martinPulse,
+    1.25 * martinPulse,
     1
   )
 
   simona.glow.scale.set(
-    2.1 * simonaPulse,
-    2.1 * simonaPulse,
+    1.25 * simonaPulse,
+    1.25 * simonaPulse,
     1
   )
 
   martin.coreMaterial.opacity =
-    0.82 +
+    0.86 +
     Math.sin(
-      time * 3
-    ) *
-    0.12
+      t * 2.7
+    ) * 0.09
 
   simona.coreMaterial.opacity =
-    0.82 +
+    0.86 +
     Math.sin(
-      time * 2.7 + 0.5
-    ) *
-    0.12
+      t * 2.5 + 1
+    ) * 0.09
 
-  starField.rotation.y =
-    time * 0.002
+  backgroundStars.rotation.y =
+    t * 0.0015
 
-  starField.rotation.x =
+  backgroundStars.rotation.x =
     Math.sin(
-      time * 0.06
-    ) *
-    0.012
+      t * 0.045
+    ) * 0.01
 
-  florenceGlowMaterial.opacity =
-    Math.max(
-      0,
-      florenceGlowMaterial.opacity
-    )
+  mist.position.x =
+    Math.sin(
+      t * 0.09
+    ) * 0.25
+
+  horizonGlow.scale.x =
+    12 +
+    Math.sin(
+      t * 0.08
+    ) * 0.25
 
   renderer.render(
     scene,
