@@ -1,5 +1,4 @@
 import * as THREE from 'three'
-import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import './style.css'
@@ -19,30 +18,17 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
 renderer.setSize(window.innerWidth, window.innerHeight)
 renderer.outputColorSpace = THREE.SRGBColorSpace
 renderer.toneMapping = THREE.ACESFilmicToneMapping
-renderer.toneMappingExposure = 1.12
+renderer.toneMappingExposure = 1.15
 
 const scene = new THREE.Scene()
 
 scene.fog = new THREE.FogExp2(
-  0x0f0d0c,
-  0.03
+  0x080706,
+  0.025
 )
 
-const pmremGenerator =
-  new THREE.PMREMGenerator(renderer)
-
-const environment =
-  pmremGenerator.fromScene(
-    new RoomEnvironment(),
-    0.04
-  ).texture
-
-scene.environment = environment
-
-pmremGenerator.dispose()
-
 const camera = new THREE.PerspectiveCamera(
-  38,
+  42,
   window.innerWidth / window.innerHeight,
   0.1,
   100
@@ -50,349 +36,604 @@ const camera = new THREE.PerspectiveCamera(
 
 camera.position.set(
   0,
-  0.15,
-  10.8
+  0,
+  11
 )
 
-const ambient =
+/* --------------------------------------------------
+   LIGHT
+-------------------------------------------------- */
+
+scene.add(
   new THREE.AmbientLight(
-    0xffead2,
-    0.55
+    0xfff0da,
+    0.22
   )
-
-scene.add(ambient)
-
-const warmLight =
-  new THREE.PointLight(
-    0xffc878,
-    42,
-    28
-  )
-
-warmLight.position.set(
-  5,
-  6,
-  7
 )
 
-scene.add(warmLight)
+/* --------------------------------------------------
+   STAR TEXTURE
+-------------------------------------------------- */
 
-const frontLight =
-  new THREE.PointLight(
-    0xffefd9,
-    34,
-    25
-  )
+function createStarTexture() {
+  const size = 512
 
-frontLight.position.set(
-  -4,
-  2.5,
-  7
-)
+  const starCanvas =
+    document.createElement('canvas')
 
-scene.add(frontLight)
+  starCanvas.width = size
+  starCanvas.height = size
 
-const rimLight =
-  new THREE.PointLight(
-    0xd8c1a0,
-    25,
-    20
-  )
+  const ctx =
+    starCanvas.getContext('2d')
 
-rimLight.position.set(
-  1,
-  -4,
-  4
-)
+  const center = size / 2
 
-scene.add(rimLight)
-
-function createBandGeometry() {
-  const outerRadius = 1.48
-  const innerRadius = 1.22
-
-  const shape =
-    new THREE.Shape()
-
-  shape.absarc(
-    0,
-    0,
-    outerRadius,
-    0,
-    Math.PI * 2,
-    false
-  )
-
-  const hole =
-    new THREE.Path()
-
-  hole.absarc(
-    0,
-    0,
-    innerRadius,
-    0,
-    Math.PI * 2,
-    true
-  )
-
-  shape.holes.push(hole)
-
-  const geometry =
-    new THREE.ExtrudeGeometry(
-      shape,
-      {
-        depth: 0.26,
-        steps: 1,
-        curveSegments: 96,
-
-        bevelEnabled: true,
-        bevelSegments: 6,
-        bevelSize: 0.045,
-        bevelThickness: 0.045
-      }
+  const gradient =
+    ctx.createRadialGradient(
+      center,
+      center,
+      0,
+      center,
+      center,
+      center
     )
 
-  geometry.translate(
+  gradient.addColorStop(
+    0,
+    'rgba(255,255,255,1)'
+  )
+
+  gradient.addColorStop(
+    0.025,
+    'rgba(255,250,235,1)'
+  )
+
+  gradient.addColorStop(
+    0.07,
+    'rgba(255,228,180,0.95)'
+  )
+
+  gradient.addColorStop(
+    0.16,
+    'rgba(255,196,120,0.45)'
+  )
+
+  gradient.addColorStop(
+    0.35,
+    'rgba(255,160,90,0.12)'
+  )
+
+  gradient.addColorStop(
+    1,
+    'rgba(255,140,60,0)'
+  )
+
+  ctx.fillStyle = gradient
+
+  ctx.fillRect(
     0,
     0,
-    -0.13
+    size,
+    size
   )
 
-  geometry.computeVertexNormals()
+  /* jemný krížový záblesk */
 
-  return geometry
+  const horizontal =
+    ctx.createLinearGradient(
+      0,
+      center,
+      size,
+      center
+    )
+
+  horizontal.addColorStop(
+    0,
+    'rgba(255,255,255,0)'
+  )
+
+  horizontal.addColorStop(
+    0.48,
+    'rgba(255,225,180,0.05)'
+  )
+
+  horizontal.addColorStop(
+    0.5,
+    'rgba(255,255,255,0.75)'
+  )
+
+  horizontal.addColorStop(
+    0.52,
+    'rgba(255,225,180,0.05)'
+  )
+
+  horizontal.addColorStop(
+    1,
+    'rgba(255,255,255,0)'
+  )
+
+  ctx.fillStyle = horizontal
+
+  ctx.fillRect(
+    0,
+    center - 1,
+    size,
+    2
+  )
+
+  const vertical =
+    ctx.createLinearGradient(
+      center,
+      0,
+      center,
+      size
+    )
+
+  vertical.addColorStop(
+    0,
+    'rgba(255,255,255,0)'
+  )
+
+  vertical.addColorStop(
+    0.48,
+    'rgba(255,225,180,0.05)'
+  )
+
+  vertical.addColorStop(
+    0.5,
+    'rgba(255,255,255,0.65)'
+  )
+
+  vertical.addColorStop(
+    0.52,
+    'rgba(255,225,180,0.05)'
+  )
+
+  vertical.addColorStop(
+    1,
+    'rgba(255,255,255,0)'
+  )
+
+  ctx.fillStyle = vertical
+
+  ctx.fillRect(
+    center - 1,
+    0,
+    2,
+    size
+  )
+
+  return new THREE.CanvasTexture(
+    starCanvas
+  )
 }
 
-const ringGeometry =
-  createBandGeometry()
+const starTexture =
+  createStarTexture()
 
-function createMatteGold() {
-  return new THREE.MeshPhysicalMaterial({
-    color: 0xcfa45f,
-    metalness: 0.9,
-    roughness: 0.5,
-    clearcoat: 0.08,
-    clearcoatRoughness: 0.5,
-    reflectivity: 0.75,
-    envMapIntensity: 0.8,
-    transparent: true,
-    opacity: 1
-  })
+/* --------------------------------------------------
+   LABEL TEXTURE
+-------------------------------------------------- */
+
+function createLabelTexture(
+  top,
+  bottom
+) {
+  const labelCanvas =
+    document.createElement('canvas')
+
+  labelCanvas.width = 1024
+  labelCanvas.height = 256
+
+  const ctx =
+    labelCanvas.getContext('2d')
+
+  ctx.clearRect(
+    0,
+    0,
+    1024,
+    256
+  )
+
+  ctx.textAlign = 'center'
+
+  ctx.fillStyle =
+    'rgba(236,214,184,0.85)'
+
+  ctx.font =
+    '300 34px Arial'
+
+  ctx.fillText(
+    top.toUpperCase(),
+    512,
+    105
+  )
+
+  ctx.fillStyle =
+    'rgba(255,245,230,0.55)'
+
+  ctx.font =
+    '300 24px Arial'
+
+  ctx.fillText(
+    bottom,
+    512,
+    155
+  )
+
+  const texture =
+    new THREE.CanvasTexture(
+      labelCanvas
+    )
+
+  texture.colorSpace =
+    THREE.SRGBColorSpace
+
+  return texture
 }
 
-function createPolishedGold() {
-  return new THREE.MeshPhysicalMaterial({
-    color: 0xd8ad66,
-    metalness: 0.95,
-    roughness: 0.25,
-    clearcoat: 0.25,
-    clearcoatRoughness: 0.2,
-    reflectivity: 0.9,
-    envMapIntensity: 0.9,
-    transparent: true,
-    opacity: 1
-  })
+/* --------------------------------------------------
+   CREATE A STAR
+-------------------------------------------------- */
+
+function createStar({
+  color,
+  scale,
+  label,
+  name
+}) {
+  const group =
+    new THREE.Group()
+
+  const glowMaterial =
+    new THREE.SpriteMaterial({
+      map: starTexture,
+      color,
+      transparent: true,
+      opacity: 1,
+      depthWrite: false,
+      blending:
+        THREE.AdditiveBlending
+    })
+
+  const glow =
+    new THREE.Sprite(
+      glowMaterial
+    )
+
+  glow.scale.set(
+    scale,
+    scale,
+    1
+  )
+
+  group.add(glow)
+
+  const coreMaterial =
+    new THREE.SpriteMaterial({
+      map: starTexture,
+      color: 0xffffff,
+      transparent: true,
+      opacity: 1,
+      depthWrite: false,
+      blending:
+        THREE.AdditiveBlending
+    })
+
+  const core =
+    new THREE.Sprite(
+      coreMaterial
+    )
+
+  core.scale.set(
+    scale * 0.22,
+    scale * 0.22,
+    1
+  )
+
+  group.add(core)
+
+  const labelTexture =
+    createLabelTexture(
+      label,
+      name
+    )
+
+  const labelMaterial =
+    new THREE.SpriteMaterial({
+      map: labelTexture,
+      transparent: true,
+      opacity: 0.68,
+      depthWrite: false
+    })
+
+  const labelSprite =
+    new THREE.Sprite(
+      labelMaterial
+    )
+
+  labelSprite.scale.set(
+    3.8,
+    0.95,
+    1
+  )
+
+  labelSprite.position.y =
+    -1.05
+
+  group.add(labelSprite)
+
+  return {
+    group,
+    glow,
+    core,
+    glowMaterial,
+    coreMaterial,
+    labelMaterial
+  }
 }
 
-const matteGoldA =
-  createMatteGold()
+/* --------------------------------------------------
+   MARTIN / HLOHOVEC
+-------------------------------------------------- */
 
-const polishedGoldA =
-  createPolishedGold()
-
-const matteGoldB =
-  createMatteGold()
-
-const polishedGoldB =
-  createPolishedGold()
-
-const ringA =
-  new THREE.Mesh(
-    ringGeometry,
-    [
-      matteGoldA,
-      polishedGoldA
-    ]
-  )
-
-ringA.position.set(
-  -0.78,
-  0.42,
-  -0.58
-)
-
-ringA.rotation.set(
-  0.82,
-  -0.12,
-  -0.27
-)
-
-const ringB =
-  new THREE.Mesh(
-    ringGeometry,
-    [
-      matteGoldB,
-      polishedGoldB
-    ]
-  )
-
-ringB.position.set(
-  0.72,
-  -0.28,
-  0.1
-)
-
-ringB.rotation.set(
-  1.07,
-  0.2,
-  0.22
-)
-
-const rig =
-  new THREE.Group()
-
-rig.add(
-  ringA,
-  ringB
-)
-
-scene.add(rig)
-
-const haloGeometry =
-  new THREE.RingGeometry(
-    2.3,
-    5,
-    96
-  )
-
-const haloMaterial =
-  new THREE.MeshBasicMaterial({
-    color: 0xb98d52,
-    transparent: true,
-    opacity: 0.018,
-    side: THREE.DoubleSide,
-    depthWrite: false
+const martinStar =
+  createStar({
+    color: 0xffd39a,
+    scale: 2.4,
+    label: 'Hlohovec',
+    name: 'Martin'
   })
 
-const halo =
-  new THREE.Mesh(
-    haloGeometry,
-    haloMaterial
-  )
+martinStar.group.position.set(
+  -4.1,
+  0.65,
+  0
+)
 
-halo.position.z = -3
+scene.add(
+  martinStar.group
+)
 
-scene.add(halo)
+/* --------------------------------------------------
+   SIMONA / CIFER
+-------------------------------------------------- */
 
-const particlesCount = 850
+const simonaStar =
+  createStar({
+    color: 0xffead2,
+    scale: 2.25,
+    label: 'Cífer',
+    name: 'Simona'
+  })
 
-const positions =
+simonaStar.group.position.set(
+  4.1,
+  -0.5,
+  -0.2
+)
+
+scene.add(
+  simonaStar.group
+)
+
+/* --------------------------------------------------
+   BACKGROUND STAR FIELD
+-------------------------------------------------- */
+
+const starCount =
+  window.innerWidth < 700
+    ? 450
+    : 800
+
+const starPositions =
   new Float32Array(
-    particlesCount * 3
+    starCount * 3
   )
 
 for (
   let i = 0;
-  i < particlesCount;
+  i < starCount;
   i++
 ) {
-  positions[i * 3] =
-    (Math.random() - 0.5) * 30
+  starPositions[i * 3] =
+    (Math.random() - 0.5) * 32
 
-  positions[i * 3 + 1] =
+  starPositions[i * 3 + 1] =
     (Math.random() - 0.5) * 20
 
-  positions[i * 3 + 2] =
-    (Math.random() - 0.5) * 22
+  starPositions[i * 3 + 2] =
+    -Math.random() * 20
 }
 
-const particlesGeometry =
+const starGeometry =
   new THREE.BufferGeometry()
 
-particlesGeometry.setAttribute(
+starGeometry.setAttribute(
   'position',
   new THREE.BufferAttribute(
-    positions,
+    starPositions,
     3
   )
 )
 
-const particlesMaterial =
+const starFieldMaterial =
   new THREE.PointsMaterial({
-    color: 0xe2c391,
-    size: 0.019,
+    color: 0xffe6c5,
+    size: 0.024,
     transparent: true,
-    opacity: 0.3,
+    opacity: 0.5,
     depthWrite: false
   })
 
-const particles =
+const starField =
   new THREE.Points(
-    particlesGeometry,
-    particlesMaterial
+    starGeometry,
+    starFieldMaterial
   )
 
-scene.add(particles)
+scene.add(
+  starField
+)
+
+/* --------------------------------------------------
+   TRAILS
+-------------------------------------------------- */
+
+function makeTrail(
+  startX,
+  endX,
+  y,
+  color
+) {
+  const curve =
+    new THREE.CatmullRomCurve3([
+      new THREE.Vector3(
+        startX,
+        y,
+        -0.6
+      ),
+
+      new THREE.Vector3(
+        startX * 0.65,
+        y * 0.45,
+        -0.35
+      ),
+
+      new THREE.Vector3(
+        startX * 0.3,
+        y * 0.15,
+        -0.1
+      ),
+
+      new THREE.Vector3(
+        endX,
+        0,
+        0
+      )
+    ])
+
+  const geometry =
+    new THREE.TubeGeometry(
+      curve,
+      100,
+      0.008,
+      6,
+      false
+    )
+
+  const material =
+    new THREE.MeshBasicMaterial({
+      color,
+      transparent: true,
+      opacity: 0,
+      blending:
+        THREE.AdditiveBlending,
+      depthWrite: false
+    })
+
+  const mesh =
+    new THREE.Mesh(
+      geometry,
+      material
+    )
+
+  scene.add(mesh)
+
+  return {
+    mesh,
+    material
+  }
+}
+
+const martinTrail =
+  makeTrail(
+    -4.1,
+    -0.12,
+    0.65,
+    0xd8a865
+  )
+
+const simonaTrail =
+  makeTrail(
+    4.1,
+    0.12,
+    -0.5,
+    0xf0cfaa
+  )
+
+/* --------------------------------------------------
+   TEXT CHAPTERS
+-------------------------------------------------- */
 
 const chapters =
   gsap.utils.toArray(
     '.chapter__inner'
   )
 
-chapters.forEach((chapter) => {
-  gsap.fromTo(
-    chapter,
-    {
-      opacity: 0,
-      y: 42
-    },
-    {
-      opacity: 1,
-      y: 0,
-      ease: 'none',
+chapters.forEach(
+  (chapter) => {
 
-      scrollTrigger: {
-        trigger:
-          chapter.parentElement,
+    gsap.fromTo(
+      chapter,
+      {
+        opacity: 0,
+        y: 42
+      },
+      {
+        opacity: 1,
+        y: 0,
+        ease: 'none',
 
-        start:
-          'top 72%',
+        scrollTrigger: {
+          trigger:
+            chapter.parentElement,
 
-        end:
-          'center 50%',
+          start:
+            'top 72%',
 
-        scrub: true
+          end:
+            'center 50%',
+
+          scrub: true
+        }
       }
-    }
-  )
+    )
 
-  gsap.to(
-    chapter,
-    {
-      opacity: 0,
-      y: -34,
-      ease: 'none',
+    gsap.to(
+      chapter,
+      {
+        opacity: 0,
+        y: -34,
+        ease: 'none',
 
-      scrollTrigger: {
-        trigger:
-          chapter.parentElement,
+        scrollTrigger: {
+          trigger:
+            chapter.parentElement,
 
-        start:
-          'center 42%',
+          start:
+            'center 42%',
 
-        end:
-          'bottom 18%',
+          end:
+            'bottom 18%',
 
-        scrub: true
+          scrub: true
+        }
       }
-    }
-  )
-})
+    )
+  }
+)
 
-const timeline =
+/* --------------------------------------------------
+   STORY
+-------------------------------------------------- */
+
+const story =
   gsap.timeline({
     defaults: {
-      ease: 'power2.inOut'
+      ease:
+        'power2.inOut'
     },
 
     scrollTrigger: {
@@ -405,180 +646,231 @@ const timeline =
       end:
         'bottom bottom',
 
-      scrub: 1.4
+      scrub:
+        1.5
     }
   })
 
-timeline
+/* hviezdy sa prebúdzajú */
 
+story
   .to(
-    camera.position,
+    martinStar.group.position,
     {
-      z: 9,
+      x: -3.2,
+      y: 0.45,
       duration: 1
     }
   )
 
   .to(
-    ringA.position,
+    simonaStar.group.position,
     {
-      x: -0.55,
-      y: 0.28,
-      duration: 1
-    },
-    '<'
-  )
-
-  .to(
-    ringB.position,
-    {
-      x: 0.55,
-      y: -0.18,
-      duration: 1
-    },
-    '<'
-  )
-
-  .to(
-    rig.rotation,
-    {
-      y:
-        Math.PI * 0.3,
-
-      x:
-        0.05,
-
-      duration:
-        1.2
-    }
-  )
-
-  .to(
-    camera.position,
-    {
-      x: 1.3,
-      y: 0.5,
-      z: 7.5,
-
-      duration: 1.1
-    }
-  )
-
-  .to(
-    rig.rotation,
-    {
-      y:
-        Math.PI * 0.72,
-
-      z:
-        0.1,
-
-      duration: 1.1
-    },
-    '<'
-  )
-
-  .to(
-    camera.position,
-    {
-      x: -1.15,
+      x: 3.2,
       y: -0.35,
-      z: 6.5,
+      duration: 1
+    },
+    '<'
+  )
 
+  .to(
+    martinTrail.material,
+    {
+      opacity: 0.28,
+      duration: 0.7
+    },
+    '<'
+  )
+
+  .to(
+    simonaTrail.material,
+    {
+      opacity: 0.28,
+      duration: 0.7
+    },
+    '<'
+  )
+
+/* dve cesty */
+
+  .to(
+    martinStar.group.position,
+    {
+      x: -1.65,
+      y: 0.25,
       duration: 1.1
     }
   )
 
   .to(
-    ringA.rotation,
+    simonaStar.group.position,
     {
-      z: 0.62,
+      x: 1.65,
+      y: -0.2,
+      duration: 1.1
+    },
+    '<'
+  )
+
+  .to(
+    camera.position,
+    {
+      z: 9.3,
+      duration: 1
+    },
+    '<'
+  )
+
+/* stretnutie */
+
+  .to(
+    martinStar.group.position,
+    {
+      x: -0.23,
+      y: 0.08,
+      z: 0.05,
+      duration: 1.25
+    }
+  )
+
+  .to(
+    simonaStar.group.position,
+    {
+      x: 0.23,
+      y: -0.08,
+      z: 0,
+      duration: 1.25
+    },
+    '<'
+  )
+
+  .to(
+    [
+      martinStar.labelMaterial,
+      simonaStar.labelMaterial
+    ],
+    {
+      opacity: 0,
+      duration: 0.55
+    },
+    '<'
+  )
+
+  .to(
+    camera.position,
+    {
+      z: 7.4,
+      duration: 1.2
+    },
+    '<'
+  )
+
+/* spolu */
+
+  .to(
+    martinStar.group.position,
+    {
+      x: -0.17,
+      y: 0.1,
+      duration: 1
+    }
+  )
+
+  .to(
+    simonaStar.group.position,
+    {
+      x: 0.17,
+      y: -0.1,
       duration: 1
     },
     '<'
   )
 
   .to(
-    ringB.rotation,
+    camera.position,
     {
-      z: -0.5,
+      x: 0.7,
+      y: 0.25,
+      z: 6.2,
       duration: 1
     },
     '<'
   )
 
+/* florencia */
+
   .to(
-    ringA.position,
+    martinStar.group.position,
     {
-      x: -0.15,
+      x: -0.12,
       y: 0.05,
-      z: -0.05,
-
-      duration: 1.1
+      z: 0.2,
+      duration: 1
     }
   )
 
   .to(
-    ringB.position,
+    simonaStar.group.position,
     {
-      x: 0.15,
+      x: 0.12,
       y: -0.05,
-      z: 0.08,
+      z: 0.2,
+      duration: 1
+    },
+    '<'
+  )
 
+  .to(
+    camera.position,
+    {
+      x: -0.65,
+      y: -0.15,
+      z: 5.4,
       duration: 1.1
     },
     '<'
   )
+
+/* svadba */
 
   .to(
     camera.position,
     {
       x: 0,
-      y: 0.1,
-      z: 5,
-
+      y: 0,
+      z: 4.2,
       duration: 1.2
     }
   )
 
   .to(
-    rig.rotation,
+    [
+      martinStar.glowMaterial,
+      simonaStar.glowMaterial
+    ],
     {
-      y:
-        Math.PI * 1.35,
-
-      x:
-        -0.06,
-
-      duration:
-        1.2
-    },
-    '<'
-  )
-
-  .to(
-    camera.position,
-    {
-      z: 3.7,
-      duration: 1
+      opacity: 0.15,
+      duration: 0.9
     }
   )
 
   .to(
     [
-      matteGoldA,
-      polishedGoldA,
-      matteGoldB,
-      polishedGoldB
+      martinStar.coreMaterial,
+      simonaStar.coreMaterial
     ],
     {
-      opacity: 0.1,
-      duration: 0.8
-    }
+      opacity: 0.15,
+      duration: 0.9
+    },
+    '<'
   )
 
   .to(
-    haloMaterial,
+    [
+      martinTrail.material,
+      simonaTrail.material
+    ],
     {
       opacity: 0,
       duration: 0.8
@@ -586,14 +878,25 @@ timeline
     '<'
   )
 
+/* --------------------------------------------------
+   RESPONSIVE
+-------------------------------------------------- */
+
 function updateScale() {
   const mobile =
     window.innerWidth < 700
 
-  rig.scale.setScalar(
+  const scale =
     mobile
-      ? 0.68
-      : 0.9
+      ? 0.72
+      : 1
+
+  martinStar.group.scale.setScalar(
+    scale
+  )
+
+  simonaStar.group.scale.setScalar(
+    scale
   )
 }
 
@@ -626,37 +929,60 @@ window.addEventListener(
 
 updateScale()
 
+/* --------------------------------------------------
+   RENDER LOOP
+-------------------------------------------------- */
+
 const clock =
   new THREE.Clock()
 
 function render() {
-  const t =
+  const time =
     clock.getElapsedTime()
 
-  particles.rotation.y =
-    t * 0.003
-
-  particles.rotation.x =
+  const pulseMartin =
+    1 +
     Math.sin(
-      t * 0.08
-    ) * 0.02
+      time * 2.1
+    ) * 0.045
 
-  rig.position.y =
+  const pulseSimona =
+    1 +
     Math.sin(
-      t * 0.55
-    ) * 0.035
+      time * 1.85 + 1
+    ) * 0.05
 
-  warmLight.position.x =
-    5 +
-    Math.sin(
-      t * 0.55
-    ) * 0.8
+  martinStar.glow.scale.set(
+    2.4 * pulseMartin,
+    2.4 * pulseMartin,
+    1
+  )
 
-  frontLight.position.y =
-    2.5 +
+  simonaStar.glow.scale.set(
+    2.25 * pulseSimona,
+    2.25 * pulseSimona,
+    1
+  )
+
+  martinStar.coreMaterial.opacity =
+    0.82 +
     Math.sin(
-      t * 0.4
-    ) * 0.4
+      time * 3
+    ) * 0.12
+
+  simonaStar.coreMaterial.opacity =
+    0.82 +
+    Math.sin(
+      time * 2.7 + 0.6
+    ) * 0.12
+
+  starField.rotation.y =
+    time * 0.0025
+
+  starField.rotation.x =
+    Math.sin(
+      time * 0.05
+    ) * 0.015
 
   renderer.render(
     scene,
