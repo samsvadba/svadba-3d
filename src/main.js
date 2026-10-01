@@ -28,10 +28,6 @@ scene.fog = new THREE.FogExp2(
   0.03
 )
 
-/* --------------------------------------------------
-   ENVIRONMENT
--------------------------------------------------- */
-
 const pmremGenerator =
   new THREE.PMREMGenerator(renderer)
 
@@ -45,10 +41,6 @@ scene.environment = environment
 
 pmremGenerator.dispose()
 
-/* --------------------------------------------------
-   CAMERA
--------------------------------------------------- */
-
 const camera = new THREE.PerspectiveCamera(
   38,
   window.innerWidth / window.innerHeight,
@@ -61,10 +53,6 @@ camera.position.set(
   0.15,
   10.8
 )
-
-/* --------------------------------------------------
-   LIGHTS
--------------------------------------------------- */
 
 const ambient =
   new THREE.AmbientLight(
@@ -119,13 +107,9 @@ rimLight.position.set(
 
 scene.add(rimLight)
 
-/* --------------------------------------------------
-   WEDDING BAND GEOMETRY
--------------------------------------------------- */
-
 function createBandGeometry() {
   const outerRadius = 1.48
-  const innerRadius = 1.08
+  const innerRadius = 1.22
 
   const shape =
     new THREE.Shape()
@@ -157,21 +141,21 @@ function createBandGeometry() {
     new THREE.ExtrudeGeometry(
       shape,
       {
-        depth: 0.34,
+        depth: 0.26,
         steps: 1,
         curveSegments: 96,
 
         bevelEnabled: true,
-        bevelSegments: 7,
-        bevelSize: 0.065,
-        bevelThickness: 0.065
+        bevelSegments: 6,
+        bevelSize: 0.045,
+        bevelThickness: 0.045
       }
     )
 
   geometry.translate(
     0,
     0,
-    -0.17
+    -0.13
   )
 
   geometry.computeVertexNormals()
@@ -182,22 +166,15 @@ function createBandGeometry() {
 const ringGeometry =
   createBandGeometry()
 
-/* --------------------------------------------------
-   GOLD MATERIALS
--------------------------------------------------- */
-
 function createMatteGold() {
   return new THREE.MeshPhysicalMaterial({
-    color: 0xd7ac63,
-
-    metalness: 0.88,
-    roughness: 0.36,
-
-    clearcoat: 0.22,
-    clearcoatRoughness: 0.28,
-
-    reflectivity: 0.8,
-
+    color: 0xcfa45f,
+    metalness: 0.9,
+    roughness: 0.5,
+    clearcoat: 0.08,
+    clearcoatRoughness: 0.5,
+    reflectivity: 0.75,
+    envMapIntensity: 0.8,
     transparent: true,
     opacity: 1
   })
@@ -205,16 +182,13 @@ function createMatteGold() {
 
 function createPolishedGold() {
   return new THREE.MeshPhysicalMaterial({
-    color: 0xe1b96f,
-
-    metalness: 0.94,
-    roughness: 0.16,
-
-    clearcoat: 0.5,
-    clearcoatRoughness: 0.12,
-
-    reflectivity: 1,
-
+    color: 0xd8ad66,
+    metalness: 0.95,
+    roughness: 0.25,
+    clearcoat: 0.25,
+    clearcoatRoughness: 0.2,
+    reflectivity: 0.9,
+    envMapIntensity: 0.9,
     transparent: true,
     opacity: 1
   })
@@ -231,10 +205,6 @@ const matteGoldB =
 
 const polishedGoldB =
   createPolishedGold()
-
-/* --------------------------------------------------
-   RINGS
--------------------------------------------------- */
 
 const ringA =
   new THREE.Mesh(
@@ -288,10 +258,6 @@ rig.add(
 
 scene.add(rig)
 
-/* --------------------------------------------------
-   SUBTLE HALO
--------------------------------------------------- */
-
 const haloGeometry =
   new THREE.RingGeometry(
     2.3,
@@ -317,10 +283,6 @@ const halo =
 halo.position.z = -3
 
 scene.add(halo)
-
-/* --------------------------------------------------
-   PARTICLES
--------------------------------------------------- */
 
 const particlesCount = 850
 
@@ -372,17 +334,12 @@ const particles =
 
 scene.add(particles)
 
-/* --------------------------------------------------
-   TEXT CHAPTERS
--------------------------------------------------- */
-
 const chapters =
   gsap.utils.toArray(
     '.chapter__inner'
   )
 
 chapters.forEach((chapter) => {
-
   gsap.fromTo(
     chapter,
     {
@@ -430,16 +387,10 @@ chapters.forEach((chapter) => {
       }
     }
   )
-
 })
-
-/* --------------------------------------------------
-   SCROLL CINEMATIC
--------------------------------------------------- */
 
 const timeline =
   gsap.timeline({
-
     defaults: {
       ease: 'power2.inOut'
     },
@@ -456,7 +407,6 @@ const timeline =
 
       scrub: 1.4
     }
-
   })
 
 timeline
@@ -636,25 +586,18 @@ timeline
     '<'
   )
 
-/* --------------------------------------------------
-   RESPONSIVE
--------------------------------------------------- */
-
 function updateScale() {
-
   const mobile =
     window.innerWidth < 700
 
   rig.scale.setScalar(
     mobile
-      ? 0.82
-      : 1
+      ? 0.68
+      : 0.9
   )
-
 }
 
 function resize() {
-
   camera.aspect =
     window.innerWidth /
     window.innerHeight
@@ -674,7 +617,6 @@ function resize() {
   )
 
   updateScale()
-
 }
 
 window.addEventListener(
@@ -684,15 +626,10 @@ window.addEventListener(
 
 updateScale()
 
-/* --------------------------------------------------
-   RENDER
--------------------------------------------------- */
-
 const clock =
   new THREE.Clock()
 
 function render() {
-
   const t =
     clock.getElapsedTime()
 
@@ -729,7 +666,6 @@ function render() {
   requestAnimationFrame(
     render
   )
-
 }
 
 render()
