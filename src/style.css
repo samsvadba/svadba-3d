@@ -1,529 +1,363 @@
-import * as THREE from 'three'
-import gsap from 'gsap'
-import { ScrollTrigger } from 'gsap/ScrollTrigger'
-import './style.css'
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Inter:wght@300;400&display=swap');
 
-gsap.registerPlugin(ScrollTrigger)
-
-const canvas = document.querySelector('#scene')
-
-const renderer = new THREE.WebGLRenderer({
-  canvas,
-  antialias: true,
-  alpha: true,
-  powerPreference: 'high-performance'
-})
-
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
-renderer.setSize(window.innerWidth, window.innerHeight)
-renderer.outputColorSpace = THREE.SRGBColorSpace
-renderer.toneMapping = THREE.ACESFilmicToneMapping
-renderer.toneMappingExposure = 1.15
-
-const scene = new THREE.Scene()
-
-scene.fog = new THREE.FogExp2(
-  0x0f0d0c,
-  0.032
-)
-
-const camera = new THREE.PerspectiveCamera(
-  38,
-  window.innerWidth / window.innerHeight,
-  0.1,
-  100
-)
-
-camera.position.set(0, 0.2, 11.5)
-
-scene.add(
-  new THREE.AmbientLight(
-    0xfff2e0,
-    0.8
-  )
-)
-
-const warmLight = new THREE.PointLight(
-  0xffc98c,
-  65,
-  26
-)
-
-warmLight.position.set(
-  4.8,
-  5.5,
-  5.5
-)
-
-scene.add(warmLight)
-
-const softLight = new THREE.PointLight(
-  0xf4e6d8,
-  30,
-  22
-)
-
-softLight.position.set(
-  -4.5,
-  2,
-  5
-)
-
-scene.add(softLight)
-
-const rimLight = new THREE.PointLight(
-  0xd9c8ff,
-  28,
-  22
-)
-
-rimLight.position.set(
-  -3,
-  -4,
-  2
-)
-
-scene.add(rimLight)
-
-const topLight = new THREE.DirectionalLight(
-  0xffe5c3,
-  1.5
-)
-
-topLight.position.set(
-  0,
-  5,
-  2
-)
-
-scene.add(topLight)
-
-const ringGeometry =
-  new THREE.TorusGeometry(
-    1.38,
-    0.10,
-    64,
-    240
-  )
-
-const ringMaterialA =
-  new THREE.MeshPhysicalMaterial({
-    color: 0xd7ad68,
-    metalness: 1,
-    roughness: 0.12,
-    clearcoat: 1,
-    clearcoatRoughness: 0.08,
-    reflectivity: 1,
-    transparent: true,
-    opacity: 1
-  })
-
-const ringMaterialB =
-  ringMaterialA.clone()
-
-const ringA =
-  new THREE.Mesh(
-    ringGeometry,
-    ringMaterialA
-  )
-
-ringA.position.set(
-  -0.82,
-  0.18,
-  0
-)
-
-ringA.rotation.set(
-  0.72,
-  -0.2,
-  0.38
-)
-
-const ringB =
-  new THREE.Mesh(
-    ringGeometry,
-    ringMaterialB
-  )
-
-ringB.position.set(
-  0.82,
-  -0.18,
-  -0.18
-)
-
-ringB.rotation.set(
-  1.1,
-  0.28,
-  -0.42
-)
-
-const rig = new THREE.Group()
-
-rig.add(
-  ringA,
-  ringB
-)
-
-scene.add(rig)
-
-const haloGeometry =
-  new THREE.RingGeometry(
-    2.1,
-    4.6,
-    96
-  )
-
-const haloMaterial =
-  new THREE.MeshBasicMaterial({
-    color: 0xc49a63,
-    transparent: true,
-    opacity: 0.025,
-    side: THREE.DoubleSide,
-    depthWrite: false
-  })
-
-const halo =
-  new THREE.Mesh(
-    haloGeometry,
-    haloMaterial
-  )
-
-halo.position.z = -2.8
-halo.rotation.x =
-  Math.PI * 0.5
-
-scene.add(halo)
-
-const particlesCount = 1100
-
-const positions =
-  new Float32Array(
-    particlesCount * 3
-  )
-
-for (
-  let i = 0;
-  i < particlesCount;
-  i++
-) {
-  positions[i * 3] =
-    (Math.random() - 0.5) * 30
-
-  positions[i * 3 + 1] =
-    (Math.random() - 0.5) * 20
-
-  positions[i * 3 + 2] =
-    (Math.random() - 0.5) * 22
+:root {
+  font-family: Inter, system-ui, sans-serif;
+  color: #f5eee5;
+  background: #0f0d0c;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
 }
 
-const particlesGeometry =
-  new THREE.BufferGeometry()
-
-particlesGeometry.setAttribute(
-  'position',
-  new THREE.BufferAttribute(
-    positions,
-    3
-  )
-)
-
-const particlesMaterial =
-  new THREE.PointsMaterial({
-    color: 0xe6cba4,
-    size: 0.022,
-    transparent: true,
-    opacity: 0.4,
-    depthWrite: false
-  })
-
-const particles =
-  new THREE.Points(
-    particlesGeometry,
-    particlesMaterial
-  )
-
-scene.add(particles)
-
-const chapters =
-  gsap.utils.toArray(
-    '.chapter__inner'
-  )
-
-chapters.forEach((chapter) => {
-  gsap.fromTo(
-    chapter,
-    {
-      opacity: 0,
-      y: 42
-    },
-    {
-      opacity: 1,
-      y: 0,
-      ease: 'none',
-      scrollTrigger: {
-        trigger:
-          chapter.parentElement,
-        start: 'top 72%',
-        end: 'center 50%',
-        scrub: true
-      }
-    }
-  )
-
-  gsap.to(chapter, {
-    opacity: 0,
-    y: -34,
-    ease: 'none',
-    scrollTrigger: {
-      trigger:
-        chapter.parentElement,
-      start: 'center 42%',
-      end: 'bottom 18%',
-      scrub: true
-    }
-  })
-})
-
-const timeline =
-  gsap.timeline({
-    defaults: {
-      ease:
-        'power2.inOut'
-    },
-
-    scrollTrigger: {
-      trigger: '#experience',
-      start: 'top top',
-      end: 'bottom bottom',
-      scrub: 1.4
-    }
-  })
-
-timeline
-
-  .to(
-    camera.position,
-    {
-      z: 9.2,
-      y: 0,
-      duration: 1
-    }
-  )
-
-  .to(
-    ringA.position,
-    {
-      x: -0.48,
-      y: 0.08,
-      duration: 1
-    },
-    '<'
-  )
-
-  .to(
-    ringB.position,
-    {
-      x: 0.48,
-      y: -0.08,
-      duration: 1
-    },
-    '<'
-  )
-
-  .to(
-    rig.rotation,
-    {
-      y:
-        Math.PI * 0.55,
-      x: 0.12,
-      duration: 1.15
-    }
-  )
-
-  .to(
-    camera.position,
-    {
-      x: 1.7,
-      y: 0.6,
-      z: 7.7,
-      duration: 1.1
-    }
-  )
-
-  .to(
-    rig.rotation,
-    {
-      y:
-        Math.PI * 1.2,
-      z: 0.14,
-      duration: 1.1
-    },
-    '<'
-  )
-
-  .to(
-    camera.position,
-    {
-      x: -1.5,
-      y: -0.4,
-      z: 6.7,
-      duration: 1.1
-    }
-  )
-
-  .to(
-    ringA.rotation,
-    {
-      z: 1.4,
-      duration: 1
-    },
-    '<'
-  )
-
-  .to(
-    ringB.rotation,
-    {
-      z: -1.35,
-      duration: 1
-    },
-    '<'
-  )
-
-  .to(
-    ringA.position,
-    {
-      x: -0.12,
-      y: 0,
-      z: 0.04,
-      duration: 1.1
-    }
-  )
-
-  .to(
-    ringB.position,
-    {
-      x: 0.12,
-      y: 0,
-      z: -0.04,
-      duration: 1.1
-    },
-    '<'
-  )
-
-  .to(
-    camera.position,
-    {
-      x: 0,
-      y: 0.15,
-      z: 5.2,
-      duration: 1.2
-    }
-  )
-
-  .to(
-    rig.rotation,
-    {
-      y:
-        Math.PI * 2.1,
-      x: -0.08,
-      duration: 1.2
-    },
-    '<'
-  )
-
-  .to(
-    camera.position,
-    {
-      z: 3.7,
-      duration: 1
-    }
-  )
-
-  .to(
-    [
-      ringMaterialA,
-      ringMaterialB
-    ],
-    {
-      opacity: 0.12,
-      duration: 0.8
-    }
-  )
-
-  .to(
-    haloMaterial,
-    {
-      opacity: 0,
-      duration: 0.8
-    },
-    '<'
-  )
-
-function resize() {
-  camera.aspect =
-    window.innerWidth /
-    window.innerHeight
-
-  camera.updateProjectionMatrix()
-
-  renderer.setSize(
-    window.innerWidth,
-    window.innerHeight
-  )
-
-  renderer.setPixelRatio(
-    Math.min(
-      window.devicePixelRatio,
-      2
-    )
-  )
+* {
+  box-sizing: border-box;
 }
 
-window.addEventListener(
-  'resize',
-  resize
-)
-
-const clock =
-  new THREE.Clock()
-
-function render() {
-  const t =
-    clock.getElapsedTime()
-
-  particles.rotation.y =
-    t * 0.004
-
-  particles.rotation.x =
-    Math.sin(t * 0.08) *
-    0.025
-
-  rig.position.y =
-    Math.sin(t * 0.6) *
-    0.045
-
-  ringA.rotation.y +=
-    0.00055
-
-  ringB.rotation.y -=
-    0.00045
-
-  halo.rotation.z =
-    t * 0.012
-
-  warmLight.position.x =
-    4.8 +
-    Math.sin(t * 0.7) *
-      0.6
-
-  renderer.render(
-    scene,
-    camera
-  )
-
-  requestAnimationFrame(
-    render
-  )
+html {
+  background: #0f0d0c;
+  scroll-behavior: smooth;
 }
 
-render()
+body {
+  margin: 0;
+  min-width: 320px;
+  overflow-x: hidden;
+  background:
+    radial-gradient(
+      circle at 50% 15%,
+      rgba(168, 130, 84, 0.1),
+      transparent 32%
+    ),
+    #0f0d0c;
+}
+
+::selection {
+  background: rgba(214, 176, 116, 0.28);
+  color: #fff;
+}
+
+.experience {
+  position: relative;
+  height: 600vh;
+  background:
+    radial-gradient(
+      circle at 50% 26%,
+      rgba(172, 131, 82, 0.13),
+      transparent 30%
+    ),
+    radial-gradient(
+      circle at 20% 70%,
+      rgba(82, 65, 56, 0.09),
+      transparent 35%
+    ),
+    #0f0d0c;
+}
+
+.experience::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 4;
+  background:
+    radial-gradient(
+      circle at center,
+      transparent 44%,
+      rgba(0, 0, 0, 0.36) 100%
+    );
+}
+
+#scene {
+  position: sticky;
+  top: 0;
+  width: 100%;
+  height: 100vh;
+  display: block;
+}
+
+.story {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+}
+
+.chapter {
+  height: 100vh;
+  display: grid;
+  align-items: center;
+  padding: clamp(28px, 7vw, 110px);
+}
+
+.chapter:nth-child(even) {
+  justify-items: end;
+  text-align: right;
+}
+
+.chapter__inner {
+  position: relative;
+  width: min(760px, 88vw);
+  opacity: 0;
+  transform: translateY(42px);
+}
+
+.chapter__inner::before {
+  content: "";
+  position: absolute;
+  left: -28px;
+  top: 4px;
+  width: 1px;
+  height: 64px;
+  background:
+    linear-gradient(
+      to bottom,
+      rgba(222, 188, 136, 0.7),
+      transparent
+    );
+}
+
+.chapter:nth-child(even)
+.chapter__inner::before {
+  left: auto;
+  right: -28px;
+}
+
+h1,
+h2 {
+  margin: 0;
+  font-family:
+    "Cormorant Garamond",
+    Georgia,
+    serif;
+  font-weight: 400;
+  line-height: 0.9;
+  letter-spacing: -0.045em;
+  text-wrap: balance;
+}
+
+h1 {
+  font-size:
+    clamp(
+      92px,
+      18vw,
+      250px
+    );
+  text-shadow:
+    0 0 28px
+    rgba(220, 175, 112, 0.04);
+}
+
+h1 span {
+  display: inline-block;
+  margin: 0 0.05em;
+  font-style: italic;
+  color: #d8b47b;
+}
+
+h2 {
+  font-size:
+    clamp(
+      54px,
+      8vw,
+      126px
+    );
+}
+
+p {
+  margin: 1.35rem 0 0;
+  max-width: 48ch;
+  font-size:
+    clamp(
+      14px,
+      1.2vw,
+      17px
+    );
+  line-height: 1.7;
+  font-weight: 300;
+  color:
+    rgba(
+      245,
+      238,
+      229,
+      0.66
+    );
+}
+
+.eyebrow {
+  margin: 0 0 1.15rem;
+  font-size: 10px;
+  letter-spacing: 0.34em;
+  text-transform: uppercase;
+  color:
+    rgba(
+      227,
+      196,
+      152,
+      0.62
+    );
+}
+
+.hint {
+  margin-top: 2.5rem;
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color:
+    rgba(
+      245,
+      238,
+      229,
+      0.46
+    );
+}
+
+.chapter--1
+.chapter__inner {
+  text-align: center;
+  margin: 0 auto;
+}
+
+.chapter--1
+.chapter__inner::before {
+  display: none;
+}
+
+.chapter--1
+.eyebrow {
+  margin-bottom: 0.5rem;
+}
+
+.wedding-site {
+  min-height: 100vh;
+  position: relative;
+  display: grid;
+  place-items: center;
+  padding:
+    clamp(
+      70px,
+      10vw,
+      160px
+    );
+  background:
+    linear-gradient(
+      180deg,
+      #eee6da 0%,
+      #f4eee5 100%
+    );
+  color: #302b27;
+}
+
+.wedding-site::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 1px;
+  height: 70px;
+  background:
+    linear-gradient(
+      to bottom,
+      rgba(48, 43, 39, 0),
+      rgba(48, 43, 39, 0.25)
+    );
+}
+
+.wedding-site__inner {
+  width:
+    min(
+      900px,
+      92vw
+    );
+  text-align: center;
+}
+
+.wedding-site h2 {
+  font-size:
+    clamp(
+      68px,
+      11vw,
+      150px
+    );
+}
+
+.wedding-site p {
+  margin-left: auto;
+  margin-right: auto;
+  color:
+    rgba(
+      48,
+      43,
+      39,
+      0.68
+    );
+}
+
+.wedding-site
+.eyebrow {
+  color:
+    rgba(
+      48,
+      43,
+      39,
+      0.48
+    );
+}
+
+@media
+(max-width: 700px) {
+
+  .chapter {
+    padding:
+      10vw 7vw;
+  }
+
+  .chapter:nth-child(even) {
+    justify-items: start;
+    text-align: left;
+  }
+
+  .chapter__inner {
+    width: 88vw;
+  }
+
+  .chapter__inner::before {
+    display: none;
+  }
+
+  h1 {
+    font-size:
+      clamp(
+        82px,
+        27vw,
+        145px
+      );
+  }
+
+  h2 {
+    font-size:
+      clamp(
+        48px,
+        15vw,
+        78px
+      );
+  }
+
+  .eyebrow {
+    letter-spacing: 0.25em;
+  }
+
+  p {
+    font-size: 14px;
+  }
+}
+
+@media
+(prefers-reduced-motion: reduce) {
+
+  .chapter__inner {
+    transform: none !important;
+  }
+
+  html {
+    scroll-behavior: auto;
+  }
+}
