@@ -360,4 +360,933 @@ p {
   html {
     scroll-behavior: auto;
   }
+}/* =========================================================
+   CINEMATIC FLORENCE V2
+========================================================= */
+
+.experience::after {
+  display: none !important;
+}
+
+#scene {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.cinematic-world {
+  --mx: 0px;
+  --my: 0px;
+
+  position: sticky;
+  top: 0;
+  z-index: 3;
+
+  width: 100%;
+  height: 100vh;
+
+  margin-top: -100vh;
+
+  overflow: hidden;
+
+  pointer-events: none;
+
+  background:
+    radial-gradient(
+      circle at 50% 35%,
+      rgba(104, 70, 42, 0.13),
+      transparent 36%
+    ),
+    #0b0908;
+}
+
+.cinematic-world::after {
+  content: "";
+
+  position: absolute;
+  inset: 0;
+
+  z-index: 40;
+
+  background:
+    radial-gradient(
+      circle at center,
+      transparent 48%,
+      rgba(15, 8, 5, 0.13) 75%,
+      rgba(7, 4, 3, 0.42) 100%
+    );
+
+  pointer-events: none;
+}
+
+/* =========================================================
+   FLORENCIA
+========================================================= */
+
+.florence-film {
+  position: absolute;
+  inset: 0;
+
+  z-index: 2;
+
+  overflow: hidden;
+
+  background:
+    #d9a36f;
+
+  transform-origin:
+    center;
+}
+
+.florence-layer {
+  position: absolute;
+
+  inset: -7%;
+
+  background-size:
+    cover;
+
+  background-repeat:
+    no-repeat;
+
+  background-position:
+    60% 50%;
+
+  will-change:
+    transform;
+
+  transform:
+    translate3d(
+      var(--mx),
+      var(--my),
+      0
+    );
+}
+
+.florence-layer--back {
+  z-index: 1;
+
+  filter:
+    saturate(0.92)
+    contrast(0.98)
+    brightness(0.96);
+}
+
+.florence-layer--mid {
+  z-index: 2;
+
+  opacity: 0.76;
+
+  -webkit-mask-image:
+    linear-gradient(
+      to bottom,
+      transparent 0 37%,
+      rgba(0, 0, 0, 0.22) 48%,
+      #000 61% 100%
+    );
+
+  mask-image:
+    linear-gradient(
+      to bottom,
+      transparent 0 37%,
+      rgba(0, 0, 0, 0.22) 48%,
+      #000 61% 100%
+    );
+}
+
+.florence-layer--front {
+  z-index: 3;
+
+  opacity: 0.67;
+
+  filter:
+    blur(1px);
+
+  -webkit-mask-image:
+    linear-gradient(
+      to bottom,
+      transparent 0 63%,
+      rgba(0, 0, 0, 0.18) 70%,
+      #000 81% 100%
+    );
+
+  mask-image:
+    linear-gradient(
+      to bottom,
+      transparent 0 63%,
+      rgba(0, 0, 0, 0.18) 70%,
+      #000 81% 100%
+    );
+}
+
+/* =========================================================
+   SVETLO
+========================================================= */
+
+.florence-light {
+  position: absolute;
+
+  inset: 0;
+
+  z-index: 6;
+
+  opacity: 0;
+
+  background:
+
+    radial-gradient(
+      circle at 13% 40%,
+      rgba(
+        255,
+        248,
+        208,
+        0.62
+      ),
+
+      rgba(
+        255,
+        191,
+        108,
+        0.22
+      ) 19%,
+
+      transparent 45%
+    ),
+
+    linear-gradient(
+      180deg,
+
+      rgba(
+        255,
+        226,
+        185,
+        0.13
+      ),
+
+      transparent 48%,
+
+      rgba(
+        129,
+        65,
+        32,
+        0.08
+      )
+    );
+
+  mix-blend-mode:
+    screen;
+}
+
+.florence-shade {
+  position: absolute;
+
+  inset: 0;
+
+  z-index: 12;
+
+  background:
+
+    linear-gradient(
+      180deg,
+
+      rgba(
+        10,
+        7,
+        5,
+        0.03
+      ),
+
+      transparent 25%,
+
+      transparent 68%,
+
+      rgba(
+        31,
+        15,
+        8,
+        0.18
+      )
+    ),
+
+    radial-gradient(
+      ellipse at center,
+
+      transparent 53%,
+
+      rgba(
+        35,
+        17,
+        9,
+        0.15
+      ) 100%
+    );
+}
+
+/* =========================================================
+   OBLAKY
+========================================================= */
+
+.florence-cloud {
+  position: absolute;
+
+  z-index: 8;
+
+  opacity: 0;
+
+  border-radius:
+    50%;
+
+  filter:
+    blur(34px);
+}
+
+.florence-cloud--a {
+  left: -24%;
+  bottom: -12%;
+
+  width: 108%;
+  height: 38%;
+
+  background:
+    radial-gradient(
+      ellipse at center,
+
+      rgba(
+        255,
+        245,
+        224,
+        0.84
+      ),
+
+      rgba(
+        248,
+        210,
+        167,
+        0.28
+      ) 47%,
+
+      transparent 75%
+    );
+
+  animation:
+    cloud-a
+    13s
+    ease-in-out
+    infinite
+    alternate;
+}
+
+.florence-cloud--b {
+  right: -31%;
+  bottom: 12%;
+
+  width: 98%;
+  height: 29%;
+
+  background:
+    radial-gradient(
+      ellipse at center,
+
+      rgba(
+        255,
+        235,
+        208,
+        0.58
+      ),
+
+      rgba(
+        246,
+        196,
+        142,
+        0.17
+      ) 48%,
+
+      transparent 75%
+    );
+
+  animation:
+    cloud-b
+    16s
+    ease-in-out
+    infinite
+    alternate;
+}
+
+@keyframes cloud-a {
+
+  from {
+    transform:
+      translate3d(
+        -2%,
+        2%,
+        0
+      )
+      scale(1);
+  }
+
+  to {
+    transform:
+      translate3d(
+        8%,
+        -3%,
+        0
+      )
+      scale(1.07);
+  }
+
+}
+
+@keyframes cloud-b {
+
+  from {
+    transform:
+      translate3d(
+        5%,
+        1%,
+        0
+      )
+      scale(1.03);
+  }
+
+  to {
+    transform:
+      translate3d(
+        -7%,
+        -4%,
+        0
+      )
+      scale(1.1);
+  }
+
+}
+
+/* =========================================================
+   BOKEH
+========================================================= */
+
+.florence-bokeh {
+  position: absolute;
+
+  inset: 0;
+
+  z-index: 9;
+
+  opacity: 0;
+
+  filter:
+    blur(1px);
+
+  background:
+
+    radial-gradient(
+      circle at 7% 83%,
+      rgba(
+        255,
+        193,
+        89,
+        0.58
+      ) 0 3px,
+      transparent 12px
+    ),
+
+    radial-gradient(
+      circle at 15% 92%,
+      rgba(
+        255,
+        220,
+        157,
+        0.5
+      ) 0 5px,
+      transparent 18px
+    ),
+
+    radial-gradient(
+      circle at 84% 91%,
+      rgba(
+        255,
+        191,
+        85,
+        0.46
+      ) 0 4px,
+      transparent 17px
+    ),
+
+    radial-gradient(
+      circle at 92% 79%,
+      rgba(
+        255,
+        222,
+        170,
+        0.42
+      ) 0 3px,
+      transparent 14px
+    );
+}
+
+/* =========================================================
+   ZLATÉ CESTY
+========================================================= */
+
+.love-paths {
+  position: absolute;
+
+  inset: 0;
+
+  z-index: 15;
+
+  width: 100%;
+  height: 100%;
+
+  overflow: visible;
+}
+
+.love-path {
+  fill: none;
+
+  stroke:
+    rgba(
+      255,
+      220,
+      160,
+      0.58
+    );
+
+  stroke-width:
+    0.15;
+
+  vector-effect:
+    non-scaling-stroke;
+
+  filter:
+    drop-shadow(
+      0 0 5px
+      rgba(
+        255,
+        190,
+        91,
+        0.38
+      )
+    );
+}
+
+.love-path--together {
+  stroke:
+    rgba(
+      255,
+      235,
+      201,
+      0.78
+    );
+
+  stroke-width:
+    0.19;
+}
+
+/* =========================================================
+   HVIEZDY
+========================================================= */
+
+.love-star {
+  position: absolute;
+
+  z-index: 19;
+
+  width: 18px;
+  height: 18px;
+
+  transform:
+    translate(
+      -50%,
+      -50%
+    );
+}
+
+.love-star__glow,
+.love-star__core {
+  position: absolute;
+
+  left: 50%;
+  top: 50%;
+
+  border-radius:
+    50%;
+
+  transform:
+    translate(
+      -50%,
+      -50%
+    );
+}
+
+.love-star__glow {
+  width: 72px;
+  height: 72px;
+
+  background:
+    radial-gradient(
+      circle,
+
+      #fff 0 2%,
+
+      rgba(
+        255,
+        239,
+        207,
+        0.92
+      ) 4%,
+
+      rgba(
+        255,
+        190,
+        91,
+        0.34
+      ) 17%,
+
+      rgba(
+        255,
+        164,
+        70,
+        0.08
+      ) 37%,
+
+      transparent 70%
+    );
+
+  animation:
+    star-breathe
+    2.4s
+    ease-in-out
+    infinite
+    alternate;
+}
+
+.love-star__core {
+  width: 5px;
+  height: 5px;
+
+  background:
+    #fffdf7;
+
+  box-shadow:
+
+    0 0 6px
+    #fff,
+
+    0 0 15px
+    rgba(
+      255,
+      227,
+      174,
+      0.95
+    ),
+
+    0 0 28px
+    rgba(
+      255,
+      184,
+      82,
+      0.76
+    );
+}
+
+.love-star__core::before,
+.love-star__core::after {
+  content: "";
+
+  position: absolute;
+
+  left: 50%;
+  top: 50%;
+
+  transform:
+    translate(
+      -50%,
+      -50%
+    );
+}
+
+.love-star__core::before {
+  width: 38px;
+  height: 1px;
+
+  background:
+    linear-gradient(
+      to right,
+      transparent,
+      rgba(
+        255,
+        255,
+        255,
+        0.9
+      ),
+      transparent
+    );
+}
+
+.love-star__core::after {
+  width: 1px;
+  height: 28px;
+
+  background:
+    linear-gradient(
+      to bottom,
+      transparent,
+      rgba(
+        255,
+        255,
+        255,
+        0.76
+      ),
+      transparent
+    );
+}
+
+/* =========================================================
+   HLOHOVEC / CÍFER
+========================================================= */
+
+.love-star__label {
+  position: absolute;
+
+  left: 50%;
+  top: 43px;
+
+  display: grid;
+
+  gap: 5px;
+
+  min-width: 120px;
+
+  transform:
+    translateX(-50%);
+
+  text-align:
+    center;
+
+  white-space:
+    nowrap;
+}
+
+.love-star__label strong {
+  font-size: 9px;
+
+  font-weight: 400;
+
+  letter-spacing:
+    0.28em;
+
+  text-transform:
+    uppercase;
+
+  color:
+    rgba(
+      255,
+      234,
+      202,
+      0.8
+    );
+}
+
+.love-star__label small {
+  font-family:
+    "Cormorant Garamond",
+    Georgia,
+    serif;
+
+  font-size:
+    17px;
+
+  color:
+    rgba(
+      255,
+      247,
+      235,
+      0.74
+    );
+}
+
+@keyframes star-breathe {
+
+  from {
+    opacity: 0.72;
+
+    transform:
+      translate(
+        -50%,
+        -50%
+      )
+      scale(0.92);
+  }
+
+  to {
+    opacity: 1;
+
+    transform:
+      translate(
+        -50%,
+        -50%
+      )
+      scale(1.08);
+  }
+
+}
+
+/* =========================================================
+   ZLATÝ PULSE
+========================================================= */
+
+.love-pulse {
+  position: absolute;
+
+  z-index: 18;
+
+  width: 54px;
+  height: 54px;
+
+  transform:
+    translate(
+      -50%,
+      -50%
+    );
+
+  border:
+    1px solid
+    rgba(
+      255,
+      231,
+      184,
+      0.7
+    );
+
+  border-radius:
+    50%;
+
+  box-shadow:
+
+    0 0 30px
+    rgba(
+      255,
+      194,
+      99,
+      0.38
+    ),
+
+    inset 0 0 20px
+    rgba(
+      255,
+      240,
+      208,
+      0.13
+    );
+}
+
+/* =========================================================
+   TEXT NAD SCÉNOU
+========================================================= */
+
+.story {
+  z-index:
+    25 !important;
+}
+
+.chapter--3
+.chapter__inner {
+  align-self: end;
+
+  margin-bottom:
+    10vh;
+
+  padding:
+    16px 18px;
+
+  border-radius:
+    20px;
+
+  background:
+    linear-gradient(
+      90deg,
+      rgba(
+        44,
+        24,
+        12,
+        0.24
+      ),
+
+      rgba(
+        44,
+        24,
+        12,
+        0.03
+      )
+    );
+
+  backdrop-filter:
+    blur(4px);
+}
+
+.chapter--3 h2 {
+  color:
+    #fff8ed;
+
+  text-shadow:
+    0 4px 30px
+    rgba(
+      49,
+      24,
+      10,
+      0.25
+    );
+}
+
+.chapter--3
+.eyebrow {
+  color:
+    rgba(
+      255,
+      232,
+      197,
+      0.86
+    );
+}
+
+/* =========================================================
+   TELEFÓN
+========================================================= */
+
+@media
+(max-width: 700px) {
+
+  .florence-layer {
+    background-position:
+      66% 50%;
+  }
+
+  .love-star__glow {
+    width: 62px;
+    height: 62px;
+  }
+
+  .love-star__label {
+    top: 39px;
+  }
+
+  .chapter--3
+  .chapter__inner {
+    margin-bottom:
+      8vh;
+
+    padding:
+      14px 15px;
+  }
+
+}
+
+@media
+(prefers-reduced-motion: reduce) {
+
+  .florence-cloud,
+  .love-star__glow {
+    animation:
+      none !important;
+  }
+
 }
