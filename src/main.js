@@ -2879,7 +2879,24 @@ function referenceSmoothstep(
   )
 
 }
+let introUnlocked = false
 
+function getIntroLockPosition() {
+
+  if (!referenceHero) {
+    return 0
+  }
+
+  const distance =
+    Math.max(
+      referenceHero.offsetHeight -
+      window.innerHeight,
+      1
+    )
+
+  return distance * 0.72
+
+}
 function updateReferenceIntro() {
 
   if (
@@ -2901,6 +2918,22 @@ function updateReferenceIntro() {
       1
 
     )
+
+ const lockPosition =
+    getIntroLockPosition()
+
+  if (
+    !introUnlocked &&
+    window.scrollY >
+    lockPosition
+  ) {
+
+    window.scrollTo(
+      0,
+      lockPosition
+    )
+
+  }
 
   const progress =
     referenceClamp(
@@ -3069,7 +3102,7 @@ referenceExplore
 
       event.preventDefault()
       event.stopImmediatePropagation()
-
+introUnlocked = true
       if (
         !globeSection
       ) {
