@@ -1479,10 +1479,10 @@ function ensureGlobe() {
 
 
   camera.position.set(
-    0,
-    0,
-    isMobile ? 40 : 37
-  )
+  0,
+  isMobile ? 1.2 : 0,
+  isMobile ? 78 : 58
+)
 
 
   renderer =
