@@ -2,821 +2,665 @@
 <html lang="sk">
 
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
 
   <meta
     name="viewport"
     content="width=device-width, initial-scale=1, viewport-fit=cover"
-  />
+  >
 
   <meta
     name="theme-color"
-    content="#f7f7f5"
-  />
+    content="#f5f4f0"
+  >
 
   <meta
     name="description"
     content="Simona & Martin — A journey of us — 30. 04. 2027"
-  />
+  >
 
   <title>
-    Simona & Martin — 30. 04. 2027
+    Simona & Martin — A journey of us
   </title>
+
+  <link
+    rel="preconnect"
+    href="https://fonts.googleapis.com"
+  >
+
+  <link
+    rel="preconnect"
+    href="https://fonts.gstatic.com"
+    crossorigin
+  >
+
+  <link
+    href="https://fonts.googleapis.com/css2?family=Allura&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=DM+Sans:wght@400;500;600&display=swap"
+    rel="stylesheet"
+  >
+
+  <link
+    rel="stylesheet"
+    href="./src/style-v2.css"
+  >
 </head>
 
 
-<body class="is-loading">
+<body class="loading intro-mode">
+
+  <!-- =====================================================
+       PRELOADER
+  ====================================================== -->
 
   <div
-    class="loader"
-    id="loader"
-    aria-hidden="true"
+    id="interactive-preloader"
+    class="interactive-preloader"
   >
 
-    <div class="loader-inner">
+    <div class="preloader-center">
 
-      <span class="loader-mark">
-        S&M
-      </span>
+      <div
+        id="loading-ring"
+        class="loading-ring"
+      >
 
-      <div class="loader-line">
-        <span id="loader-progress"></span>
+        <span id="preloader-percentage">
+          0%
+        </span>
+
       </div>
 
-      <span
-        class="loader-percent"
-        id="loader-percent"
+
+      <button
+        id="pl-skip-btn"
+        class="preloader-skip"
+        type="button"
       >
-        0%
-      </span>
+        SKIP
+      </button>
 
     </div>
 
   </div>
 
 
-  <header class="topbar">
+  <!-- =====================================================
+       PERSISTENT HEADER
+  ====================================================== -->
 
-    <a
-      class="topbar-logo"
-      href="#home"
+  <header
+    id="persistent-header"
+    class="persistent-header"
+  >
+
+    <div class="header-left">
+
+      <button
+        id="mute-btn"
+        class="header-icon-button"
+        type="button"
+        aria-label="Zapnúť alebo vypnúť zvuk"
+      >
+
+        <svg
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <path
+            d="M4 9.5v5h4l5 4V5.5l-5 4H4Z"
+          ></path>
+
+          <path
+            d="M16 8.5c1.2 1.1 1.8 2.2 1.8 3.5S17.2 14.4 16 15.5"
+          ></path>
+        </svg>
+
+      </button>
+
+    </div>
+
+
+    <button
+      id="header-home"
+      class="header-monogram"
+      type="button"
       aria-label="Simona a Martin"
     >
       S<span>&</span>M
-    </a>
+    </button>
 
 
-    <div class="topbar-center">
-
-      <span>
-        30
-      </span>
-
-      <i></i>
-
-      <span>
-        04
-      </span>
-
-      <i></i>
-
-      <span>
-        27
-      </span>
-
-    </div>
-
-
-    <nav class="topbar-nav">
-
-      <a href="#globe-section">
-        Journey
-      </a>
-
-      <a href="#wedding">
-        Wedding
-      </a>
-
-    </nav>
-
-  </header>
-
-
-  <main>
-
-    <!-- =====================================================
-         REFERENCE-STYLE INTRO
-    ====================================================== -->
-
-    <section
-      class="hero hero-reference"
-      id="home"
-    >
-
-      <div class="hero-reference-stage">
-
-        <div class="hero-reference-media">
-
-          <img
-            src="./photos/07-florence-engagement.jpeg"
-            alt="Simona a Martin"
-          />
-
-        </div>
-
-
-        <div class="hero-reference-shade"></div>
-
-
-        <div class="hero-reference-intro">
-
-          <h1>
-
-            <span>
-              Simona
-            </span>
-
-            <em>
-              &
-            </em>
-
-            <span>
-              Martin
-            </span>
-
-          </h1>
-
-
-          <p>
-            A journey of us
-          </p>
-
-        </div>
-
-
-        <div class="hero-reference-story">
-
-          <p class="hero-reference-quote">
-
-            <span>
-              A journey of us,
-            </span>
-
-            <span>
-              captured in every moment.
-            </span>
-
-          </p>
-
-
-          <h2>
-
-            <span>
-              Simona
-            </span>
-
-            <em>
-              &
-            </em>
-
-            <span>
-              Martin
-            </span>
-
-          </h2>
-
-
-          <a
-            class="hero-reference-explore"
-            href="#globe-section"
-          >
-
-            <span>
-              Explore
-            </span>
-
-            <i>
-              ↘
-            </i>
-
-          </a>
-
-        </div>
-
-
-        <div class="hero-reference-date">
-          30 · 04 · 2027
-        </div>
-
-
-        <div class="hero-reference-scroll">
-          SCROLL
-        </div>
-
-      </div>
-
-    </section>
-
-
-
-    <!-- =====================================================
-         INTERACTIVE GLOBE
-    ====================================================== -->
-
-    <section
-      class="globe-section"
-      id="globe-section"
-    >
-
-      <div class="globe-sticky">
-
-        <canvas
-          id="globe-canvas"
-          aria-label="Interaktívny glóbus našich ciest"
-        ></canvas>
-
-
-        <div class="globe-atmosphere"></div>
-
-
-        <div class="globe-title">
-
-          <span>
-            EXPLORE
-          </span>
-
-          <span>
-            OUR WORLD
-          </span>
-
-        </div>
-
-
-        <div class="globe-instruction">
-
-          <span class="globe-instruction-icon">
-            ↻
-          </span>
-
-          <p>
-            DRAG TO ROTATE
-            <br />
-            SELECT A CITY
-          </p>
-
-        </div>
-
-
-        <div
-          class="city-list"
-          id="city-list"
-        >
-
-          <button
-            type="button"
-            data-city="hlohovec"
-          >
-            <span>01</span>
-            Hlohovec
-          </button>
-
-
-          <button
-            type="button"
-            data-city="cifer"
-          >
-            <span>02</span>
-            Cífer
-          </button>
-
-
-          <button
-            type="button"
-            data-city="london"
-          >
-            <span>03</span>
-            London
-          </button>
-
-
-          <button
-            type="button"
-            data-city="madeira"
-          >
-            <span>04</span>
-            Madeira
-          </button>
-
-
-          <button
-            type="button"
-            data-city="liverpool"
-          >
-            <span>05</span>
-            Liverpool
-          </button>
-
-
-          <button
-            type="button"
-            data-city="japan"
-          >
-            <span>06</span>
-            Japan
-          </button>
-
-
-          <button
-            type="button"
-            data-city="florence"
-          >
-            <span>07</span>
-            Firenze
-          </button>
-
-        </div>
-
-
-        <article
-          class="memory-card"
-          id="memory-card"
-          aria-live="polite"
-        >
-
-          <button
-            class="memory-close"
-            id="memory-close"
-            type="button"
-            aria-label="Zatvoriť spomienku"
-          >
-            ×
-          </button>
-
-
-          <div class="memory-photo">
-
-            <img
-              id="memory-image"
-              src="./photos/03-madeira-waterfall.jpeg"
-              alt=""
-            />
-
-          </div>
-
-
-          <div class="memory-content">
-
-            <span
-              class="memory-number"
-              id="memory-number"
-            >
-              04 / 07
-            </span>
-
-
-            <p
-              class="memory-country"
-              id="memory-country"
-            >
-              Portugal
-            </p>
-
-
-            <h3 id="memory-title">
-              Madeira
-            </h3>
-
-
-            <p
-              class="memory-text"
-              id="memory-text"
-            >
-              Miesto, kde sme na chvíľu
-              zabudli na všetko ostatné.
-            </p>
-
-
-            <a
-              class="memory-link"
-              id="memory-link"
-              href="#"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              WATCH REEL ↗
-            </a>
-
-
-            <div class="memory-coordinates">
-
-              <span id="memory-lat">
-                32.7607° N
-              </span>
-
-              <span id="memory-lng">
-                16.9595° W
-              </span>
-
-            </div>
-
-          </div>
-
-        </article>
-
-
-        <button
-          class="mobile-city-button"
-          id="mobile-city-button"
-          type="button"
-        >
-
-          <span>
-            Select a place
-          </span>
-
-          <strong>
-            +
-          </strong>
-
-        </button>
-
-
-        <div class="globe-progress">
-
-          <span>
-            OUR JOURNEY
-          </span>
-
-          <div>
-            <i></i>
-          </div>
-
-          <span>
-            2027
-          </span>
-
-        </div>
-
-      </div>
-
-    </section>
-
-
-
-    <section class="moments">
-
-      <div class="moments-heading">
-
-        <span class="section-index">
-          02
-        </span>
-
-        <p class="eyebrow">
-          Hidden moments
-        </p>
-
-        <h2>
-          Some places
-          become
-
-          <em>
-            part of you.
-          </em>
-        </h2>
-
-      </div>
-
-
-      <div class="moments-grid">
-
-        <figure class="moment moment-large">
-
-          <img
-            src="./photos/04-madeira-swing.jpeg"
-            alt="Simona a Martin na Madeire"
-          />
-
-          <figcaption>
-
-            <span>
-              Madeira
-            </span>
-
-            <span>
-              32° N · 16° W
-            </span>
-
-          </figcaption>
-
-        </figure>
-
-
-        <figure class="moment moment-small">
-
-          <img
-            src="./photos/02-west-ham.jpeg"
-            alt="Simona a Martin v Londýne"
-          />
-
-          <figcaption>
-
-            <span>
-              London
-            </span>
-
-            <span>
-              51° N · 0° W
-            </span>
-
-          </figcaption>
-
-        </figure>
-
-
-        <figure class="moment moment-tall">
-
-          <img
-            src="./photos/06-liverpool-waterfront.jpeg"
-            alt="Simona a Martin v Liverpoole"
-          />
-
-          <figcaption>
-
-            <span>
-              Liverpool
-            </span>
-
-            <span>
-              53° N · 2° W
-            </span>
-
-          </figcaption>
-
-        </figure>
-
-      </div>
-
-    </section>
-
-
-
-    <section
-      class="florence"
-      id="florence"
-    >
-
-      <div class="florence-photo">
-
-        <img
-          src="./photos/07-florence-engagement.jpeg"
-          alt="Zásnuby Simony a Martina vo Florencii"
-        />
-
-      </div>
-
-
-      <div class="florence-overlay"></div>
-
-
-      <div class="florence-copy">
-
-        <p class="eyebrow">
-          Firenze · Italia
-        </p>
-
-
-        <h2>
-
-          <span>
-            AND THEN
-          </span>
-
-          <em>
-            she said yes.
-          </em>
-
-        </h2>
-
-
-        <p class="florence-date">
-          01 · 04 · 2026
-        </p>
-
-      </div>
-
-
-      <div class="florence-coordinates">
-
-        <span>
-          43.7696° N
-        </span>
-
-        <span>
-          11.2558° E
-        </span>
-
-      </div>
-
-    </section>
-
-
-
-    <section class="new-adventure">
-
-      <p class="eyebrow">
-        And now
-      </p>
-
-
-      <h2>
-        Our new
-        <br />
-
-        adventure
-
-        <em>
-          begins.
-        </em>
-      </h2>
-
-
-      <div class="new-adventure-date">
-
-        <span>30</span>
-
-        <i>·</i>
-
-        <span>04</span>
-
-        <i>·</i>
-
-        <span>27</span>
-
-      </div>
-
-    </section>
-
-
-
-    <section
-      class="wedding"
-      id="wedding"
-    >
-
-      <div class="wedding-heading">
-
-        <span class="section-index">
-          03
-        </span>
-
-        <p class="eyebrow">
-          Our wedding
-        </p>
-
-        <h2>
-          Simona
-
-          <em>
-            &
-          </em>
-
-          Martin
-        </h2>
-
-      </div>
-
-
-      <div class="wedding-photo">
-
-        <img
-          src="./photos/08-formal-outdoor.jpeg"
-          alt="Simona a Martin"
-        />
-
-      </div>
-
-
-      <div class="wedding-info">
-
-        <article>
-
-          <span class="wedding-info-number">
-            01
-          </span>
-
-          <p class="eyebrow">
-            Ceremony
-          </p>
-
-          <h3>
-            Trnava
-          </h3>
-
-          <p>
-            Kostol sv. Jakuba
-            <br />
-
-            30. apríla 2027
-            <br />
-
-            15:00
-          </p>
-
-        </article>
-
-
-        <article>
-
-          <span class="wedding-info-number">
-            02
-          </span>
-
-          <p class="eyebrow">
-            Celebration
-          </p>
-
-          <h3>
-            Šúrovce
-          </h3>
-
-          <p>
-            Zemiansky dvor
-            <br />
-
-            po obrade
-          </p>
-
-        </article>
-
-      </div>
-
-
-      <a
-        class="rsvp-button"
-        href="https://samsvadba.github.io/svadba/#rsvp"
-      >
-
-        <span>
-          RSVP
-        </span>
-
-        <span>
-          Potvrdiť účasť
-        </span>
-
-        <span>
-          ↗
-        </span>
-
-      </a>
-
-    </section>
-
-  </main>
-
-
-  <footer class="footer">
-
-    <p>
-      The next destination
-    </p>
-
-
-    <div class="footer-names">
-
-      <span>
-        SIMONA
-      </span>
-
-      <em>
-        &
-      </em>
-
-      <span>
-        MARTIN
-      </span>
-
-    </div>
-
-
-    <div class="footer-bottom">
+    <div class="header-right">
 
       <span>
         30 · 04 · 2027
       </span>
 
-      <span>
-        Trnava → Šúrovce
+    </div>
+
+  </header>
+
+
+  <!-- =====================================================
+       INTRO
+  ====================================================== -->
+
+  <section
+    id="intro-overlay"
+    class="intro-overlay"
+  >
+
+    <div class="intro-media">
+
+      <!--
+        Neskôr sem vložíme vaše intro video.
+        Dovtedy zostáva Florence fotografia.
+      -->
+
+      <video
+        id="intro-video-bg"
+        muted
+        playsinline
+        preload="metadata"
+      ></video>
+
+
+      <img
+        id="intro-poster"
+        class="intro-poster"
+        src="./photos/07-florence-engagement.jpeg"
+        alt="Simona a Martin vo Florencii"
+      >
+
+
+      <div class="intro-media-overlay"></div>
+
+    </div>
+
+
+    <!-- FIRST INTRO VIEW -->
+
+    <div
+      id="intro-opening"
+      class="intro-opening"
+    >
+
+      <h1 class="intro-main-title">
+
+        <span>
+          Simona
+        </span>
+
+        <em>
+          &
+        </em>
+
+        <span>
+          Martin
+        </span>
+
+      </h1>
+
+
+      <p data-t="journeySub">
+        A journey of us
+      </p>
+
+    </div>
+
+
+    <!-- SECOND INTRO VIEW -->
+
+    <div
+      id="intro-story"
+      class="intro-story"
+    >
+
+      <div class="intro-copy">
+
+        <p
+          class="sub-line"
+          data-t="introLine1"
+        >
+          A journey of us,
+        </p>
+
+
+        <p
+          class="sub-line"
+          data-t="introLine2"
+        >
+          captured in every moment.
+        </p>
+
+      </div>
+
+
+      <div class="title-layout">
+
+        <h2>
+
+          <span>
+            Simona
+          </span>
+
+          <em>
+            &
+          </em>
+
+          <span>
+            Martin
+          </span>
+
+        </h2>
+
+
+        <button
+          id="next-btn"
+          class="explore-button"
+          type="button"
+        >
+
+          <span data-t="explore">
+            Explore
+          </span>
+
+
+          <svg
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path
+              d="M7 17 17 7"
+            ></path>
+
+            <path
+              d="M9 7h8v8"
+            ></path>
+          </svg>
+
+        </button>
+
+      </div>
+
+    </div>
+
+
+    <div class="intro-date">
+      30 · 04 · 2027
+    </div>
+
+  </section>
+
+
+  <!-- =====================================================
+       JOURNEY / THREE.JS AREA
+  ====================================================== -->
+
+  <div
+    id="journey-scene"
+    class="journey-scene"
+    aria-hidden="true"
+  >
+
+    <canvas
+      id="three-canvas"
+      aria-label="Interaktívny glóbus našich ciest"
+    ></canvas>
+
+
+    <svg
+      id="svg-canvas"
+      aria-hidden="true"
+    ></svg>
+
+
+    <div
+      id="label-layer"
+      class="label-layer"
+    ></div>
+
+  </div>
+
+
+  <!-- =====================================================
+       INTRO -> JOURNEY TRANSITION
+  ====================================================== -->
+
+  <section
+    id="transition-screen"
+    class="transition-screen"
+    aria-hidden="true"
+  >
+
+    <div class="transition-text">
+
+      <span
+        class="trans-line"
+        data-t="spinLine1"
+      >
+        Roztočte glóbus a objavte naše spoločné chvíle.
+      </span>
+
+
+      <span
+        class="trans-line"
+        data-t="spinLine2"
+      >
+        Vyberte mesto a začnite.
       </span>
 
     </div>
 
-  </footer>
+  </section>
 
+
+  <!-- =====================================================
+       JOURNEY INSTRUCTION
+  ====================================================== -->
+
+  <div
+    id="journey-instruction"
+    class="journey-instruction"
+  >
+
+    <div class="journey-instruction-icon">
+
+      <svg
+        viewBox="0 0 30 30"
+        aria-hidden="true"
+      >
+        <circle
+          cx="15"
+          cy="15"
+          r="12"
+        ></circle>
+
+        <path
+          d="M9 15h12"
+        ></path>
+
+        <path
+          d="m17 11 4 4-4 4"
+        ></path>
+      </svg>
+
+    </div>
+
+
+    <p>
+
+      <span data-t="spinLine1">
+        Roztočte glóbus a objavte naše spoločné chvíle.
+      </span>
+
+      <span data-t="spinLine2">
+        Vyberte mesto a začnite.
+      </span>
+
+    </p>
+
+  </div>
+
+
+  <!-- =====================================================
+       CITY / MEMORY MODAL
+  ====================================================== -->
+
+  <section
+    id="modal"
+    class="journey-modal"
+    aria-hidden="true"
+  >
+
+    <div class="journey-modal-media">
+
+      <img
+        id="modal-image"
+        src=""
+        alt=""
+      >
+
+
+      <iframe
+        id="modal-instagram"
+        title="Instagram Reel"
+        allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
+        allowfullscreen
+      ></iframe>
+
+    </div>
+
+
+    <div class="journey-modal-meta">
+
+      <h2 id="modal-city">
+        CITY
+      </h2>
+
+
+      <p id="modal-location">
+        LOCATION
+      </p>
+
+    </div>
+
+
+    <div class="journey-modal-controls">
+
+      <button
+        id="video-stop-btn"
+        type="button"
+        aria-label="Zatvoriť spomienku"
+      >
+
+        <svg
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <path
+            d="M6 6l12 12"
+          ></path>
+
+          <path
+            d="M18 6 6 18"
+          ></path>
+        </svg>
+
+      </button>
+
+
+      <button
+        id="video-skip-btn"
+        type="button"
+      >
+        <span data-t="videoSkip">
+          SKIP
+        </span>
+      </button>
+
+    </div>
+
+  </section>
+
+
+  <!-- =====================================================
+       JOURNEY -> WEDDING TRANSITION
+  ====================================================== -->
+
+  <section
+    id="final-transition-screen"
+    class="final-transition-screen"
+    aria-hidden="true"
+  >
+
+    <div class="transition-text">
+
+      <span
+        class="trans-line"
+        data-t="adventureLine1"
+      >
+        And now,
+      </span>
+
+
+      <span
+        class="trans-line"
+        data-t="adventureLine2"
+      >
+        Our new adventure begins.
+      </span>
+
+    </div>
+
+  </section>
+
+
+  <!-- =====================================================
+       WEDDING HANDOFF
+
+       Toto NIE JE ďalšia wedding stránka.
+       Je to iba krátky fullscreen handoff.
+       JS po animácii otvorí:
+       https://samsvadba.github.io/svadba/
+  ====================================================== -->
+
+  <section
+    id="wedding-handoff"
+    class="wedding-handoff"
+    aria-hidden="true"
+  >
+
+    <div class="wedding-handoff-inner">
+
+      <p>
+        30 · 04 · 2027
+      </p>
+
+
+      <h2>
+
+        <span>
+          Simona
+        </span>
+
+        <em>
+          &
+        </em>
+
+        <span>
+          Martin
+        </span>
+
+      </h2>
+
+
+      <div class="wedding-handoff-mark">
+        S&M
+      </div>
+
+    </div>
+
+  </section>
+
+
+  <!-- =====================================================
+       BOTTOM NAV
+  ====================================================== -->
+
+  <nav
+    id="bottom-nav"
+    class="bottom-nav"
+    aria-label="Navigácia príbehu"
+  >
+
+    <button
+      id="nav-intro"
+      class="nav-item active"
+      type="button"
+    >
+      INTRO
+    </button>
+
+
+    <div class="nav-progress">
+
+      <div class="nav-progress-line">
+
+        <span
+          id="nav-fill"
+          class="nav-progress-fill"
+        ></span>
+
+      </div>
+
+
+      <span
+        id="dot-1"
+        class="nav-dot active"
+      ></span>
+
+
+      <span
+        id="dot-2"
+        class="nav-dot"
+      ></span>
+
+
+      <span
+        id="dot-3"
+        class="nav-dot"
+      ></span>
+
+    </div>
+
+
+    <button
+      id="nav-journey"
+      class="nav-item"
+      type="button"
+    >
+      JOURNEY
+    </button>
+
+
+    <button
+      id="nav-wedding"
+      class="nav-item"
+      type="button"
+    >
+      WEDDING
+    </button>
+
+  </nav>
+
+
+  <!-- =====================================================
+       AUDIO PLACEHOLDER
+
+       Keď vyberieme hudbu, doplníme source.
+  ====================================================== -->
+
+  <audio
+    id="bgm"
+    loop
+  ></audio>
+
+
+  <!-- =====================================================
+       CONFIG FIRST
+  ====================================================== -->
+
+  <script src="./src/config.js"></script>
+
+
+  <!-- =====================================================
+       APP
+  ====================================================== -->
 
   <script
     type="module"
-    src="/src/main.js"
+    src="./src/main-v2.js"
   ></script>
 
 </body>
