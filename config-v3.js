@@ -162,7 +162,7 @@ const config = {
   "GLOBE_RADIUS": 12,
   "intro": {
     "poster": "photos/07-florence-engagement.jpeg",
-    "video": public/Intro.mp4.mp4
+    "video": "Intro.mp4.mp4"
   },
   "wedding": {
     "couple": {
