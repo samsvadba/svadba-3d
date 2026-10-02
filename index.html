@@ -1,180 +1,39 @@
 <!doctype html>
 <html lang="sk">
-  <head>
-    <meta charset="UTF-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
-    />
-    <meta name="theme-color" content="#8b826e" />
-    <meta
-      name="description"
-      content="Simona & Martin — 30. 04. 2027"
-    />
-
-    <title>Simona & Martin — 30. 04. 2027</title>
-  </head>
-
-  <body>
-    <main id="app">
-
-      <section
-        class="experience"
-        id="experience"
-      >
-
-        <canvas id="scene"></canvas>
-
-        <div
-          class="film-grain"
-          aria-hidden="true"
-        ></div>
-
-        <div
-          class="film-vignette"
-          aria-hidden="true"
-        ></div>
-
-        <div
-          class="world-label world-label--martin"
-          aria-hidden="true"
-        >
-          <span>Hlohovec</span>
-          <strong>Martin</strong>
-        </div>
-
-        <div
-          class="world-label world-label--simona"
-          aria-hidden="true"
-        >
-          <span>Cífer</span>
-          <strong>Simona</strong>
-        </div>
-
-        <div class="story">
-
-          <section
-            class="chapter chapter--1"
-          >
-            <div
-              class="chapter__inner chapter__inner--center"
-            >
-
-              <p class="eyebrow">
-                Simona & Martin
-              </p>
-
-              <h1>
-                Jeden príbeh.
-              </h1>
-
-              <p class="date">
-                30 · 04 · 2027
-              </p>
-
-              <p class="hint">
-                Posuň nižšie
-              </p>
-
-            </div>
-          </section>
-
-          <section
-            class="chapter chapter--2"
-          >
-            <div class="chapter__inner">
-
-              <p class="eyebrow">
-                Hlohovec · Cífer
-              </p>
-
-              <h2>
-                Dva začiatky.
-              </h2>
-
-              <p>
-                Dve miesta. Dve cesty,
-                ktoré ešte netušili,
-                že raz budú pokračovať spolu.
-              </p>
-
-            </div>
-          </section>
-
-          <section
-            class="chapter chapter--3"
-          >
-            <div
-              class="chapter__inner chapter__inner--right"
-            >
-
-              <p class="eyebrow">
-                Niekde medzi tým
-              </p>
-
-              <h2>
-                A potom sa stretli.
-              </h2>
-
-            </div>
-          </section>
-
-          <section
-            class="chapter chapter--4"
-          >
-            <div class="chapter__inner">
-
-              <p class="eyebrow">
-                Odvtedy
-              </p>
-
-              <h2>
-                Jedným smerom.
-              </h2>
-
-              <p>
-                Toto je len začiatok cesty.
-                Ďalšia kapitola nás zavedie
-                do Florencie.
-              </p>
-
-            </div>
-          </section>
-
-        </div>
-      </section>
-
-      <section
-        class="wedding-site"
-        id="wedding-site"
-      >
-
-        <div class="wedding-site__inner">
-
-          <p class="eyebrow">
-            Simona & Martin
-          </p>
-
-          <h2>
-            Pokračovanie príbehu
-          </h2>
-
-          <p>
-            Sem neskôr plynulo nadviažeme
-            Florenciou, Trnavou, Šúrovcami
-            a samotnou svadobnou stránkou.
-          </p>
-
-        </div>
-
-      </section>
-
-    </main>
-
-    <script
-      type="module"
-      src="/src/main.js"
-    ></script>
-
-  </body>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#242a25" />
+  <meta name="description" content="Simona & Martin. Naše spoločné cesty a ďalšia kapitola — 30. apríla 2027." />
+  <title>Simona & Martin — Jeden príbeh</title>
+</head>
+<body>
+  <header class="header">
+    <a class="monogram" href="#experience" aria-label="Simona a Martin, začiatok">S<span>&</span>M</a>
+    <span class="header-date">30 / 04 / 2027</span>
+    <nav aria-label="Hlavné menu"><button id="view-toggle" type="button" aria-pressed="false">Pokojné zobrazenie</button><a href="#wedding">Naša svadba ↗</a></nav>
+  </header>
+  <main>
+    <section id="experience" aria-label="Náš príbeh vo fotografiách">
+      <div class="stage" aria-hidden="true"><canvas id="scene"></canvas><div class="vignette"></div><span class="background-word">spolu.</span></div>
+      <div id="chapters"></div>
+      <div class="gallery-footer"><span id="chapter-count">01 / 09</span><div class="progress"><span id="progress-fill"></span></div><span>NAŠE MALÉ VEĽKÉ MOMENTY</span></div>
+    </section>
+    <section id="wedding" class="wedding">
+      <span class="eyebrow">Ďalšia kapitola · tentoraz s vami</span>
+      <h2>Na celý <em>život.</em></h2>
+      <p class="names">Simona & Martin</p>
+      <p class="wedding-date">30. apríla 2027</p>
+      <div class="details">
+        <article><span class="eyebrow">01 / Obrad · 15:00</span><h3>Trnava</h3><p>Kostol sv. Jakuba<br>Františkánska 1</p><a href="https://maps.google.com/?q=Kostol+sv.+Jakuba,+Františkánska+1,+Trnava" target="_blank" rel="noopener noreferrer">Zobraziť na mape ↗</a></article>
+        <article><span class="eyebrow">02 / Oslava · po obrade</span><h3>Šúrovce</h3><p>Penzión Zemiansky dvor<br>Krakovská 67</p><a href="https://maps.google.com/?q=Penzion+Zemiansky+dvor,+Krakovska+67,+Surovce" target="_blank" rel="noopener noreferrer">Zobraziť na mape ↗</a></article>
+      </div>
+      <p class="closing">Zo všetkých ciest je najkrajšia tá spoločná.</p>
+      <a class="back" href="#experience">Prežiť príbeh ešte raz ↑</a>
+      <footer>SIMONA & MARTIN <span>HLOHOVEC · CÍFER · CELÝ SVET</span></footer>
+    </section>
+  </main>
+  <noscript><p class="no-script">Pre priestorovú galériu zapnite JavaScript. Naša svadba: 30. apríla 2027, obrad o 15:00 v Kostole sv. Jakuba v Trnave.</p></noscript>
+  <script type="module" src="/src/main.js"></script>
+</body>
 </html>
