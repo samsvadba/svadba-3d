@@ -8,3 +8,21 @@
 .wedding{background:#eee8dc;color:#333a30;text-align:center;padding:110px 7vw 30px;position:relative;z-index:10}.wedding .eyebrow{color:#7b795f}.wedding h2{font-size:clamp(70px,10vw,145px);margin:35px 0}.wedding h2 em{color:#7f866a}.wedding p{margin-inline:auto;color:#626657}.names{font-family:'Cormorant Garamond',Georgia,serif;font-size:32px}.wedding-date{letter-spacing:.16em;text-transform:uppercase;font-size:11px;margin-top:10px}.details{max-width:900px;margin:75px auto;display:grid;grid-template-columns:1fr 1fr;border-top:1px solid #343a3025;border-bottom:1px solid #343a3025;padding:45px 0}.details article+article{border-left:1px solid #343a3025}h3{font-family:'Cormorant Garamond',Georgia,serif;font-weight:400;font-size:48px;margin:13px 0}.details a,.back{display:inline-block;font-size:10px;letter-spacing:.08em;border-bottom:1px solid #343a3040;padding-bottom:7px;margin-top:23px}.closing{font-family:'Cormorant Garamond',Georgia,serif;font-size:25px;max-width:35ch}.wedding footer{display:flex;justify-content:space-between;gap:20px;font-size:8px;letter-spacing:.17em;text-align:left;margin-top:100px;border-top:1px solid #343a3020;padding-top:24px}.no-script{padding:20px;background:#eee8dc;color:#333}
 @media(max-width:700px){.header{padding:20px 6vw;gap:12px}.header-date{display:none}.header nav{gap:18px;font-size:9px}.monogram{font-size:27px}.chapter{grid-template-columns:1fr;gap:30px;padding:105px 8vw 65px;min-height:100svh}.chapter-copy{max-width:100%}h1,h2{font-size:clamp(62px,17vw,100px);margin:18px 0}.eyebrow{font-size:8px;letter-spacing:.16em}p{font-size:12px;max-width:35ch}.chapter figure img{max-height:48svh}.is-3d .chapter{padding:0 8vw 95px;align-items:end}.is-3d .chapter-copy{width:100%}.is-3d .chapter-copy h1,.is-3d .chapter-copy h2{font-size:clamp(54px,15vw,88px);margin:12px 0}.is-3d .chapter-copy p{max-width:39ch;font-size:11px;line-height:1.65}.is-3d .scroll-hint{margin-top:16px;font-size:8px}.gallery-footer{padding:0 8vw;bottom:25px;gap:15px}.gallery-footer>span:last-child{font-size:7px;letter-spacing:.06em;max-width:130px}.progress{width:55px}.background-word{bottom:31%;font-size:45vw}.wedding{padding:80px 8vw 25px}.details{grid-template-columns:1fr;margin:45px auto;padding:0}.details article{padding:30px 0}.details article+article{border-left:0;border-top:1px solid #343a3025}.wedding footer{margin-top:70px;font-size:7px}.wedding footer span{max-width:130px;text-align:right}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+/* Ivory monochrome wedding edition */
+:root{color:#292c28;background:#f0ece3;--cream:#292c28;--accent:#777563}
+#experience{background:#f0ece3!important;--accent:#777563!important}
+.header button{border-bottom-color:#292c2835}
+.stage:before{background:radial-gradient(ellipse at 75% 35%,#ffffffb0,transparent 65%)}
+.vignette{background:radial-gradient(ellipse at 65% 45%,transparent 35%,#918c7620 100%)}
+#scene{filter:grayscale(1)}
+.background-word{color:#302e2706}
+h1 em,h2 em{color:#747568}
+p{color:#626459}
+figure img{filter:grayscale(1);box-shadow:0 25px 70px #35342920}
+figcaption{color:#626459}
+.gallery-footer>span:last-child{color:#77796c}
+.progress{background:#292c2826}
+.is-static .chapter{border-bottom-color:#292c2810}
+.is-static .chapter:nth-child(even){background:#ffffff30}
+.wedding{background:#e6e1d5}
+::selection{background:#bdbbaa;color:#292c28}
