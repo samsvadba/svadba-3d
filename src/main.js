@@ -2,13 +2,18 @@ import * as THREE from 'three'
 import './style.css'
 
 const BASE = import.meta.env.BASE_URL
-const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)')
+
+const reducedMotion =
+  window.matchMedia(
+    '(prefers-reduced-motion: reduce)'
+  )
 
 /* =========================================================
    DESTINATIONS
 ========================================================= */
 
 const cities = {
+
   hlohovec: {
     key: 'hlohovec',
     number: '01 / 07',
@@ -19,7 +24,8 @@ const cities = {
     latLabel: '48.4317° N',
     lngLabel: '17.8031° E',
     image: '01-historic-selfie.jpeg',
-    text: 'Jeden z dvoch začiatkov nášho príbehu. Miesto, odkiaľ vyrazil Martin.'
+    text:
+      'Jeden z dvoch začiatkov nášho príbehu. Miesto, odkiaľ vyrazil Martin.'
   },
 
   cifer: {
@@ -27,12 +33,13 @@ const cities = {
     number: '02 / 07',
     title: 'Cífer',
     country: 'Slovensko',
-    lat: 48.3150,
-    lng: 17.4910,
+    lat: 48.315,
+    lng: 17.491,
     latLabel: '48.3150° N',
     lngLabel: '17.4910° E',
     image: '08-formal-outdoor.jpeg',
-    text: 'Druhý začiatok. Miesto, odkiaľ do spoločného príbehu vykročila Simona.'
+    text:
+      'Druhý začiatok. Miesto, odkiaľ do spoločného príbehu vykročila Simona.'
   },
 
   london: {
@@ -45,7 +52,8 @@ const cities = {
     latLabel: '51.5074° N',
     lngLabel: '0.1278° W',
     image: '02-west-ham.jpeg',
-    text: 'Futbal, mesto a ďalšia spoločná spomienka. Jedna z ciest, ktoré sú najlepšie vo dvojici.'
+    text:
+      'Futbal, mesto a ďalšia spoločná spomienka. Jedna z ciest, ktoré sú najlepšie vo dvojici.'
   },
 
   madeira: {
@@ -58,7 +66,8 @@ const cities = {
     latLabel: '32.7607° N',
     lngLabel: '16.9595° W',
     image: '03-madeira-waterfall.jpeg',
-    text: 'Hory, oceán, vodopády a chvíle, pri ktorých človek na všetko ostatné zabudne.'
+    text:
+      'Hory, oceán, vodopády a chvíle, pri ktorých človek na všetko ostatné zabudne.'
   },
 
   liverpool: {
@@ -71,7 +80,8 @@ const cities = {
     latLabel: '53.4084° N',
     lngLabel: '2.9916° W',
     image: '06-liverpool-waterfront.jpeg',
-    text: 'Aj keď počasie nebolo vždy dokonalé, spoločná cesta áno.'
+    text:
+      'Aj keď počasie nebolo vždy dokonalé, spoločná cesta áno.'
   },
 
   japan: {
@@ -84,9 +94,12 @@ const cities = {
     latLabel: '35.6762° N',
     lngLabel: '139.6503° E',
     image: null,
-    text: 'Jedna z ciest na druhý koniec sveta. Tokyo, Japonsko — ďalšia spomienka, ktorú si chceme nechať navždy.',
-    instagramUrl: 'https://www.instagram.com/reel/DN_BgiWktOJ/',
-    instagramEmbedUrl: 'https://www.instagram.com/reel/DN_BgiWktOJ/embed/'
+    text:
+      'Jedna z ciest na druhý koniec sveta. Tokyo, Japonsko — ďalšia spomienka, ktorú si chceme nechať navždy.',
+    instagramUrl:
+      'https://www.instagram.com/reel/DN_BgiWktOJ/',
+    instagramEmbedUrl:
+      'https://www.instagram.com/reel/DN_BgiWktOJ/embed/'
   },
 
   florence: {
@@ -99,8 +112,10 @@ const cities = {
     latLabel: '43.7696° N',
     lngLabel: '11.2558° E',
     image: '07-florence-engagement.jpeg',
-    text: 'Miesto, kde jedna otázka zmenila ďalšiu cestu. Florencia, 1. apríla 2026.'
+    text:
+      'Miesto, kde jedna otázka zmenila ďalšiu cestu. Florencia, 1. apríla 2026.'
   }
+
 }
 
 const cityOrder = [
@@ -120,22 +135,80 @@ const cityOrder = [
 const root = document.documentElement
 const body = document.body
 
-const canvas = document.querySelector('#globe-canvas')
-const globeSection = document.querySelector('#globe-section')
-const globeSticky = document.querySelector('.globe-sticky')
-const florenceSection = document.querySelector('.florence')
+const canvas =
+  document.querySelector(
+    '#globe-canvas'
+  )
 
-const memoryCard = document.querySelector('#memory-card')
-const memoryPhoto = document.querySelector('.memory-photo')
-const memoryImage = document.querySelector('#memory-image')
-const memoryNumber = document.querySelector('#memory-number')
-const memoryCountry = document.querySelector('#memory-country')
-const memoryTitle = document.querySelector('#memory-title')
-const memoryText = document.querySelector('#memory-text')
-const memoryLink = document.querySelector('#memory-link')
-const memoryLat = document.querySelector('#memory-lat')
-const memoryLng = document.querySelector('#memory-lng')
-const memoryClose = document.querySelector('#memory-close')
+const globeSection =
+  document.querySelector(
+    '#globe-section'
+  )
+
+const globeSticky =
+  document.querySelector(
+    '.globe-sticky'
+  )
+
+const florenceSection =
+  document.querySelector(
+    '.florence'
+  )
+
+const memoryCard =
+  document.querySelector(
+    '#memory-card'
+  )
+
+const memoryPhoto =
+  document.querySelector(
+    '.memory-photo'
+  )
+
+const memoryImage =
+  document.querySelector(
+    '#memory-image'
+  )
+
+const memoryNumber =
+  document.querySelector(
+    '#memory-number'
+  )
+
+const memoryCountry =
+  document.querySelector(
+    '#memory-country'
+  )
+
+const memoryTitle =
+  document.querySelector(
+    '#memory-title'
+  )
+
+const memoryText =
+  document.querySelector(
+    '#memory-text'
+  )
+
+const memoryLink =
+  document.querySelector(
+    '#memory-link'
+  )
+
+const memoryLat =
+  document.querySelector(
+    '#memory-lat'
+  )
+
+const memoryLng =
+  document.querySelector(
+    '#memory-lng'
+  )
+
+const memoryClose =
+  document.querySelector(
+    '#memory-close'
+  )
 
 const cityButtons = [
   ...document.querySelectorAll(
@@ -184,7 +257,7 @@ const referenceExplore =
   )
 
 /* =========================================================
-   RUNTIME CSS
+   RUNTIME STYLES
 ========================================================= */
 
 const runtimeStyle =
@@ -194,158 +267,58 @@ const runtimeStyle =
 
 runtimeStyle.textContent = `
 
-.globe-section {
-  background:
-    #f5f4f0 !important;
-
-  color:
-    #171714 !important;
-}
-
-.globe-sticky {
-  background:
-    radial-gradient(
-      circle at 50% 45%,
-      #ffffff 0%,
-      #faf9f6 48%,
-      #f2f1ed 100%
-    ) !important;
-
-  color:
-    #171714 !important;
-}
-
-.globe-atmosphere {
-  width:
-    min(58vw, 660px) !important;
-
-  background:
-    radial-gradient(
-      circle,
-      rgba(70,75,70,.035),
-      rgba(70,75,70,.012) 50%,
-      transparent 72%
-    ) !important;
-
-  filter:
-    blur(26px) !important;
-}
-
-.globe-title {
-  color:
-    rgba(20,22,19,.022) !important;
-}
-
-.globe-instruction,
-.city-list,
-.city-list button,
-.globe-progress,
-.mobile-city-button {
-  color:
-    #171714 !important;
-}
-
-.globe-instruction-icon {
-  border-color:
-    rgba(20,22,19,.2) !important;
-}
-
-.globe-progress > div {
-  background:
-    rgba(20,22,19,.12) !important;
-}
-
-.globe-progress i {
-  background:
-    #171714 !important;
-}
-
-.memory-photo {
-  position:
-    relative !important;
-}
-
 .instagram-reel-wrap {
-  position:
-    absolute;
+  position: absolute;
+  inset: 0;
+  z-index: 2;
 
-  inset:
-    0;
+  display: none;
 
-  z-index:
-    2;
+  overflow: hidden;
 
-  display:
-    none;
-
-  overflow:
-    hidden;
-
-  background:
-    #fff;
+  background: #fff;
 }
 
 .memory-photo.is-instagram
 .instagram-reel-wrap {
-  display:
-    block;
+  display: block;
 }
 
 .memory-photo.is-instagram
 #memory-image {
-  display:
-    none !important;
+  display: none !important;
 }
 
 .instagram-reel-wrap iframe {
-  display:
-    block;
+  display: block;
 
-  width:
-    100%;
+  width: 100%;
+  height: 100%;
 
-  height:
-    100%;
+  border: 0;
 
-  border:
-    0;
-
-  background:
-    #fff;
+  background: #fff;
 }
 
 .instagram-fallback {
-  position:
-    absolute;
+  position: absolute;
 
-  left:
-    10px;
+  left: 10px;
+  right: 10px;
+  bottom: 8px;
 
-  right:
-    10px;
+  z-index: 5;
 
-  bottom:
-    8px;
+  display: flex;
+  justify-content: center;
 
-  z-index:
-    5;
-
-  display:
-    flex;
-
-  justify-content:
-    center;
-
-  pointer-events:
-    none;
+  pointer-events: none;
 }
 
 .instagram-fallback a {
-  pointer-events:
-    auto;
+  pointer-events: auto;
 
-  padding:
-    8px 12px;
+  padding: 8px 12px;
 
   border:
     1px solid
@@ -354,184 +327,197 @@ runtimeStyle.textContent = `
   background:
     rgba(255,255,255,.94);
 
-  color:
-    #11130f;
+  color: #11130f;
 
-  font-size:
-    7px;
+  font-size: 7px;
 
-  font-weight:
-    600;
+  font-weight: 600;
 
-  letter-spacing:
-    .12em;
+  letter-spacing: .12em;
 
-  text-transform:
-    uppercase;
-}
-
-.memory-link {
-  display:
-    none;
-
-  width:
-    max-content;
-
-  margin-top:
-    18px;
-
-  padding-bottom:
-    4px;
-
-  border-bottom:
-    1px solid
-    rgba(17,19,15,.34);
-
-  color:
-    #11130f;
-
-  font-size:
-    8px;
-
-  font-weight:
-    600;
-
-  letter-spacing:
-    .14em;
-
-  text-transform:
-    uppercase;
-
-  transition:
-    opacity .25s ease,
-    transform .25s ease;
-}
-
-.memory-link:hover {
-  opacity:
-    .6;
-
-  transform:
-    translateX(3px);
+  text-transform: uppercase;
 }
 
 .memory-connector {
-  position:
-    absolute;
+  position: absolute;
 
-  inset:
-    0;
+  inset: 0;
 
-  z-index:
-    24;
+  z-index: 24;
 
-  width:
-    100%;
+  width: 100%;
+  height: 100%;
 
-  height:
-    100%;
+  overflow: visible;
 
-  overflow:
-    visible;
+  pointer-events: none;
 
-  pointer-events:
-    none;
-
-  opacity:
-    0;
+  opacity: 0;
 
   transition:
     opacity .3s ease;
 }
 
 .memory-connector.is-visible {
-  opacity:
-    1;
+  opacity: 1;
 }
 
 .memory-connector line {
   stroke:
     rgba(20,22,19,.38);
 
-  stroke-width:
-    1;
+  stroke-width: 1;
 
   vector-effect:
     non-scaling-stroke;
 }
 
 .memory-connector circle {
-  fill:
-    #171714;
+  fill: #171714;
 }
 
 .globe-start-message {
-  position:
-    absolute;
+  position: absolute;
 
-  left:
-    50%;
+  left: 50%;
+  bottom: 76px;
 
-  bottom:
-    76px;
-
-  z-index:
-    11;
+  z-index: 11;
 
   transform:
     translateX(-50%);
 
-  white-space:
-    nowrap;
+  white-space: nowrap;
 
   color:
     rgba(17,19,15,.48);
 
-  font-size:
-    7px;
+  font-size: 7px;
 
-  font-weight:
-    500;
+  font-weight: 500;
 
-  letter-spacing:
-    .2em;
+  letter-spacing: .2em;
 
-  text-transform:
-    uppercase;
+  text-transform: uppercase;
 
-  pointer-events:
-    none;
+  pointer-events: none;
 
   transition:
     opacity .3s ease;
 }
 
+.mobile-city-menu {
+  position: absolute;
+
+  left: 17px;
+  right: 17px;
+  bottom: 112px;
+
+  z-index: 40;
+
+  display: none;
+
+  max-height: 56svh;
+
+  overflow: auto;
+
+  padding: 8px 18px;
+
+  background:
+    rgba(247,246,242,.97);
+
+  box-shadow:
+    0 20px 70px
+    rgba(20,22,19,.12);
+
+  opacity: 0;
+
+  visibility: hidden;
+
+  transform:
+    translateY(22px);
+
+  transition:
+    opacity .3s ease,
+    transform .4s cubic-bezier(.22,1,.36,1),
+    visibility .3s ease;
+}
+
+.mobile-city-menu.is-open {
+  opacity: 1;
+
+  visibility: visible;
+
+  transform:
+    translateY(0);
+}
+
+.mobile-city-menu button {
+  display: grid;
+
+  grid-template-columns:
+    35px 1fr auto;
+
+  align-items: center;
+
+  width: 100%;
+
+  padding: 15px 0;
+
+  border-bottom:
+    1px solid
+    rgba(20,22,19,.1);
+
+  color: #171714;
+
+  text-align: left;
+}
+
+.mobile-city-menu button:last-child {
+  border-bottom: 0;
+}
+
+.mobile-city-menu span {
+  font-size: 7px;
+
+  letter-spacing: .15em;
+
+  opacity: .45;
+}
+
+.mobile-city-menu strong {
+  font-family:
+    "Cormorant Garamond",
+    Georgia,
+    serif;
+
+  font-size: 27px;
+
+  font-weight: 400;
+}
+
+.mobile-city-menu i {
+  font-size: 11px;
+
+  font-style: normal;
+
+  opacity: .5;
+}
+
 @media (max-width:700px) {
 
-  .globe-atmosphere {
-    width:
-      88vw !important;
+  .mobile-city-menu {
+    display: block;
   }
 
   .memory-connector {
-    display:
-      none;
+    display: none;
   }
 
   .globe-start-message {
-    bottom:
-      118px;
+    bottom: 118px;
 
-    font-size:
-      6px;
-  }
-
-  .memory-link {
-    margin-top:
-      14px;
-
-    font-size:
-      7px;
+    font-size: 6px;
   }
 
 }
@@ -564,9 +550,7 @@ instagramWrap.innerHTML = `
     allowfullscreen
   ></iframe>
 
-  <div
-    class="instagram-fallback"
-  >
+  <div class="instagram-fallback">
 
     <a
       id="instagram-fallback-link"
@@ -587,14 +571,16 @@ memoryPhoto
   )
 
 const instagramFrame =
-  instagramWrap.querySelector(
-    '#instagram-reel-frame'
-  )
+  instagramWrap
+    .querySelector(
+      '#instagram-reel-frame'
+    )
 
 const instagramFallbackLink =
-  instagramWrap.querySelector(
-    '#instagram-fallback-link'
-  )
+  instagramWrap
+    .querySelector(
+      '#instagram-fallback-link'
+    )
 
 /* =========================================================
    CONNECTOR
@@ -620,7 +606,6 @@ connectorSvg.setAttribute(
 )
 
 connectorSvg.innerHTML = `
-
   <line
     x1="0"
     y1="0"
@@ -633,7 +618,6 @@ connectorSvg.innerHTML = `
     cy="0"
     r="3"
   ></circle>
-
 `
 
 globeSticky
@@ -642,14 +626,16 @@ globeSticky
   )
 
 const connectorLine =
-  connectorSvg.querySelector(
-    'line'
-  )
+  connectorSvg
+    .querySelector(
+      'line'
+    )
 
 const connectorDot =
-  connectorSvg.querySelector(
-    'circle'
-  )
+  connectorSvg
+    .querySelector(
+      'circle'
+    )
 
 /* =========================================================
    START MESSAGE
@@ -671,23 +657,51 @@ globeSticky
     startMessage
   )
 
-const instructionText =
-  document.querySelector(
-    '.globe-instruction p'
+/* =========================================================
+   MOBILE MENU
+========================================================= */
+
+const mobileMenu =
+  document.createElement(
+    'div'
   )
 
-if (
-  instructionText
-) {
+mobileMenu.className =
+  'mobile-city-menu'
 
-  instructionText.innerHTML =
-    `
-      DRAG TO ROTATE
-      <br>
-      SELECT A CITY
-    `
+mobileMenu.innerHTML =
+  cityOrder
+    .map(
+      key => {
 
-}
+        const city =
+          cities[key]
+
+        return `
+          <button
+            type="button"
+            data-mobile-city="${key}"
+          >
+            <span>
+              ${city.number.split(' / ')[0]}
+            </span>
+
+            <strong>
+              ${city.title}
+            </strong>
+
+            <i>↗</i>
+          </button>
+        `
+
+      }
+    )
+    .join('')
+
+globeSticky
+  ?.appendChild(
+    mobileMenu
+  )
 
 /* =========================================================
    LOADER
@@ -703,8 +717,7 @@ const preloadFiles = [
   '08-formal-outdoor.jpeg'
 ]
 
-let loadedResources =
-  0
+let loadedResources = 0
 
 function setLoaderProgress(
   value
@@ -741,8 +754,7 @@ function setLoaderProgress(
 
 function resourceLoaded() {
 
-  loadedResources +=
-    1
+  loadedResources += 1
 
   setLoaderProgress(
     (
@@ -772,6 +784,7 @@ function preloadImages() {
               () => {
 
                 resourceLoaded()
+
                 resolve()
 
               }
@@ -780,6 +793,7 @@ function preloadImages() {
               () => {
 
                 resourceLoaded()
+
                 resolve()
 
               }
@@ -805,13 +819,17 @@ function finishLoader() {
   window.setTimeout(
     () => {
 
-      body.classList.remove(
-        'is-loading'
-      )
+      body
+        .classList
+        .remove(
+          'is-loading'
+        )
 
-      body.classList.add(
-        'is-loaded'
-      )
+      body
+        .classList
+        .add(
+          'is-loaded'
+        )
 
     },
     300
@@ -820,7 +838,7 @@ function finishLoader() {
 }
 
 /* =========================================================
-   THREE
+   THREE STATE
 ========================================================= */
 
 let renderer
@@ -892,41 +910,29 @@ function latLngToVector(
 ) {
 
   const phi =
-    THREE.MathUtils
-      .degToRad(
-        90 -
-        lat
-      )
+    THREE.MathUtils.degToRad(
+      90 -
+      lat
+    )
 
   const theta =
-    THREE.MathUtils
-      .degToRad(
-        lng +
-        180
-      )
+    THREE.MathUtils.degToRad(
+      lng +
+      180
+    )
 
   return new THREE.Vector3(
 
     -radius *
-    Math.sin(
-      phi
-    ) *
-    Math.cos(
-      theta
-    ),
+    Math.sin(phi) *
+    Math.cos(theta),
 
     radius *
-    Math.cos(
-      phi
-    ),
+    Math.cos(phi),
 
     radius *
-    Math.sin(
-      phi
-    ) *
-    Math.sin(
-      theta
-    )
+    Math.sin(phi) *
+    Math.sin(theta)
 
   )
 
@@ -939,12 +945,10 @@ function latLngToVector(
 function createLights() {
 
   scene.add(
-
     new THREE.AmbientLight(
       0xffffff,
       1.8
     )
-
   )
 
   const key =
@@ -966,7 +970,7 @@ function createLights() {
   const fill =
     new THREE.DirectionalLight(
       0xdfe6df,
-      0.65
+      .65
     )
 
   fill.position.set(
@@ -982,7 +986,7 @@ function createLights() {
 }
 
 /* =========================================================
-   GLOBE SURFACE
+   GLOBE
 ========================================================= */
 
 function createGlobeSurface() {
@@ -997,23 +1001,17 @@ function createGlobeSurface() {
   const material =
     new THREE.MeshPhysicalMaterial({
 
-      color:
-        0xf7f7f4,
+      color: 0xf7f7f4,
 
-      transparent:
-        true,
+      transparent: true,
 
-      opacity:
-        .36,
+      opacity: .36,
 
-      roughness:
-        1,
+      roughness: 1,
 
-      metalness:
-        0,
+      metalness: 0,
 
-      depthWrite:
-        true
+      depthWrite: true
 
     })
 
@@ -1029,49 +1027,38 @@ function createGlobeSurface() {
 
   const wireGeometry =
     new THREE.SphereGeometry(
-
       globeRadius *
       1.003,
-
       42,
-
       28
-
     )
 
   const wireMaterial =
     new THREE.MeshBasicMaterial({
 
-      color:
-        0x747874,
+      color: 0x747874,
 
-      wireframe:
-        true,
+      wireframe: true,
 
-      transparent:
-        true,
+      transparent: true,
 
-      opacity:
-        .055,
+      opacity: .055,
 
-      depthWrite:
-        false
+      depthWrite: false
 
     })
 
   worldGroup.add(
-
     new THREE.Mesh(
       wireGeometry,
       wireMaterial
     )
-
   )
 
 }
 
 /* =========================================================
-   GLOBE DOTS
+   SURFACE DOTS
 ========================================================= */
 
 function createSurfaceDots() {
@@ -1092,9 +1079,7 @@ function createSurfaceDots() {
     Math.PI *
     (
       3 -
-      Math.sqrt(
-        5
-      )
+      Math.sqrt(5)
     )
 
   for (
@@ -1128,25 +1113,19 @@ function createSurfaceDots() {
     const point =
       new THREE.Vector3(
 
-        Math.cos(
-          theta
-        ) *
+        Math.cos(theta) *
         radius,
 
         y,
 
-        Math.sin(
-          theta
-        ) *
+        Math.sin(theta) *
         radius
 
       )
         .normalize()
         .multiplyScalar(
-
           globeRadius *
           1.007
-
         )
 
     positions[
@@ -1188,8 +1167,7 @@ function createSurfaceDots() {
   const material =
     new THREE.PointsMaterial({
 
-      color:
-        0x4a4e4a,
+      color: 0x4a4e4a,
 
       size:
         window.innerWidth <
@@ -1197,30 +1175,25 @@ function createSurfaceDots() {
           ? .008
           : .006,
 
-      transparent:
-        true,
+      transparent: true,
 
-      opacity:
-        .13,
+      opacity: .13,
 
-      depthWrite:
-        false
+      depthWrite: false
 
     })
 
   worldGroup.add(
-
     new THREE.Points(
       geometry,
       material
     )
-
   )
 
 }
 
 /* =========================================================
-   GRID
+   GRATICULE
 ========================================================= */
 
 function createGraticule() {
@@ -1228,17 +1201,13 @@ function createGraticule() {
   const material =
     new THREE.LineBasicMaterial({
 
-      color:
-        0x676b67,
+      color: 0x676b67,
 
-      transparent:
-        true,
+      transparent: true,
 
-      opacity:
-        .085,
+      opacity: .085,
 
-      depthWrite:
-        false
+      depthWrite: false
 
     })
 
@@ -1252,84 +1221,77 @@ function createGraticule() {
     0,
     30,
     60
+  ]
+    .forEach(
+      latitude => {
 
-  ].forEach(
-    latitude => {
+        const points = []
 
-      const points =
-        []
+        const latRad =
+          THREE.MathUtils
+            .degToRad(
+              latitude
+            )
 
-      const latRad =
-        THREE.MathUtils
-          .degToRad(
-            latitude
-          )
-
-      const ringRadius =
-        Math.cos(
-          latRad
-        ) *
-        radius
-
-      const y =
-        Math.sin(
-          latRad
-        ) *
-        radius
-
-      for (
-        let i = 0;
-        i <= 150;
-        i += 1
-      ) {
-
-        const angle =
-          (
-            i /
-            150
+        const ringRadius =
+          Math.cos(
+            latRad
           ) *
-          Math.PI *
-          2
+          radius
 
-        points.push(
+        const y =
+          Math.sin(
+            latRad
+          ) *
+          radius
 
-          new THREE.Vector3(
+        for (
+          let i = 0;
+          i <= 150;
+          i += 1
+        ) {
 
-            Math.cos(
-              angle
+          const angle =
+            (
+              i /
+              150
             ) *
-            ringRadius,
+            Math.PI *
+            2
 
-            y,
+          points.push(
 
-            Math.sin(
-              angle
-            ) *
-            ringRadius
+            new THREE.Vector3(
+
+              Math.cos(angle) *
+              ringRadius,
+
+              y,
+
+              Math.sin(angle) *
+              ringRadius
+
+            )
 
           )
 
+        }
+
+        const geometry =
+          new THREE.BufferGeometry()
+            .setFromPoints(
+              points
+            )
+
+        worldGroup.add(
+          new THREE.Line(
+            geometry,
+            material
+          )
         )
 
       }
-
-      const geometry =
-        new THREE.BufferGeometry()
-          .setFromPoints(
-            points
-          )
-
-      worldGroup.add(
-
-        new THREE.Line(
-          geometry,
-          material
-        )
-
-      )
-
-    }
-  )
+    )
 
   for (
     let longitude = -150;
@@ -1337,8 +1299,7 @@ function createGraticule() {
     longitude += 30
   ) {
 
-    const points =
-      []
+    const points = []
 
     const lngRad =
       THREE.MathUtils
@@ -1363,25 +1324,15 @@ function createGraticule() {
         new THREE.Vector3(
 
           radius *
-          Math.cos(
-            latRad
-          ) *
-          Math.sin(
-            lngRad
-          ),
+          Math.cos(latRad) *
+          Math.sin(lngRad),
 
           radius *
-          Math.sin(
-            latRad
-          ),
+          Math.sin(latRad),
 
           radius *
-          Math.cos(
-            latRad
-          ) *
-          Math.cos(
-            lngRad
-          )
+          Math.cos(latRad) *
+          Math.cos(lngRad)
 
         )
 
@@ -1396,12 +1347,10 @@ function createGraticule() {
         )
 
     worldGroup.add(
-
       new THREE.Line(
         geometry,
         material
       )
-
     )
 
   }
@@ -1409,14 +1358,15 @@ function createGraticule() {
 }
 
 /* =========================================================
-   MARKERS
+   CITY MARKERS
 ========================================================= */
 
 function createMarkers() {
 
-  Object.values(
-    cities
-  )
+  Object
+    .values(
+      cities
+    )
     .forEach(
       (
         city,
@@ -1459,10 +1409,8 @@ function createMarkers() {
             ),
 
             new THREE.MeshBasicMaterial({
-
               color:
                 0x141614
-
             })
 
           )
@@ -1554,7 +1502,7 @@ function createMarkers() {
 }
 
 /* =========================================================
-   RESIZE GLOBE
+   RESIZE
 ========================================================= */
 
 function resizeRenderer() {
@@ -1576,12 +1524,10 @@ function resizeRenderer() {
     window.innerHeight
 
   renderer.setPixelRatio(
-
     Math.min(
       window.devicePixelRatio,
       2
     )
-
   )
 
   renderer.setSize(
@@ -1650,9 +1596,11 @@ function faceCoordinates(
     immediate
   ) {
 
-    worldGroup.quaternion.copy(
-      targetQuaternion
-    )
+    worldGroup
+      .quaternion
+      .copy(
+        targetQuaternion
+      )
 
   }
 
@@ -1713,42 +1661,39 @@ function showInstagramVideo(
 }
 
 /* =========================================================
-   ACTIVE BUTTONS
+   MEMORY CARD
 ========================================================= */
 
 function updateActiveButtons(
   key
 ) {
 
-  cityButtons.forEach(
-    button => {
+  cityButtons
+    .forEach(
+      button => {
 
-      button.classList.toggle(
+        button
+          .classList
+          .toggle(
 
-        'is-active',
+            'is-active',
 
-        button.dataset.city ===
-        key
+            button.dataset.city ===
+            key
 
-      )
+          )
 
-    }
-  )
+      }
+    )
 
 }
-
-/* =========================================================
-   OPEN MEMORY
-========================================================= */
 
 function openMemory(
   key
 ) {
 
   const city =
-    cities[
-      key
-    ]
+    cities[key]
 
   if (
     !city ||
@@ -1766,55 +1711,43 @@ function openMemory(
   if (
     memoryNumber
   ) {
-
     memoryNumber.textContent =
       city.number
-
   }
 
   if (
     memoryCountry
   ) {
-
     memoryCountry.textContent =
       city.country
-
   }
 
   if (
     memoryTitle
   ) {
-
     memoryTitle.textContent =
       city.title
-
   }
 
   if (
     memoryText
   ) {
-
     memoryText.textContent =
       city.text
-
   }
 
   if (
     memoryLat
   ) {
-
     memoryLat.textContent =
       city.latLabel
-
   }
 
   if (
     memoryLng
   ) {
-
     memoryLng.textContent =
       city.lngLabel
-
   }
 
   if (
@@ -1899,10 +1832,6 @@ function openMemory(
 
 }
 
-/* =========================================================
-   CLOSE MEMORY
-========================================================= */
-
 function closeMemoryCard() {
 
   activeCity =
@@ -1937,231 +1866,27 @@ memoryClose
     closeMemoryCard
   )
 
-cityButtons.forEach(
-  button => {
+cityButtons
+  .forEach(
+    button => {
 
-    button.addEventListener(
-      'click',
-      () => {
+      button
+        .addEventListener(
+          'click',
+          () => {
 
-        openMemory(
-          button.dataset.city
+            openMemory(
+              button.dataset.city
+            )
+
+          }
         )
 
-      }
-    )
-
-  }
-)
+    }
+  )
 
 /* =========================================================
    MOBILE MENU
-========================================================= */
-
-const mobileMenu =
-  document.createElement(
-    'div'
-  )
-
-mobileMenu.className =
-  'mobile-city-menu'
-
-mobileMenu.innerHTML =
-  cityOrder
-    .map(
-      key => {
-
-        const city =
-          cities[
-            key
-          ]
-
-        return `
-          <button
-            type="button"
-            data-mobile-city="${key}"
-          >
-
-            <span>
-              ${city.number.split(' / ')[0]}
-            </span>
-
-            <strong>
-              ${city.title}
-            </strong>
-
-            <i>
-              ↗
-            </i>
-
-          </button>
-        `
-
-      }
-    )
-    .join(
-      ''
-    )
-
-globeSticky
-  ?.appendChild(
-    mobileMenu
-  )
-
-const mobileMenuStyle =
-  document.createElement(
-    'style'
-  )
-
-mobileMenuStyle.textContent = `
-
-.mobile-city-menu {
-  position:
-    absolute;
-
-  left:
-    17px;
-
-  right:
-    17px;
-
-  bottom:
-    112px;
-
-  z-index:
-    40;
-
-  display:
-    none;
-
-  max-height:
-    56svh;
-
-  overflow:
-    auto;
-
-  padding:
-    8px 18px;
-
-  background:
-    rgba(247,246,242,.97);
-
-  box-shadow:
-    0 20px 70px
-    rgba(20,22,19,.12);
-
-  transform:
-    translateY(22px);
-
-  opacity:
-    0;
-
-  visibility:
-    hidden;
-
-  transition:
-    opacity .3s ease,
-    transform .4s
-    cubic-bezier(.22,1,.36,1),
-    visibility .3s ease;
-}
-
-.mobile-city-menu.is-open {
-  transform:
-    translateY(0);
-
-  opacity:
-    1;
-
-  visibility:
-    visible;
-}
-
-.mobile-city-menu button {
-  display:
-    grid;
-
-  grid-template-columns:
-    35px 1fr auto;
-
-  align-items:
-    center;
-
-  width:
-    100%;
-
-  padding:
-    15px 0;
-
-  border-bottom:
-    1px solid
-    rgba(20,22,19,.1);
-
-  color:
-    #171714;
-
-  text-align:
-    left;
-}
-
-.mobile-city-menu button:last-child {
-  border-bottom:
-    0;
-}
-
-.mobile-city-menu span {
-  font-size:
-    7px;
-
-  letter-spacing:
-    .15em;
-
-  opacity:
-    .45;
-}
-
-.mobile-city-menu strong {
-  font-family:
-    "Cormorant Garamond",
-    Georgia,
-    serif;
-
-  font-size:
-    27px;
-
-  font-weight:
-    400;
-}
-
-.mobile-city-menu i {
-  font-size:
-    11px;
-
-  font-style:
-    normal;
-
-  opacity:
-    .5;
-}
-
-@media
-(max-width:700px) {
-
-  .mobile-city-menu {
-    display:
-      block;
-  }
-
-}
-
-`
-
-document.head.appendChild(
-  mobileMenuStyle
-)
-
-/* =========================================================
-   MOBILE MENU FUNCTIONS
 ========================================================= */
 
 function openMobileMenu() {
@@ -2245,17 +1970,18 @@ mobileMenu
   .forEach(
     button => {
 
-      button.addEventListener(
-        'click',
-        () => {
+      button
+        .addEventListener(
+          'click',
+          () => {
 
-          openMemory(
-            button.dataset
-              .mobileCity
-          )
+            openMemory(
+              button.dataset
+                .mobileCity
+            )
 
-        }
-      )
+          }
+        )
 
     }
   )
@@ -2306,9 +2032,7 @@ function onPointerDown(
     )
 
   } catch {
-
     // Safari fallback
-
   }
 
 }
@@ -2456,19 +2180,14 @@ function raycastCity(
       )
 
   if (
-    intersections.length >
-    0
+    intersections.length
   ) {
 
     openMemory(
-
-      intersections[
-        0
-      ]
+      intersections[0]
         .object
         .userData
         .cityKey
-
     )
 
   }
@@ -2545,14 +2264,8 @@ canvas
       dragging =
         false
 
-      if (
-        canvas
-      ) {
-
-        canvas.style.cursor =
-          'grab'
-
-      }
+      canvas.style.cursor =
+        'grab'
 
     }
   )
@@ -2570,11 +2283,12 @@ function getActiveMarkerWorldPosition() {
   }
 
   const marker =
-    markerObjects.find(
-      item =>
-        item.userData.cityKey ===
-        activeCity
-    )
+    markerObjects
+      .find(
+        item =>
+          item.userData.cityKey ===
+          activeCity
+      )
 
   if (
     !marker
@@ -2585,9 +2299,10 @@ function getActiveMarkerWorldPosition() {
   const worldPosition =
     new THREE.Vector3()
 
-  marker.getWorldPosition(
-    worldPosition
-  )
+  marker
+    .getWorldPosition(
+      worldPosition
+    )
 
   return worldPosition
 
@@ -2615,7 +2330,6 @@ function updateConnector() {
       )
 
     return
-
   }
 
   const markerWorld =
@@ -2730,7 +2444,7 @@ function updateConnector() {
 }
 
 /* =========================================================
-   NORMAL SCROLL PROGRESS
+   SECTION PROGRESS
 ========================================================= */
 
 function clamp(
@@ -2797,10 +2511,9 @@ function updateScroll() {
 
     '--globe-progress',
 
-    globeProgress
-      .toFixed(
-        4
-      )
+    globeProgress.toFixed(
+      4
+    )
 
   )
 
@@ -2808,30 +2521,24 @@ function updateScroll() {
 
     '--florence-progress',
 
-    florenceProgress
-      .toFixed(
-        4
-      )
+    florenceProgress.toFixed(
+      4
+    )
 
   )
 
 }
 
 window.addEventListener(
-
   'scroll',
-
   updateScroll,
-
   {
-    passive:
-      true
+    passive: true
   }
-
 )
 
 /* =========================================================
-   REFERENCE INTRO
+   INTRO
 ========================================================= */
 
 function referenceClamp(
@@ -2879,24 +2586,248 @@ function referenceSmoothstep(
   )
 
 }
-let introUnlocked = false
+
+/* =========================================================
+   INTRO LOCK
+
+   Dôležité:
+   browser nedovolíme prescrollovať hranicu.
+   Až Explore nastaví introUnlocked = true.
+========================================================= */
+
+let introUnlocked =
+  false
+
+let introTouchY =
+  0
 
 function getIntroLockPosition() {
 
-  if (!referenceHero) {
+  if (
+    !referenceHero
+  ) {
     return 0
   }
 
   const distance =
     Math.max(
+
       referenceHero.offsetHeight -
       window.innerHeight,
+
       1
+
     )
 
-  return distance * 0.72
+  return (
+    referenceHero.offsetTop +
+    distance *
+    .72
+  )
 
 }
+
+function moveToIntroLock() {
+
+  window.scrollTo({
+    top:
+      getIntroLockPosition(),
+    behavior:
+      'auto'
+  })
+
+}
+
+/* -----------------------------------------
+   MOUSE / TRACKPAD
+----------------------------------------- */
+
+window.addEventListener(
+
+  'wheel',
+
+  event => {
+
+    if (
+      introUnlocked ||
+      event.deltaY <=
+      0
+    ) {
+      return
+    }
+
+    const lock =
+      getIntroLockPosition()
+
+    if (
+      window.scrollY +
+      event.deltaY >=
+      lock
+    ) {
+
+      event.preventDefault()
+
+      moveToIntroLock()
+
+    }
+
+  },
+
+  {
+    passive: false
+  }
+
+)
+
+/* -----------------------------------------
+   TOUCH
+----------------------------------------- */
+
+window.addEventListener(
+
+  'touchstart',
+
+  event => {
+
+    introTouchY =
+      event.touches[0]
+        ?.clientY ||
+      0
+
+  },
+
+  {
+    passive: true
+  }
+
+)
+
+window.addEventListener(
+
+  'touchmove',
+
+  event => {
+
+    if (
+      introUnlocked ||
+      !event.touches.length
+    ) {
+      return
+    }
+
+    const currentY =
+      event.touches[0]
+        .clientY
+
+    const deltaY =
+      introTouchY -
+      currentY
+
+    introTouchY =
+      currentY
+
+    if (
+      deltaY <=
+      0
+    ) {
+      return
+    }
+
+    const lock =
+      getIntroLockPosition()
+
+    if (
+      window.scrollY +
+      deltaY >=
+      lock
+    ) {
+
+      event.preventDefault()
+
+      moveToIntroLock()
+
+    }
+
+  },
+
+  {
+    passive: false
+  }
+
+)
+
+/* -----------------------------------------
+   KEYBOARD
+----------------------------------------- */
+
+window.addEventListener(
+
+  'keydown',
+
+  event => {
+
+    if (
+      introUnlocked
+    ) {
+      return
+    }
+
+    const forwardKeys = [
+      'ArrowDown',
+      'PageDown',
+      ' ',
+      'End'
+    ]
+
+    if (
+      !forwardKeys.includes(
+        event.key
+      )
+    ) {
+      return
+    }
+
+    const lock =
+      getIntroLockPosition()
+
+    /*
+      END by inak preskočil
+      rovno celú stránku.
+    */
+
+    if (
+      event.key ===
+      'End'
+    ) {
+
+      event.preventDefault()
+
+      moveToIntroLock()
+
+      return
+    }
+
+    if (
+      window.scrollY >=
+      lock -
+      window.innerHeight *
+      .8
+    ) {
+
+      event.preventDefault()
+
+      moveToIntroLock()
+
+    }
+
+  }
+
+)
+
+/* =========================================================
+   INTRO ANIMATION
+========================================================= */
+
 function updateReferenceIntro() {
 
   if (
@@ -2919,22 +2850,6 @@ function updateReferenceIntro() {
 
     )
 
- const lockPosition =
-    getIntroLockPosition()
-
-  if (
-    !introUnlocked &&
-    window.scrollY >
-    lockPosition
-  ) {
-
-    window.scrollTo(
-      0,
-      lockPosition
-    )
-
-  }
-
   const progress =
     referenceClamp(
 
@@ -2943,9 +2858,7 @@ function updateReferenceIntro() {
 
     )
 
-  /* =======================================================
-     SCENE 1
-  ======================================================= */
+  /* FIRST SCENE */
 
   const introExit =
     referenceSmoothstep(
@@ -2985,9 +2898,7 @@ function updateReferenceIntro() {
 
   }
 
-  /* =======================================================
-     SCENE 2
-  ======================================================= */
+  /* SECOND SCENE */
 
   const storyEnter =
     referenceSmoothstep(
@@ -3022,9 +2933,7 @@ function updateReferenceIntro() {
 
   }
 
-  /* =======================================================
-     PHOTO / FUTURE VIDEO
-  ======================================================= */
+  /* PHOTO */
 
   if (
     referenceImage
@@ -3064,29 +2973,19 @@ function updateReferenceIntro() {
 }
 
 window.addEventListener(
-
   'scroll',
-
   updateReferenceIntro,
-
   {
-    passive:
-      true
+    passive: true
   }
-
 )
 
 window.addEventListener(
-
   'resize',
-
   updateReferenceIntro,
-
   {
-    passive:
-      true
+    passive: true
   }
-
 )
 
 /* =========================================================
@@ -3101,8 +3000,17 @@ referenceExplore
     event => {
 
       event.preventDefault()
+
       event.stopImmediatePropagation()
-introUnlocked = true
+
+      /*
+        Toto je jediný moment,
+        kedy sa stránka odomkne.
+      */
+
+      introUnlocked =
+        true
+
       if (
         !globeSection
       ) {
@@ -3115,12 +3023,8 @@ introUnlocked = true
 
         referenceStory.style.transition =
           `
-            opacity
-            .35s
-            ease,
-
-            transform
-            .45s
+            opacity .35s ease,
+            transform .45s
             cubic-bezier(
               .22,
               1,
@@ -3149,8 +3053,7 @@ introUnlocked = true
 
         referenceImage.style.transition =
           `
-            transform
-            .55s
+            transform .55s
             cubic-bezier(
               .22,
               1,
@@ -3212,20 +3115,20 @@ const globeObserver =
 
     entries => {
 
-      entries.forEach(
-        entry => {
+      entries
+        .forEach(
+          entry => {
 
-          globeVisible =
-            entry.isIntersecting
+            globeVisible =
+              entry.isIntersecting
 
-        }
-      )
+          }
+        )
 
     },
 
     {
-      threshold:
-        .05
+      threshold: .05
     }
 
   )
@@ -3241,7 +3144,7 @@ if (
 }
 
 /* =========================================================
-   ANIMATION
+   ANIMATION LOOP
 ========================================================= */
 
 const clock =
@@ -3315,29 +3218,30 @@ function animate() {
 
     )
 
-  markerObjects.forEach(
-    marker => {
+  markerObjects
+    .forEach(
+      marker => {
 
-      const pulse =
-        1 +
-        Math.sin(
+        const pulse =
+          1 +
+          Math.sin(
 
-          elapsed *
-          2 +
-          marker.userData.phase
+            elapsed *
+            2 +
+            marker.userData.phase
 
-        ) *
-        .11
+          ) *
+          .11
 
-      marker.userData
-        .ring
-        .scale
-        .setScalar(
-          pulse
-        )
+        marker.userData
+          .ring
+          .scale
+          .setScalar(
+            pulse
+          )
 
-    }
-  )
+      }
+    )
 
   updateConnector()
 
@@ -3365,11 +3269,9 @@ function initGlobe() {
 
       canvas,
 
-      antialias:
-        true,
+      antialias: true,
 
-      alpha:
-        true,
+      alpha: true,
 
       powerPreference:
         'high-performance'
@@ -3388,18 +3290,12 @@ function initGlobe() {
     new THREE.Scene()
 
   camera =
-    new THREE
-      .PerspectiveCamera(
-
-        36,
-
-        1,
-
-        .1,
-
-        50
-
-      )
+    new THREE.PerspectiveCamera(
+      36,
+      1,
+      .1,
+      50
+    )
 
   worldGroup =
     new THREE.Group()
@@ -3409,10 +3305,15 @@ function initGlobe() {
   )
 
   createLights()
+
   createGlobeSurface()
+
   createSurfaceDots()
+
   createGraticule()
+
   createMarkers()
+
   resizeRenderer()
 
   faceCoordinates(
@@ -3439,20 +3340,24 @@ window.addEventListener(
   () => {
 
     resizeRenderer()
+
     updateScroll()
+
     updateReferenceIntro()
 
   },
 
   {
-    passive:
-      true
+    passive: true
   }
 
 )
 
 /* =========================================================
-   NORMAL SMOOTH LINKS
+   LINKS
+
+   Kým nie je Explore stlačené,
+   žiadny horný link nesmie obísť intro.
 ========================================================= */
 
 document
@@ -3462,56 +3367,75 @@ document
   .forEach(
     link => {
 
-      link.addEventListener(
-        'click',
-        event => {
+      link
+        .addEventListener(
+          'click',
+          event => {
 
-          if (
-            link ===
-            referenceExplore
-          ) {
-            return
+            if (
+              link ===
+              referenceExplore
+            ) {
+              return
+            }
+
+            const selector =
+              link.getAttribute(
+                'href'
+              )
+
+            if (
+              !selector ||
+              selector === '#'
+            ) {
+              return
+            }
+
+            /*
+              Home môžeme používať vždy.
+              Ostatné odkazy sú pred Explore
+              uzamknuté.
+            */
+
+            if (
+              !introUnlocked &&
+              selector !==
+              '#home'
+            ) {
+
+              event.preventDefault()
+
+              return
+            }
+
+            const target =
+              document.querySelector(
+                selector
+              )
+
+            if (
+              !target
+            ) {
+              return
+            }
+
+            event.preventDefault()
+
+            target
+              .scrollIntoView({
+
+                behavior:
+                  reducedMotion.matches
+                    ? 'auto'
+                    : 'smooth',
+
+                block:
+                  'start'
+
+              })
+
           }
-
-          const selector =
-            link.getAttribute(
-              'href'
-            )
-
-          if (
-            !selector ||
-            selector === '#'
-          ) {
-            return
-          }
-
-          const target =
-            document.querySelector(
-              selector
-            )
-
-          if (
-            !target
-          ) {
-            return
-          }
-
-          event.preventDefault()
-
-          target.scrollIntoView({
-
-            behavior:
-              reducedMotion.matches
-                ? 'auto'
-                : 'smooth',
-
-            block:
-              'start'
-
-          })
-
-        }
-      )
+        )
 
     }
   )
@@ -3521,6 +3445,32 @@ document
 ========================================================= */
 
 async function start() {
+
+  /*
+    Ak by niekto stránku otvoril
+    priamo cez #wedding alebo #globe-section,
+    intro sa nesmie obísť.
+  */
+
+  if (
+    window.location.hash &&
+    window.location.hash !==
+    '#home'
+  ) {
+
+    history.replaceState(
+      null,
+      '',
+      window.location.pathname +
+      window.location.search
+    )
+
+    window.scrollTo(
+      0,
+      0
+    )
+
+  }
 
   setLoaderProgress(
     5
@@ -3551,7 +3501,9 @@ async function start() {
   await preloadPromise
 
   updateScroll()
+
   updateReferenceIntro()
+
   finishLoader()
 
 }
