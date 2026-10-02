@@ -1804,18 +1804,27 @@ function updateLabels() {
         window.innerHeight
 
 
-      const direction =
-        item.location.side ===
-        'left'
-          ? -1
-          : 1
+    const rect =
+  journeyScene.getBoundingClientRect()
 
+const labelX =
+  item.location.side === 'left'
+    ? rect.width * parseFloat(item.location.x) / 100
+    : rect.width * (1 - parseFloat(item.location.x) / 100)
 
-      item.label.style.left =
-        `${x + direction * 18}px`
+const labelY =
+  rect.height * parseFloat(item.location.top) / 100
 
-      item.label.style.top =
-        `${y}px`
+item.label.style.left =
+  `${labelX}px`
+
+item.label.style.top =
+  `${labelY}px`
+
+item.label.style.transform =
+  item.location.side === 'left'
+    ? 'translate(0, -50%)'
+    : 'translate(-100%, -50%)'
 
       item.label.style.opacity =
         '1'
