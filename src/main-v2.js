@@ -2804,7 +2804,11 @@ function goJourney() {
 
   mode =
     'journey'
+labelLayer.style.opacity =
+  '1'
 
+labelLayer.style.visibility =
+  'visible'
 
   body.classList.remove(
     'intro-mode'
@@ -2840,12 +2844,6 @@ function goJourney() {
   )
 
 
-  gsap.set(
-    labelLayer,
-    {
-      opacity: 0
-    }
-  )
 
 
   camera.position.set(
@@ -3020,17 +3018,7 @@ function goJourney() {
       }
     )
 
-    .to(
-      labelLayer,
-      {
-        opacity: 1,
-        duration:
-          reducedMotion
-            ? 0.01
-            : 0.8
-      },
-      '-=0.35'
-    )
+  )
 
 }
 
