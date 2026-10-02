@@ -1881,26 +1881,6 @@ function updateLabels() {
           .normalize()
 
 
-      const visible =
-        surfaceDirection.dot(
-          cameraDirection
-        ) > 0.08
-
-
-      if (!visible) {
-
-        item.label.style.opacity =
-          '0'
-
-        item.label.style.pointerEvents =
-          'none'
-
-        connector.style.opacity =
-          '0'
-
-        return
-
-      }
 
 
       const projected =
