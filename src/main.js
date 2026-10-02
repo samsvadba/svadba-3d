@@ -3773,3 +3773,548 @@ async function start() {
 
 
 start()
+/* =========================================================
+   REFERENCE INTRO
+   SIMONA & MARTIN
+========================================================= */
+
+const referenceHero =
+  document.querySelector(
+    '.hero-reference'
+  )
+
+
+const referenceStage =
+  document.querySelector(
+    '.hero-reference-stage'
+  )
+
+
+const referenceImage =
+  document.querySelector(
+    '.hero-reference-media img'
+  )
+
+
+const referenceIntro =
+  document.querySelector(
+    '.hero-reference-intro'
+  )
+
+
+const referenceStory =
+  document.querySelector(
+    '.hero-reference-story'
+  )
+
+
+const referenceShade =
+  document.querySelector(
+    '.hero-reference-shade'
+  )
+
+
+const referenceExplore =
+  document.querySelector(
+    '.hero-reference-explore'
+  )
+
+
+function referenceClamp(
+  value,
+  min = 0,
+  max = 1
+) {
+
+  return Math.min(
+    Math.max(
+      value,
+      min
+    ),
+    max
+  )
+
+}
+
+
+/* =========================================================
+   SCROLL STORY
+========================================================= */
+
+function updateReferenceIntro() {
+
+  if (
+    !referenceHero
+  ) {
+    return
+  }
+
+
+  const rect =
+    referenceHero
+      .getBoundingClientRect()
+
+
+  const travel =
+    Math.max(
+
+      referenceHero.offsetHeight -
+      window.innerHeight,
+
+      1
+
+    )
+
+
+  /*
+    0 = začiatok intra
+    1 = koniec intra / pred glóbusom
+  */
+
+  const progress =
+    referenceClamp(
+
+      -rect.top /
+      travel
+
+    )
+
+
+  /* -----------------------------------------
+     FIRST SCREEN
+
+     SIMONA & MARTIN
+     A JOURNEY OF US
+  ----------------------------------------- */
+
+  const introOpacity =
+    referenceClamp(
+
+      1 -
+      progress /
+      0.36
+
+    )
+
+
+  if (
+    referenceIntro
+  ) {
+
+    /*
+      Keď sa používateľ začne hýbať,
+      prevezme animáciu scroll.
+    */
+
+    if (
+      progress >
+      0.015
+    ) {
+
+      referenceIntro.style.animation =
+        'none'
+
+    }
+
+
+    referenceIntro.style.opacity =
+      introOpacity
+
+
+    referenceIntro.style.transform =
+      `
+        translate3d(
+          0,
+          ${-progress * 42}px,
+          0
+        )
+      `
+
+  }
+
+
+  /* -----------------------------------------
+     SECOND SCREEN
+
+     A JOURNEY OF US,
+     CAPTURED IN EVERY MOMENT.
+
+     SIMONA & MARTIN
+
+     EXPLORE
+  ----------------------------------------- */
+
+  const storyOpacity =
+    referenceClamp(
+
+      (
+        progress -
+        0.27
+      ) /
+      0.34
+
+    )
+
+
+  if (
+    referenceStory
+  ) {
+
+    referenceStory.style.opacity =
+      storyOpacity
+
+
+    referenceStory.style.transform =
+      `
+        translate3d(
+          0,
+          ${(1 - storyOpacity) * 38}px,
+          0
+        )
+      `
+
+
+    /*
+      Explore sa dá stlačiť
+      až keď je druhá scéna viditeľná.
+    */
+
+    referenceStory.style.pointerEvents =
+      storyOpacity >
+      0.78
+        ? 'auto'
+        : 'none'
+
+  }
+
+
+  /* -----------------------------------------
+     PHOTO CAMERA MOVEMENT
+  ----------------------------------------- */
+
+  if (
+    referenceImage
+  ) {
+
+    const scale =
+      1.035 +
+      progress *
+      0.085
+
+
+    referenceImage.style.transform =
+      `
+        scale(
+          ${scale}
+        )
+      `
+
+
+    /*
+      Počas príbehu obraz veľmi jemne
+      tmavne a stráca saturáciu.
+    */
+
+    const saturation =
+      0.72 -
+      progress *
+      0.10
+
+
+    const brightness =
+      0.69 -
+      progress *
+      0.14
+
+
+    referenceImage.style.filter =
+      `
+        saturate(
+          ${saturation}
+        )
+
+        contrast(
+          1.04
+        )
+
+        brightness(
+          ${brightness}
+        )
+      `
+
+  }
+
+
+  /* -----------------------------------------
+     OVERLAY
+  ----------------------------------------- */
+
+  if (
+    referenceShade
+  ) {
+
+    referenceShade.style.opacity =
+      String(
+
+        0.82 +
+        progress *
+        0.18
+
+      )
+
+  }
+
+}
+
+
+/* =========================================================
+   SCROLL LISTENER
+========================================================= */
+
+window.addEventListener(
+
+  'scroll',
+
+  updateReferenceIntro,
+
+  {
+    passive:
+      true
+  }
+
+)
+
+
+window.addEventListener(
+
+  'resize',
+
+  updateReferenceIntro,
+
+  {
+    passive:
+      true
+  }
+
+)
+
+
+updateReferenceIntro()
+
+
+/* =========================================================
+   EXPLORE -> GLOBE
+========================================================= */
+
+referenceExplore
+  ?.addEventListener(
+
+    'click',
+
+    event => {
+
+      /*
+        Tento listener ide cez capture,
+        takže zastaví pôvodný obyčajný
+        smooth-scroll listener.
+      */
+
+      event.preventDefault()
+
+      event.stopImmediatePropagation()
+
+
+      if (
+        !globeSection
+      ) {
+        return
+      }
+
+
+      /*
+        Reduced motion:
+        žiadny filmový prechod.
+      */
+
+      if (
+        reducedMotion.matches
+      ) {
+
+        const oldBehavior =
+          document.documentElement
+            .style
+            .scrollBehavior
+
+
+        document.documentElement
+          .style
+          .scrollBehavior =
+            'auto'
+
+
+        window.scrollTo(
+          0,
+          globeSection.offsetTop
+        )
+
+
+        document.documentElement
+          .style
+          .scrollBehavior =
+            oldBehavior
+
+
+        return
+      }
+
+
+      /*
+        Svetlá clona medzi fotografiou
+        a svetlým glóbusom.
+      */
+
+      body.classList.add(
+        'is-intro-leaving'
+      )
+
+
+      /*
+        Fotografiu ešte jemne priblížime.
+      */
+
+      if (
+        referenceImage
+      ) {
+
+        referenceImage.style.transition =
+          `
+            transform
+            .65s
+            cubic-bezier(
+              .22,
+              1,
+              .36,
+              1
+            ),
+
+            filter
+            .65s
+            ease
+          `
+
+
+        referenceImage.style.transform =
+          `
+            scale(
+              1.16
+            )
+          `
+
+      }
+
+
+      if (
+        referenceStory
+      ) {
+
+        referenceStory.style.transition =
+          `
+            opacity
+            .38s
+            ease,
+
+            transform
+            .55s
+            cubic-bezier(
+              .22,
+              1,
+              .36,
+              1
+            )
+          `
+
+
+        referenceStory.style.opacity =
+          '0'
+
+
+        referenceStory.style.transform =
+          `
+            translate3d(
+              0,
+              -22px,
+              0
+            )
+          `
+
+      }
+
+
+      /*
+        Po zakrytí scény skočíme
+        presne na glóbus.
+      */
+
+      window.setTimeout(
+
+        () => {
+
+          const oldBehavior =
+            document.documentElement
+              .style
+              .scrollBehavior
+
+
+          document.documentElement
+            .style
+            .scrollBehavior =
+              'auto'
+
+
+          window.scrollTo(
+            0,
+            globeSection.offsetTop
+          )
+
+
+          requestAnimationFrame(
+            () => {
+
+              document.documentElement
+                .style
+                .scrollBehavior =
+                  oldBehavior
+
+
+              /*
+                Odkryjeme už svetlý glóbus.
+              */
+
+              window.setTimeout(
+
+                () => {
+
+                  body.classList.remove(
+                    'is-intro-leaving'
+                  )
+
+                },
+
+                100
+
+              )
+
+            }
+          )
+
+        },
+
+        560
+
+      )
+
+    },
+
+    true
+
+  )
