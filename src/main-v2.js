@@ -1740,18 +1740,12 @@ const journeyConnectors =
 
 function getJourneyConnector(index) {
 
-  if (
-    journeyConnectors.has(index)
-  ) {
-
+  if (journeyConnectors.has(index)) {
     return journeyConnectors.get(index)
-
   }
-
 
   const ns =
     'http://www.w3.org/2000/svg'
-
 
   const line =
     document.createElementNS(
@@ -1759,15 +1753,13 @@ function getJourneyConnector(index) {
       'line'
     )
 
-
   line.classList.add(
     'journey-city-connector'
   )
 
-
   line.setAttribute(
     'stroke',
-    'rgba(23, 25, 20, 0.28)'
+    'rgba(23, 25, 20, 0.25)'
   )
 
   line.setAttribute(
@@ -1783,23 +1775,14 @@ function getJourneyConnector(index) {
   line.style.pointerEvents =
     'none'
 
-  line.style.opacity =
-    '0'
-
-
-  svgCanvas.prepend(
-    line
-  )
-
+  svgCanvas.prepend(line)
 
   journeyConnectors.set(
     index,
     line
   )
 
-
   return line
-
 }
 
 
@@ -1807,10 +1790,7 @@ function hideJourneyConnectors() {
 
   journeyConnectors.forEach(
     line => {
-
-      line.style.opacity =
-        '0'
-
+      line.style.opacity = '0'
     }
   )
 
@@ -1821,38 +1801,15 @@ function updateLabels() {
 
   if (
     !camera ||
-    !markerData.length
-  )
-    return
-
-
-  if (
-    mode !== 'journey'
+    !markerData.length ||
+    !journeyScene
   ) {
-
-    markerData.forEach(
-      item => {
-
-        item.label.style.opacity =
-          '0'
-
-        item.label.style.pointerEvents =
-          'none'
-
-      }
-    )
-
-    hideJourneyConnectors()
-
     return
-
   }
 
 
-  const cameraDirection =
-    camera.position
-      .clone()
-      .normalize()
+  const journeyActive =
+    mode === 'journey'
 
 
   const sceneRect =
@@ -1864,37 +1821,16 @@ function updateLabels() {
     (item, index) => {
 
       const connector =
-        getJourneyConnector(
-          index
-        )
+        getJourneyConnector(index)
 
 
-      item.marker
-        .getWorldPosition(
-          worldTemp
-        )
-
-
-      const surfaceDirection =
-        worldTemp
-          .clone()
-          .normalize()
-
-
-
-
-      const projected =
-        worldTemp
-          .clone()
-          .project(camera)
-
-
-      if (
-        projected.z > 1
-      ) {
+      if (!journeyActive) {
 
         item.label.style.opacity =
           '0'
+
+        item.label.style.visibility =
+          'hidden'
 
         item.label.style.pointerEvents =
           'none'
@@ -1903,25 +1839,16 @@ function updateLabels() {
           '0'
 
         return
-
       }
 
 
-      const markerX =
-        (
-          projected.x * 0.5 +
-          0.5
-        ) *
-        window.innerWidth
-
-
-      const markerY =
-        (
-          -projected.y * 0.5 +
-          0.5
-        ) *
-        window.innerHeight
-
+      /*
+       * -----------------------------------------------------
+       * CITY CARD
+       * Position comes directly from config.js.
+       * It does NOT depend on globe visibility.
+       * -----------------------------------------------------
+       */
 
       const offset =
         parseFloat(
@@ -1935,32 +1862,45 @@ function updateLabels() {
         )
 
 
-      const labelX =
+      let labelX
+
+      if (
         item.location.side === 'left'
+      ) {
 
-          ? sceneRect.left +
+        labelX =
+          sceneRect.left +
+          (
             sceneRect.width *
-            offset /
-            100
+            offset / 100
+          )
 
-          : sceneRect.left +
+      }
+      else {
+
+        labelX =
+          sceneRect.left +
+          (
             sceneRect.width *
             (
               1 -
               offset / 100
             )
+          )
+
+      }
 
 
       const labelY =
         sceneRect.top +
-        sceneRect.height *
-        top /
-        100
+        (
+          sceneRect.height *
+          top / 100
+        )
 
 
       item.label.style.left =
         `${labelX}px`
-
 
       item.label.style.top =
         `${labelY}px`
@@ -1977,10 +1917,163 @@ function updateLabels() {
       item.label.style.opacity =
         '1'
 
+      item.label.style.visibility =
+        'visible'
 
       item.label.style.pointerEvents =
         'auto'
 
+
+      /*
+       * -----------------------------------------------------
+       * GLOBE POINT
+       * The real geographic marker is projected to screen.
+       * -----------------------------------------------------
+       */
+
+      item.marker.getWorldPosition(
+        worldTemp
+      )
+
+
+      const projected =
+        worldTemp
+          .clone()
+          .project(camera)
+
+
+      let markerX =
+        (
+          projected.x *
+          0.5 +
+          0.5
+        ) *
+        window.innerWidth
+
+
+      let markerY =
+        (
+          -projected.y *
+          0.5 +
+          0.5
+        ) *
+        window.innerHeight
+
+
+      /*
+       * Keep connector endpoint inside the visible
+       * globe area even when the geographic point
+       * rotates around the back.
+       */
+
+      const globeCenter =
+        new THREE.Vector3(
+          0,
+          0,
+          0
+        )
+          .project(camera)
+
+
+      const centerX =
+        (
+          globeCenter.x *
+          0.5 +
+          0.5
+        ) *
+        window.innerWidth
+
+
+      const centerY =
+        (
+          -globeCenter.y *
+          0.5 +
+          0.5
+        ) *
+        window.innerHeight
+
+
+      const dx =
+        markerX - centerX
+
+      const dy =
+        markerY - centerY
+
+
+      const distance =
+        Math.hypot(
+          dx,
+          dy
+        )
+
+
+      /*
+       * Approximate visible globe radius on screen.
+       */
+
+      const edgePoint =
+        new THREE.Vector3(
+          GLOBE_RADIUS,
+          0,
+          0
+        )
+          .project(camera)
+
+
+      const edgeX =
+        (
+          edgePoint.x *
+          0.5 +
+          0.5
+        ) *
+        window.innerWidth
+
+
+      const globeRadius =
+        Math.abs(
+          edgeX -
+          centerX
+        )
+
+
+      /*
+       * If projected point gets outside the visual globe,
+       * clamp it to the globe edge.
+       */
+
+      if (
+        distance >
+        globeRadius * 0.92 &&
+        distance > 0
+      ) {
+
+        const scale =
+          (
+            globeRadius *
+            0.92
+          ) /
+          distance
+
+
+        markerX =
+          centerX +
+          dx *
+          scale
+
+
+        markerY =
+          centerY +
+          dy *
+          scale
+
+      }
+
+
+      /*
+       * -----------------------------------------------------
+       * CONNECTOR
+       * -----------------------------------------------------
+       */
 
       const labelWidth =
         item.label.offsetWidth
@@ -1990,12 +2083,10 @@ function updateLabels() {
         item.location.side === 'left'
 
           ? labelX +
-            labelWidth +
-            4
+            labelWidth
 
           : labelX -
-            labelWidth -
-            4
+            labelWidth
 
 
       connector.setAttribute(
@@ -2003,18 +2094,15 @@ function updateLabels() {
         markerX
       )
 
-
       connector.setAttribute(
         'y1',
         markerY
       )
 
-
       connector.setAttribute(
         'x2',
         lineEndX
       )
-
 
       connector.setAttribute(
         'y2',
