@@ -1730,8 +1730,91 @@ function addCanvasInteraction() {
 
 
 /* =========================================================
-   LABEL PROJECTION
+   LABEL PROJECTION + CITY CONNECTORS
 ========================================================= */
+
+const journeyConnectors =
+  new Map()
+
+
+function getJourneyConnector(index) {
+
+  if (
+    journeyConnectors.has(index)
+  ) {
+
+    return journeyConnectors.get(index)
+
+  }
+
+
+  const ns =
+    'http://www.w3.org/2000/svg'
+
+
+  const line =
+    document.createElementNS(
+      ns,
+      'line'
+    )
+
+
+  line.classList.add(
+    'journey-city-connector'
+  )
+
+
+  line.setAttribute(
+    'stroke',
+    'rgba(23, 25, 20, 0.28)'
+  )
+
+  line.setAttribute(
+    'stroke-width',
+    '0.8'
+  )
+
+  line.setAttribute(
+    'vector-effect',
+    'non-scaling-stroke'
+  )
+
+  line.style.pointerEvents =
+    'none'
+
+  line.style.opacity =
+    '0'
+
+
+  svgCanvas.prepend(
+    line
+  )
+
+
+  journeyConnectors.set(
+    index,
+    line
+  )
+
+
+  return line
+
+}
+
+
+function hideJourneyConnectors() {
+
+  journeyConnectors.forEach(
+    line => {
+
+      line.style.opacity =
+        '0'
+
+    }
+  )
+
+}
+
 
 function updateLabels() {
 
@@ -1742,14 +1825,48 @@ function updateLabels() {
     return
 
 
+  if (
+    mode !== 'journey'
+  ) {
+
+    markerData.forEach(
+      item => {
+
+        item.label.style.opacity =
+          '0'
+
+        item.label.style.pointerEvents =
+          'none'
+
+      }
+    )
+
+    hideJourneyConnectors()
+
+    return
+
+  }
+
+
   const cameraDirection =
     camera.position
       .clone()
       .normalize()
 
 
+  const sceneRect =
+    journeyScene
+      .getBoundingClientRect()
+
+
   markerData.forEach(
-    item => {
+    (item, index) => {
+
+      const connector =
+        getJourneyConnector(
+          index
+        )
+
 
       item.marker
         .getWorldPosition(
@@ -1777,6 +1894,9 @@ function updateLabels() {
         item.label.style.pointerEvents =
           'none'
 
+        connector.style.opacity =
+          '0'
+
         return
 
       }
@@ -1788,7 +1908,25 @@ function updateLabels() {
           .project(camera)
 
 
-      const x =
+      if (
+        projected.z > 1
+      ) {
+
+        item.label.style.opacity =
+          '0'
+
+        item.label.style.pointerEvents =
+          'none'
+
+        connector.style.opacity =
+          '0'
+
+        return
+
+      }
+
+
+      const markerX =
         (
           projected.x * 0.5 +
           0.5
@@ -1796,7 +1934,7 @@ function updateLabels() {
         window.innerWidth
 
 
-      const y =
+      const markerY =
         (
           -projected.y * 0.5 +
           0.5
@@ -1804,33 +1942,107 @@ function updateLabels() {
         window.innerHeight
 
 
-    const rect =
-  journeyScene.getBoundingClientRect()
+      const offset =
+        parseFloat(
+          item.location.x || '8'
+        )
 
-const labelX =
-  item.location.side === 'left'
-    ? rect.width * parseFloat(item.location.x) / 100
-    : rect.width * (1 - parseFloat(item.location.x) / 100)
 
-const labelY =
-  rect.height * parseFloat(item.location.top) / 100
+      const top =
+        parseFloat(
+          item.location.top || '50'
+        )
 
-item.label.style.left =
-  `${labelX}px`
 
-item.label.style.top =
-  `${labelY}px`
+      const labelX =
+        item.location.side === 'left'
 
-item.label.style.transform =
-  item.location.side === 'left'
-    ? 'translate(0, -50%)'
-    : 'translate(-100%, -50%)'
+          ? sceneRect.left +
+            sceneRect.width *
+            offset /
+            100
+
+          : sceneRect.left +
+            sceneRect.width *
+            (
+              1 -
+              offset / 100
+            )
+
+
+      const labelY =
+        sceneRect.top +
+        sceneRect.height *
+        top /
+        100
+
+
+      item.label.style.left =
+        `${labelX}px`
+
+
+      item.label.style.top =
+        `${labelY}px`
+
+
+      item.label.style.transform =
+        item.location.side === 'left'
+
+          ? 'translate(0, -50%)'
+
+          : 'translate(-100%, -50%)'
+
 
       item.label.style.opacity =
         '1'
 
+
       item.label.style.pointerEvents =
         'auto'
+
+
+      const labelWidth =
+        item.label.offsetWidth
+
+
+      const lineEndX =
+        item.location.side === 'left'
+
+          ? labelX +
+            labelWidth +
+            4
+
+          : labelX -
+            labelWidth -
+            4
+
+
+      connector.setAttribute(
+        'x1',
+        markerX
+      )
+
+
+      connector.setAttribute(
+        'y1',
+        markerY
+      )
+
+
+      connector.setAttribute(
+        'x2',
+        lineEndX
+      )
+
+
+      connector.setAttribute(
+        'y2',
+        labelY
+      )
+
+
+      connector.style.opacity =
+        '1'
 
     }
   )
@@ -1839,7 +2051,7 @@ item.label.style.transform =
 
 
 /* =========================================================
-   SVG CONNECTOR
+   MODAL CONNECTOR
 ========================================================= */
 
 let connectorPath =
@@ -2198,8 +2410,8 @@ function selectLocation(
 
   const distance =
     isMobile
-      ? 40
-      : 37
+      ? 64
+      : 50
 
 
   const targetCamera =
@@ -2657,8 +2869,8 @@ function goJourney() {
 
   camera.position.set(
     0,
-    0,
-    isMobile ? 58 : 52
+    isMobile ? 1.2 : 0,
+    isMobile ? 88 : 68
   )
 
   camera.lookAt(
@@ -2739,10 +2951,17 @@ function goJourney() {
     .to(
       camera.position,
       {
+        x: 0,
+
+        y:
+          isMobile
+            ? 1.2
+            : 0,
+
         z:
           isMobile
-            ? 40
-            : 37,
+            ? 78
+            : 58,
 
         duration:
           reducedMotion
@@ -3358,8 +3577,8 @@ function handleResize() {
       .normalize()
       .multiplyScalar(
         isMobile
-          ? 40
-          : 37
+          ? 78
+          : 58
       )
 
     camera.lookAt(
