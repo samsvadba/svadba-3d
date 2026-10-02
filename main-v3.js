@@ -50,6 +50,8 @@ function unloadMedia() {
   $('modal-image').hidden = true;
   $('instagram-link').hidden = true;
   $('media-error').hidden = true;
+  $('media-error').classList.remove('empty-memory');
+  $('media-error').textContent = 'Fotografiu sa nepodarilo načítať.';
   $('modal').inert = true;
   $('modal').setAttribute('aria-hidden', 'true');
   gsap.set($('modal'), { autoAlpha: 0 });
@@ -326,7 +328,7 @@ function flyToAndShow(index) {
   gsap.set($('journey-instruction'), { autoAlpha: 0 });
   markerData.forEach((item, i) => item.element.classList.toggle('selected', i === index));
   $('modal-city').textContent = loc.name;
-  $('modal-location').textContent = loc.special === 'engagement' ? `Zásnuby · ${loc.subname}` : loc.subname;
+  $('modal-location').textContent = loc.special === 'engagement' ? `Zásnuby · ${loc.subname}` : (loc.description || loc.subname);
   $('memory-number').textContent = `${String(index + 1).padStart(2,'0')} / ${String(locations.length).padStart(2,'0')}`;
   const targetFraming = mobile() ? {x:0, y:.29} : {x:.22, y:0};
   gsap.to(framing, {...targetFraming, duration:duration(1.2), ease:'power2.inOut'});
@@ -337,6 +339,10 @@ function flyToAndShow(index) {
       $('modal-instagram').hidden = false;
       $('instagram-link').href = loc.external;
       $('instagram-link').hidden = false;
+    } else if (loc.type === 'text') {
+      $('media-error').textContent = loc.name;
+      $('media-error').classList.add('empty-memory');
+      $('media-error').hidden = false;
     } else {
       const img = $('modal-image');
       img.alt = `Simona a Martin — ${loc.name}`;

@@ -1,4 +1,3 @@
-// Relevant subset of the reference WeddingApp.config model. No wedding details live here.
 const config = {
   "translations": {
     "sk": {
@@ -18,30 +17,29 @@ const config = {
   },
   "locations": [
     {
-      "key": "hlohovec",
-      "name": "Hlohovec",
-      "subname": "Martin",
-      "lat": 48.4317,
-      "lon": 17.8031,
+      "key": "granada",
+      "name": "Granada",
+      "subname": "Španielsko",
+      "lat": 37.1773,
+      "lon": -3.5986,
       "side": "left",
-      "x": "7%",
-      "top": "20%",
+      "x": "6%",
+      "top": "15%",
       "type": "image",
-      "media": "photos/01-historic-selfie.jpeg",
-      "date": "Our beginning"
+      "media": "photos/01-historic-selfie.jpeg"
     },
     {
-      "key": "cifer",
-      "name": "Cífer",
-      "subname": "Simona",
-      "lat": 48.315,
-      "lon": 17.491,
+      "key": "trnava",
+      "name": "Trnava",
+      "subname": "Náš domov",
+      "lat": 48.3774,
+      "lon": 17.5883,
       "side": "left",
-      "x": "10%",
-      "top": "33%",
+      "x": "6%",
+      "top": "24%",
       "type": "image",
       "media": "photos/08-formal-outdoor.jpeg",
-      "date": "Our beginning"
+      "description": "Naše mesto, kde sme sa rozhodli žiť."
     },
     {
       "key": "london",
@@ -50,8 +48,8 @@ const config = {
       "lat": 51.5074,
       "lon": -0.1278,
       "side": "left",
-      "x": "4%",
-      "top": "48%",
+      "x": "6%",
+      "top": "33%",
       "type": "image",
       "media": "photos/02-west-ham.jpeg"
     },
@@ -61,9 +59,9 @@ const config = {
       "subname": "Portugal",
       "lat": 32.7607,
       "lon": -16.9595,
-      "side": "right",
-      "x": "8%",
-      "top": "61%",
+      "side": "left",
+      "x": "6%",
+      "top": "42%",
       "type": "image",
       "media": "photos/03-madeira-waterfall.jpeg"
     },
@@ -74,8 +72,8 @@ const config = {
       "lat": 53.4084,
       "lon": -2.9916,
       "side": "left",
-      "x": "9%",
-      "top": "65%",
+      "x": "6%",
+      "top": "51%",
       "type": "image",
       "media": "photos/06-liverpool-waterfront.jpeg"
     },
@@ -85,9 +83,9 @@ const config = {
       "subname": "Japan",
       "lat": 35.6762,
       "lon": 139.6503,
-      "side": "right",
-      "x": "7%",
-      "top": "27%",
+      "side": "left",
+      "x": "6%",
+      "top": "60%",
       "type": "instagram",
       "media": "https://www.instagram.com/reel/DN_BgiWktOJ/embed/",
       "external": "https://www.instagram.com/reel/DN_BgiWktOJ/"
@@ -99,11 +97,66 @@ const config = {
       "lat": 43.7696,
       "lon": 11.2558,
       "side": "right",
-      "x": "10%",
-      "top": "43%",
+      "x": "6%",
+      "top": "15%",
       "type": "image",
       "media": "photos/07-florence-engagement.jpeg",
       "special": "engagement"
+    },
+    {
+      "key": "malaga",
+      "name": "Málaga",
+      "subname": "Španielsko",
+      "lat": 36.7213,
+      "lon": -4.4214,
+      "type": "text",
+      "side": "right",
+      "x": "6%",
+      "top": "24%"
+    },
+    {
+      "key": "sevilla",
+      "name": "Sevilla",
+      "subname": "Španielsko",
+      "lat": 37.3891,
+      "lon": -5.9845,
+      "type": "text",
+      "side": "right",
+      "x": "6%",
+      "top": "33%"
+    },
+    {
+      "key": "seoul",
+      "name": "Soul",
+      "subname": "Južná Kórea",
+      "lat": 37.5665,
+      "lon": 126.978,
+      "type": "text",
+      "side": "right",
+      "x": "6%",
+      "top": "42%"
+    },
+    {
+      "key": "beijing",
+      "name": "Peking",
+      "subname": "Čína",
+      "lat": 39.9042,
+      "lon": 116.4074,
+      "type": "text",
+      "side": "right",
+      "x": "6%",
+      "top": "51%"
+    },
+    {
+      "key": "sardinia",
+      "name": "Sardínia",
+      "subname": "Taliansko",
+      "lat": 40.12,
+      "lon": 9.01,
+      "type": "text",
+      "side": "right",
+      "x": "6%",
+      "top": "60%"
     }
   ],
   "GLOBE_RADIUS": 12,
@@ -122,4 +175,3 @@ const config = {
   }
 };
 export default config;
-

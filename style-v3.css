@@ -11,3 +11,10 @@
 .journey-modal-media{overflow:hidden;min-height:0}.journey-modal-media img,.journey-modal-media iframe{position:absolute;inset:0;display:block;min-height:0}.intro-media img{object-position:50% 68%}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{transition:none!important}}
 
+
+/* Twelve destinations, six accessible labels on each side. */
+.city-label .city-name{font-size:clamp(23px,2.6vw,36px)}
+.memory #modal-location{line-height:1.5;max-width:245px}
+#media-error.empty-memory{font:italic 46px 'Cormorant Garamond',serif;color:#77796f}
+@media(max-width:767px){.city-label .city-name{font-size:21px}.city-label .city-subname{font-size:6px}.city-label{padding:7px 0;min-width:65px}.city-label .city-subname{margin-top:5px}}
+@media(max-height:550px){.city-label .city-name{font-size:21px}.city-label{padding:3px 0}.city-label .city-subname{margin-top:3px;font-size:6px}.city-label:after{margin-top:3px}}
