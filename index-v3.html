@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="sk">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#f5f4f0"><meta name="description" content="Simona & Martin — A journey of us — 30. 04. 2027">
+<title>Simona & Martin — A journey of us</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Allura&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>body{margin:0;background:#f5f4f0}#interactive-preloader{position:fixed;inset:0;z-index:100;background:#f5f4f0;display:grid;place-content:center}[hidden]{display:none!important}</style>
+</head>
+<body class="loading" data-state="loading">
+<div id="interactive-preloader" aria-label="Načítavanie"><span class="preloader-monogram">S & M</span><div id="loading-ring"><span id="preloader-percentage" role="status">0%</span></div><button id="pl-skip-btn">Preskočiť</button></div>
+<header id="persistent-header" inert><button id="header-home" aria-label="Simona a Martin — späť na intro">S<span>&</span>M</button><span class="header-subtitle">A journey of us</span><span class="header-date">30 · 04 · 2027</span></header>
+<main id="app">
+<section id="intro-overlay" class="screen" aria-label="Intro" inert>
+<div class="intro-media"><img id="intro-poster" src="./photos/07-florence-engagement.jpeg" alt="Simona a Martin vo Florencii" fetchpriority="high"><video id="intro-video-bg" muted playsinline hidden></video></div>
+<div id="intro-copy" aria-hidden="true"><p class="sub-line">Dve cesty.</p><p class="sub-line">Jeden spoločný príbeh.</p></div>
+<div class="title-layout"><p class="eyebrow">A journey of us</p><h1><span>Simona</span><em>&</em><span>Martin</span></h1><button id="next-btn" class="outline-button">Explore <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 18 18 6M6 6h12v12"/></svg></button></div>
+<div class="intro-caption"><span>Firenze, Italia</span><span>30 · 04 · 2027</span></div>
+</section>
+<section id="journey-scene" class="screen" aria-label="Journey — naše spoločné cesty" aria-hidden="true" inert>
+<canvas id="three-canvas" aria-label="Glóbus: potiahnutím ho otočíte; mesto môžete vybrať aj tlačidlom"></canvas>
+<svg id="svg-canvas" aria-hidden="true"><line id="memory-connector"/></svg><div id="label-layer" aria-label="Mestá"></div>
+<div id="journey-instruction"><svg viewBox="0 0 40 24" aria-hidden="true"><path d="M8 12h24M13 7l-5 5 5 5m14-10 5 5-5 5"/></svg><p>Roztočte glóbus a objavte naše spoločné chvíle.<br><span>Vyberte mesto a začnite.</span></p></div>
+<p id="globe-fallback" hidden>Glóbus sa nepodarilo zobraziť. Spomienky otvoríte výberom mesta.</p>
+<section id="modal" class="memory" aria-labelledby="modal-city" aria-hidden="true" inert>
+<div class="memory-top"><span id="memory-number"></span><button id="video-stop-btn" class="icon-button" aria-label="Zatvoriť spomienku"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div>
+<div class="journey-modal-media"><img id="modal-image" alt="" hidden><iframe id="modal-instagram" title="Tokyo — Japan Reel" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen hidden></iframe><p id="media-error" hidden>Fotografiu sa nepodarilo načítať.</p></div>
+<div class="memory-bottom"><div><h2 id="modal-city" tabindex="-1"></h2><p id="modal-location"></p></div><button id="video-skip-btn" class="text-button">Ďalšia <span aria-hidden="true">↗</span></button></div><a id="instagram-link" target="_blank" rel="noopener noreferrer" hidden>Otvoriť Reel na Instagrame ↗</a>
+</section></section>
+<section id="transition-screen" class="screen transition-screen" aria-label="Začiatok Journey" aria-hidden="true" inert><div class="transition-text"><p class="trans-line">Roztočte glóbus a objavte naše spoločné chvíle.</p><p class="trans-line">Vyberte mesto a začnite.</p></div></section>
+<section id="final-transition-screen" class="screen transition-screen" aria-label="Naše nové dobrodružstvo" aria-hidden="true" inert><div class="transition-text"><p class="trans-line">And now,</p><p class="trans-line">Our new adventure begins.</p></div></section>
+<section id="wedding-handoff" class="screen" aria-label="Pokračovanie na svadobnú stránku" aria-hidden="true" inert><p class="eyebrow">30 · 04 · 2027</p><h2>Simona <em>&</em> Martin</h2><p class="handoff-mark">S & M</p><a href="https://samsvadba.github.io/svadba/" class="outline-button">Pokračovať na svadobný web <span aria-hidden="true">↗</span></a></section>
+</main>
+<nav id="bottom-nav" aria-label="Navigácia príbehu" inert><div class="nav-labels"><button id="nav-intro" class="nav-item" aria-current="step">INTRO</button><button id="nav-journey" class="nav-item">JOURNEY <span id="journey-count"></span></button><button id="nav-wedding" class="nav-item">WEDDING</button></div><div class="nav-progress" aria-hidden="true"><span id="nav-fill"></span><i class="nav-dot active"></i><i class="nav-dot"></i><i class="nav-dot"></i></div></nav>
+<p id="app-status" class="sr-only" role="status" aria-live="polite"></p>
+<noscript><div class="no-script">Simona & Martin<br>Na zobrazenie Journey zapnite JavaScript.<br><a href="https://samsvadba.github.io/svadba/">Prejsť na svadobný web</a></div></noscript>
+<script type="module" src="./main-v3.js"></script>
+</body></html>
+
