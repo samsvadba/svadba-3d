@@ -11,7 +11,7 @@
 
   <meta
     name="theme-color"
-    content="#11130f"
+    content="#f7f7f5"
   />
 
   <meta
@@ -270,17 +270,11 @@
 
       <div class="globe-sticky">
 
-
-        <!-- WebGL globe -->
-
         <canvas
           id="globe-canvas"
           aria-label="Interaktívny glóbus našich ciest"
         ></canvas>
 
-
-
-        <!-- atmosphere -->
 
         <div class="globe-atmosphere"></div>
 
@@ -313,10 +307,9 @@
         </div>
 
 
-
-        <!-- =================================================
-             LOCATION NAVIGATION
-        ================================================== -->
+        <!-- ===============================================
+             DESTINATIONS
+        ================================================ -->
 
         <div
           class="city-list"
@@ -385,10 +378,22 @@
 
           <button
             type="button"
-            data-city="florence"
+            data-city="japan"
           >
             <span>
               06
+            </span>
+
+            Japan
+          </button>
+
+
+          <button
+            type="button"
+            data-city="florence"
+          >
+            <span>
+              07
             </span>
 
             Firenze
@@ -398,9 +403,9 @@
 
 
 
-        <!-- =================================================
-             ACTIVE MEMORY
-        ================================================== -->
+        <!-- ===============================================
+             MEMORY CARD
+        ================================================ -->
 
         <article
           class="memory-card"
@@ -435,7 +440,7 @@
               class="memory-number"
               id="memory-number"
             >
-              04 / 06
+              04 / 07
             </span>
 
 
@@ -463,6 +468,17 @@
             </p>
 
 
+            <a
+              class="memory-link"
+              id="memory-link"
+              href="#"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              WATCH REEL ↗
+            </a>
+
+
             <div class="memory-coordinates">
 
               <span id="memory-lat">
@@ -481,9 +497,9 @@
 
 
 
-        <!-- =================================================
-             MOBILE CITY TRIGGER
-        ================================================== -->
+        <!-- ===============================================
+             MOBILE DESTINATION SELECT
+        ================================================ -->
 
         <button
           class="mobile-city-button"
@@ -500,6 +516,7 @@
           </strong>
 
         </button>
+
 
 
         <div class="globe-progress">
@@ -622,7 +639,6 @@
           </figcaption>
 
         </figure>
-
 
       </div>
 
@@ -864,7 +880,6 @@
       </a>
 
     </section>
-
 
   </main>
 
