@@ -1842,3 +1842,259 @@ button:focus-visible,
   }
 
 }
+/* =========================================================
+   JOURNEY — REFERENCE LOOK
+   city cards + globe connectors
+========================================================= */
+
+.journey-city-connector {
+  stroke: rgba(23, 25, 20, 0.24);
+  stroke-width: 0.75;
+
+  vector-effect:
+    non-scaling-stroke;
+
+  pointer-events: none;
+
+  transition:
+    opacity 0.22s ease;
+}
+
+
+/* CITY CARD */
+
+.label {
+  position: absolute;
+
+  min-width: 118px;
+
+  padding:
+    9px
+    15px
+    8px;
+
+  border:
+    1px solid
+    rgba(23, 25, 20, 0.24);
+
+  background:
+    rgba(250, 249, 245, 0.82);
+
+  backdrop-filter:
+    blur(3px);
+
+  -webkit-backdrop-filter:
+    blur(3px);
+
+  text-align: center;
+
+  white-space: nowrap;
+
+  font-family:
+    var(--sans);
+
+  font-size:
+    9px;
+
+  font-weight:
+    500;
+
+  line-height:
+    1;
+
+  letter-spacing:
+    0.18em;
+
+  text-transform:
+    uppercase;
+
+  box-shadow:
+    none;
+
+  cursor:
+    pointer;
+
+  user-select:
+    none;
+
+  transition:
+    background 0.22s ease,
+    border-color 0.22s ease;
+}
+
+
+/* remove original round dot */
+
+.label::before {
+
+  content: "";
+
+  position: absolute;
+
+  top: -1px;
+  bottom: -1px;
+
+  left: auto;
+  right: -4px;
+
+  width: 4px;
+  height: auto;
+
+  border-radius: 0;
+
+  transform: none;
+
+  background:
+    rgba(23, 25, 20, 0.78);
+
+}
+
+
+/* right-side labels */
+
+.label[data-side="right"]::before {
+
+  left: -4px;
+  right: auto;
+
+}
+
+
+/* do not enlarge the side marker */
+
+.label:hover::before {
+
+  transform:
+    none;
+
+}
+
+
+.label:hover,
+.label.active {
+
+  background:
+    rgba(255, 255, 255, 0.94);
+
+  border-color:
+    rgba(23, 25, 20, 0.42);
+
+}
+
+
+/* =========================================================
+   SELECT CITY TEXT
+========================================================= */
+
+.journey-instruction {
+
+  bottom:
+    105px;
+
+  width:
+    auto;
+
+}
+
+
+.journey-instruction-icon {
+
+  display:
+    none;
+
+}
+
+
+.journey-instruction p {
+
+  display:
+    block;
+
+  margin:
+    0;
+
+  font-size:
+    9px;
+
+  font-weight:
+    500;
+
+  letter-spacing:
+    0.25em;
+
+  color:
+    rgba(23, 25, 20, 0.48);
+
+  text-align:
+    center;
+
+}
+
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media
+(max-width: 767px) {
+
+  .label {
+
+    min-width:
+      105px;
+
+    padding:
+      8px
+      10px
+      7px;
+
+    font-size:
+      7.5px;
+
+    letter-spacing:
+      0.16em;
+
+  }
+
+
+  .label::before {
+
+    right:
+      -3px;
+
+    width:
+      3px;
+
+  }
+
+
+  .label[data-side="right"]::before {
+
+    right:
+      auto;
+
+    left:
+      -3px;
+
+  }
+
+
+  .journey-instruction {
+
+    bottom:
+      88px;
+
+  }
+
+
+  .journey-instruction p {
+
+    font-size:
+      7.5px;
+
+    letter-spacing:
+      0.22em;
+
+  }
+
+}
