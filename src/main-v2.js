@@ -1383,7 +1383,8 @@ function createMarkers() {
 
       label.className =
         'label'
-
+label.dataset.side =
+  location.side || 'left'
       label.textContent =
         location.name
 
