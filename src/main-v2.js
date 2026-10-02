@@ -3018,7 +3018,6 @@ labelLayer.style.visibility =
       }
     )
 
-  )
 
 }
 
