@@ -1,924 +1,859 @@
 import * as THREE from 'three'
-import './style.css'
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
+import { gsap } from 'gsap'
 
-const BASE = import.meta.env.BASE_URL
-
-const reducedMotion =
-  window.matchMedia(
-    '(prefers-reduced-motion: reduce)'
-  )
 
 /* =========================================================
-   DESTINATIONS
+   CONFIG
 ========================================================= */
 
-const cities = {
+const config =
+  window.WeddingApp?.config || {}
 
-  hlohovec: {
-    key: 'hlohovec',
-    number: '01 / 07',
-    title: 'Hlohovec',
-    country: 'Slovensko',
-    lat: 48.4317,
-    lng: 17.8031,
-    latLabel: '48.4317° N',
-    lngLabel: '17.8031° E',
-    image: '01-historic-selfie.jpeg',
-    text:
-      'Jeden z dvoch začiatkov nášho príbehu. Miesto, odkiaľ vyrazil Martin.'
-  },
+const translations =
+  config.translations?.sk || {}
 
-  cifer: {
-    key: 'cifer',
-    number: '02 / 07',
-    title: 'Cífer',
-    country: 'Slovensko',
-    lat: 48.315,
-    lng: 17.491,
-    latLabel: '48.3150° N',
-    lngLabel: '17.4910° E',
-    image: '08-formal-outdoor.jpeg',
-    text:
-      'Druhý začiatok. Miesto, odkiaľ do spoločného príbehu vykročila Simona.'
-  },
+const locations =
+  config.locations || []
 
-  london: {
-    key: 'london',
-    number: '03 / 07',
-    title: 'London',
-    country: 'United Kingdom',
-    lat: 51.5074,
-    lng: -0.1278,
-    latLabel: '51.5074° N',
-    lngLabel: '0.1278° W',
-    image: '02-west-ham.jpeg',
-    text:
-      'Futbal, mesto a ďalšia spoločná spomienka. Jedna z ciest, ktoré sú najlepšie vo dvojici.'
-  },
+const GLOBE_RADIUS =
+  config.GLOBE_RADIUS || 12
 
-  madeira: {
-    key: 'madeira',
-    number: '04 / 07',
-    title: 'Madeira',
-    country: 'Portugal',
-    lat: 32.7607,
-    lng: -16.9595,
-    latLabel: '32.7607° N',
-    lngLabel: '16.9595° W',
-    image: '03-madeira-waterfall.jpeg',
-    text:
-      'Hory, oceán, vodopády a chvíle, pri ktorých človek na všetko ostatné zabudne.'
-  },
+const BASE =
+  import.meta.env.BASE_URL
 
-  liverpool: {
-    key: 'liverpool',
-    number: '05 / 07',
-    title: 'Liverpool',
-    country: 'United Kingdom',
-    lat: 53.4084,
-    lng: -2.9916,
-    latLabel: '53.4084° N',
-    lngLabel: '2.9916° W',
-    image: '06-liverpool-waterfront.jpeg',
-    text:
-      'Aj keď počasie nebolo vždy dokonalé, spoločná cesta áno.'
-  },
+const WEDDING_URL =
+  'https://samsvadba.github.io/svadba/'
 
-  japan: {
-    key: 'japan',
-    number: '06 / 07',
-    title: 'Tokyo',
-    country: 'Japan',
-    lat: 35.6762,
-    lng: 139.6503,
-    latLabel: '35.6762° N',
-    lngLabel: '139.6503° E',
-    image: null,
-    text:
-      'Jedna z ciest na druhý koniec sveta. Tokyo, Japonsko — ďalšia spomienka, ktorú si chceme nechať navždy.',
-    instagramUrl:
-      'https://www.instagram.com/reel/DN_BgiWktOJ/',
-    instagramEmbedUrl:
-      'https://www.instagram.com/reel/DN_BgiWktOJ/embed/'
-  },
-
-  florence: {
-    key: 'florence',
-    number: '07 / 07',
-    title: 'Firenze',
-    country: 'Italia',
-    lat: 43.7696,
-    lng: 11.2558,
-    latLabel: '43.7696° N',
-    lngLabel: '11.2558° E',
-    image: '07-florence-engagement.jpeg',
-    text:
-      'Miesto, kde jedna otázka zmenila ďalšiu cestu. Florencia, 1. apríla 2026.'
-  }
-
-}
-
-const cityOrder = [
-  'hlohovec',
-  'cifer',
-  'london',
-  'madeira',
-  'liverpool',
-  'japan',
-  'florence'
-]
 
 /* =========================================================
    DOM
 ========================================================= */
 
-const root = document.documentElement
-const body = document.body
+const body =
+  document.body
+
+const preloader =
+  document.getElementById(
+    'interactive-preloader'
+  )
+
+const loadingRing =
+  document.getElementById(
+    'loading-ring'
+  )
+
+const preloaderPercentage =
+  document.getElementById(
+    'preloader-percentage'
+  )
+
+const preloaderSkip =
+  document.getElementById(
+    'pl-skip-btn'
+  )
+
+
+const introOverlay =
+  document.getElementById(
+    'intro-overlay'
+  )
+
+const introOpening =
+  document.getElementById(
+    'intro-opening'
+  )
+
+const introStory =
+  document.getElementById(
+    'intro-story'
+  )
+
+const introPoster =
+  document.getElementById(
+    'intro-poster'
+  )
+
+const introVideo =
+  document.getElementById(
+    'intro-video-bg'
+  )
+
+const nextBtn =
+  document.getElementById(
+    'next-btn'
+  )
+
+
+const transitionScreen =
+  document.getElementById(
+    'transition-screen'
+  )
+
+const finalTransitionScreen =
+  document.getElementById(
+    'final-transition-screen'
+  )
+
+const journeyScene =
+  document.getElementById(
+    'journey-scene'
+  )
 
 const canvas =
-  document.querySelector(
-    '#globe-canvas'
+  document.getElementById(
+    'three-canvas'
   )
 
-const globeSection =
-  document.querySelector(
-    '#globe-section'
+const svgCanvas =
+  document.getElementById(
+    'svg-canvas'
   )
 
-const globeSticky =
-  document.querySelector(
-    '.globe-sticky'
+const labelLayer =
+  document.getElementById(
+    'label-layer'
   )
 
-const florenceSection =
-  document.querySelector(
-    '.florence'
+const journeyInstruction =
+  document.getElementById(
+    'journey-instruction'
   )
 
-const memoryCard =
-  document.querySelector(
-    '#memory-card'
+
+const modal =
+  document.getElementById(
+    'modal'
   )
 
-const memoryPhoto =
-  document.querySelector(
-    '.memory-photo'
+const modalImage =
+  document.getElementById(
+    'modal-image'
   )
 
-const memoryImage =
-  document.querySelector(
-    '#memory-image'
+const modalInstagram =
+  document.getElementById(
+    'modal-instagram'
   )
 
-const memoryNumber =
-  document.querySelector(
-    '#memory-number'
+const modalCity =
+  document.getElementById(
+    'modal-city'
   )
 
-const memoryCountry =
-  document.querySelector(
-    '#memory-country'
+const modalLocation =
+  document.getElementById(
+    'modal-location'
   )
 
-const memoryTitle =
-  document.querySelector(
-    '#memory-title'
+const modalClose =
+  document.getElementById(
+    'video-stop-btn'
   )
 
-const memoryText =
-  document.querySelector(
-    '#memory-text'
+const modalSkip =
+  document.getElementById(
+    'video-skip-btn'
   )
 
-const memoryLink =
-  document.querySelector(
-    '#memory-link'
+
+const weddingHandoff =
+  document.getElementById(
+    'wedding-handoff'
   )
 
-const memoryLat =
-  document.querySelector(
-    '#memory-lat'
+
+const navIntro =
+  document.getElementById(
+    'nav-intro'
   )
 
-const memoryLng =
-  document.querySelector(
-    '#memory-lng'
+const navJourney =
+  document.getElementById(
+    'nav-journey'
   )
 
-const memoryClose =
-  document.querySelector(
-    '#memory-close'
+const navWedding =
+  document.getElementById(
+    'nav-wedding'
   )
 
-const cityButtons = [
-  ...document.querySelectorAll(
-    '.city-list [data-city]'
+const navFill =
+  document.getElementById(
+    'nav-fill'
   )
+
+const navDots = [
+  document.getElementById('dot-1'),
+  document.getElementById('dot-2'),
+  document.getElementById('dot-3')
 ]
 
-const mobileCityButton =
-  document.querySelector(
-    '#mobile-city-button'
+
+const headerHome =
+  document.getElementById(
+    'header-home'
   )
 
-const loaderProgress =
-  document.querySelector(
-    '#loader-progress'
+const muteBtn =
+  document.getElementById(
+    'mute-btn'
   )
 
-const loaderPercent =
-  document.querySelector(
-    '#loader-percent'
+const bgm =
+  document.getElementById(
+    'bgm'
   )
 
-const referenceHero =
-  document.querySelector(
-    '.hero-reference'
-  )
-
-const referenceImage =
-  document.querySelector(
-    '.hero-reference-media img'
-  )
-
-const referenceIntro =
-  document.querySelector(
-    '.hero-reference-intro'
-  )
-
-const referenceStory =
-  document.querySelector(
-    '.hero-reference-story'
-  )
-
-const referenceExplore =
-  document.querySelector(
-    '.hero-reference-explore'
-  )
 
 /* =========================================================
-   RUNTIME STYLES
+   STATE
 ========================================================= */
 
-const runtimeStyle =
-  document.createElement(
-    'style'
+const reducedMotion =
+  window.matchMedia(
+    '(prefers-reduced-motion: reduce)'
+  ).matches
+
+const mobileQuery =
+  window.matchMedia(
+    '(max-width: 767px)'
   )
 
-runtimeStyle.textContent = `
+let isMobile =
+  mobileQuery.matches
 
-.instagram-reel-wrap {
-  position: absolute;
-  inset: 0;
-  z-index: 2;
+let mode =
+  'intro'
 
-  display: none;
-
-  overflow: hidden;
-
-  background: #fff;
-}
-
-.memory-photo.is-instagram
-.instagram-reel-wrap {
-  display: block;
-}
-
-.memory-photo.is-instagram
-#memory-image {
-  display: none !important;
-}
-
-.instagram-reel-wrap iframe {
-  display: block;
-
-  width: 100%;
-  height: 100%;
-
-  border: 0;
-
-  background: #fff;
-}
-
-.instagram-fallback {
-  position: absolute;
-
-  left: 10px;
-  right: 10px;
-  bottom: 8px;
-
-  z-index: 5;
-
-  display: flex;
-  justify-content: center;
-
-  pointer-events: none;
-}
-
-.instagram-fallback a {
-  pointer-events: auto;
-
-  padding: 8px 12px;
-
-  border:
-    1px solid
-    rgba(0,0,0,.14);
-
-  background:
-    rgba(255,255,255,.94);
-
-  color: #11130f;
-
-  font-size: 7px;
-
-  font-weight: 600;
-
-  letter-spacing: .12em;
-
-  text-transform: uppercase;
-}
-
-.memory-connector {
-  position: absolute;
-
-  inset: 0;
-
-  z-index: 24;
-
-  width: 100%;
-  height: 100%;
-
-  overflow: visible;
-
-  pointer-events: none;
-
-  opacity: 0;
-
-  transition:
-    opacity .3s ease;
-}
-
-.memory-connector.is-visible {
-  opacity: 1;
-}
-
-.memory-connector line {
-  stroke:
-    rgba(20,22,19,.38);
-
-  stroke-width: 1;
-
-  vector-effect:
-    non-scaling-stroke;
-}
-
-.memory-connector circle {
-  fill: #171714;
-}
-
-.globe-start-message {
-  position: absolute;
-
-  left: 50%;
-  bottom: 76px;
-
-  z-index: 11;
-
-  transform:
-    translateX(-50%);
-
-  white-space: nowrap;
-
-  color:
-    rgba(17,19,15,.48);
-
-  font-size: 7px;
-
-  font-weight: 500;
-
-  letter-spacing: .2em;
-
-  text-transform: uppercase;
-
-  pointer-events: none;
-
-  transition:
-    opacity .3s ease;
-}
-
-.mobile-city-menu {
-  position: absolute;
-
-  left: 17px;
-  right: 17px;
-  bottom: 112px;
-
-  z-index: 40;
-
-  display: none;
-
-  max-height: 56svh;
-
-  overflow: auto;
-
-  padding: 8px 18px;
-
-  background:
-    rgba(247,246,242,.97);
-
-  box-shadow:
-    0 20px 70px
-    rgba(20,22,19,.12);
-
-  opacity: 0;
-
-  visibility: hidden;
-
-  transform:
-    translateY(22px);
-
-  transition:
-    opacity .3s ease,
-    transform .4s cubic-bezier(.22,1,.36,1),
-    visibility .3s ease;
-}
-
-.mobile-city-menu.is-open {
-  opacity: 1;
-
-  visibility: visible;
-
-  transform:
-    translateY(0);
-}
-
-.mobile-city-menu button {
-  display: grid;
-
-  grid-template-columns:
-    35px 1fr auto;
-
-  align-items: center;
-
-  width: 100%;
-
-  padding: 15px 0;
-
-  border-bottom:
-    1px solid
-    rgba(20,22,19,.1);
-
-  color: #171714;
-
-  text-align: left;
-}
-
-.mobile-city-menu button:last-child {
-  border-bottom: 0;
-}
-
-.mobile-city-menu span {
-  font-size: 7px;
-
-  letter-spacing: .15em;
-
-  opacity: .45;
-}
-
-.mobile-city-menu strong {
-  font-family:
-    "Cormorant Garamond",
-    Georgia,
-    serif;
-
-  font-size: 27px;
-
-  font-weight: 400;
-}
-
-.mobile-city-menu i {
-  font-size: 11px;
-
-  font-style: normal;
-
-  opacity: .5;
-}
-
-@media (max-width:700px) {
-
-  .mobile-city-menu {
-    display: block;
-  }
-
-  .memory-connector {
-    display: none;
-  }
-
-  .globe-start-message {
-    bottom: 118px;
-
-    font-size: 6px;
-  }
-
-}
-
-`
-
-document.head.appendChild(
-  runtimeStyle
-)
-
-/* =========================================================
-   INSTAGRAM REEL
-========================================================= */
-
-const instagramWrap =
-  document.createElement(
-    'div'
-  )
-
-instagramWrap.className =
-  'instagram-reel-wrap'
-
-instagramWrap.innerHTML = `
-
-  <iframe
-    id="instagram-reel-frame"
-    title="Japan Instagram Reel"
-    loading="lazy"
-    allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
-    allowfullscreen
-  ></iframe>
-
-  <div class="instagram-fallback">
-
-    <a
-      id="instagram-fallback-link"
-      href="https://www.instagram.com/reel/DN_BgiWktOJ/"
-      target="_blank"
-      rel="noopener noreferrer"
-    >
-      OPEN ON INSTAGRAM ↗
-    </a>
-
-  </div>
-
-`
-
-memoryPhoto
-  ?.appendChild(
-    instagramWrap
-  )
-
-const instagramFrame =
-  instagramWrap
-    .querySelector(
-      '#instagram-reel-frame'
-    )
-
-const instagramFallbackLink =
-  instagramWrap
-    .querySelector(
-      '#instagram-fallback-link'
-    )
-
-/* =========================================================
-   CONNECTOR
-========================================================= */
-
-const SVG_NS =
-  'http://www.w3.org/2000/svg'
-
-const connectorSvg =
-  document.createElementNS(
-    SVG_NS,
-    'svg'
-  )
-
-connectorSvg.setAttribute(
-  'class',
-  'memory-connector'
-)
-
-connectorSvg.setAttribute(
-  'aria-hidden',
-  'true'
-)
-
-connectorSvg.innerHTML = `
-  <line
-    x1="0"
-    y1="0"
-    x2="0"
-    y2="0"
-  ></line>
-
-  <circle
-    cx="0"
-    cy="0"
-    r="3"
-  ></circle>
-`
-
-globeSticky
-  ?.appendChild(
-    connectorSvg
-  )
-
-const connectorLine =
-  connectorSvg
-    .querySelector(
-      'line'
-    )
-
-const connectorDot =
-  connectorSvg
-    .querySelector(
-      'circle'
-    )
-
-/* =========================================================
-   START MESSAGE
-========================================================= */
-
-const startMessage =
-  document.createElement(
-    'div'
-  )
-
-startMessage.className =
-  'globe-start-message'
-
-startMessage.textContent =
-  'SELECT A CITY TO START'
-
-globeSticky
-  ?.appendChild(
-    startMessage
-  )
-
-/* =========================================================
-   MOBILE MENU
-========================================================= */
-
-const mobileMenu =
-  document.createElement(
-    'div'
-  )
-
-mobileMenu.className =
-  'mobile-city-menu'
-
-mobileMenu.innerHTML =
-  cityOrder
-    .map(
-      key => {
-
-        const city =
-          cities[key]
-
-        return `
-          <button
-            type="button"
-            data-mobile-city="${key}"
-          >
-            <span>
-              ${city.number.split(' / ')[0]}
-            </span>
-
-            <strong>
-              ${city.title}
-            </strong>
-
-            <i>↗</i>
-          </button>
-        `
-
-      }
-    )
-    .join('')
-
-globeSticky
-  ?.appendChild(
-    mobileMenu
-  )
-
-/* =========================================================
-   LOADER
-========================================================= */
-
-const preloadFiles = [
-  '01-historic-selfie.jpeg',
-  '02-west-ham.jpeg',
-  '03-madeira-waterfall.jpeg',
-  '04-madeira-swing.jpeg',
-  '06-liverpool-waterfront.jpeg',
-  '07-florence-engagement.jpeg',
-  '08-formal-outdoor.jpeg'
-]
-
-let loadedResources = 0
-
-function setLoaderProgress(
-  value
-) {
-
-  const progress =
-    Math.max(
-      0,
-      Math.min(
-        value,
-        100
-      )
-    )
-
-  if (
-    loaderProgress
-  ) {
-
-    loaderProgress.style.width =
-      `${progress}%`
-
-  }
-
-  if (
-    loaderPercent
-  ) {
-
-    loaderPercent.textContent =
-      `${Math.round(progress)}%`
-
-  }
-
-}
-
-function resourceLoaded() {
-
-  loadedResources += 1
-
-  setLoaderProgress(
-    (
-      loadedResources /
-      preloadFiles.length
-    ) *
-    88
-  )
-
-}
-
-function preloadImages() {
-
-  return Promise.allSettled(
-
-    preloadFiles.map(
-
-      file =>
-
-        new Promise(
-          resolve => {
-
-            const image =
-              new Image()
-
-            image.onload =
-              () => {
-
-                resourceLoaded()
-
-                resolve()
-
-              }
-
-            image.onerror =
-              () => {
-
-                resourceLoaded()
-
-                resolve()
-
-              }
-
-            image.src =
-              `${BASE}photos/${file}`
-
-          }
-        )
-
-    )
-
-  )
-
-}
-
-function finishLoader() {
-
-  setLoaderProgress(
-    100
-  )
-
-  window.setTimeout(
-    () => {
-
-      body
-        .classList
-        .remove(
-          'is-loading'
-        )
-
-      body
-        .classList
-        .add(
-          'is-loaded'
-        )
-
-    },
-    300
-  )
-
-}
-
-/* =========================================================
-   THREE STATE
-========================================================= */
-
-let renderer
-let scene
-let camera
-let worldGroup
-let globeSphere
-
-let globeVisible =
+let transitionRunning =
   false
 
-let activeCity =
+let introTimeline =
   null
 
-let dragging =
+let transitionTimeline =
+  null
+
+let finalTimeline =
+  null
+
+let selectedIndex =
+  -1
+
+let userMovedGlobe =
   false
 
-let dragDistance =
+const visited =
+  new Set()
+
+
+/* =========================================================
+   TRANSLATIONS
+========================================================= */
+
+function applyTranslations() {
+
+  document
+    .querySelectorAll('[data-t]')
+    .forEach(element => {
+
+      const key =
+        element.dataset.t
+
+      if (
+        key &&
+        translations[key]
+      ) {
+
+        element.innerHTML =
+          translations[key]
+
+      }
+
+    })
+
+}
+
+applyTranslations()
+
+
+/* =========================================================
+   ASSET PATH
+========================================================= */
+
+function resolveMedia(path) {
+
+  if (!path)
+    return ''
+
+  if (
+    /^https?:\/\//i.test(path)
+  ) {
+
+    return path
+
+  }
+
+  return (
+    BASE +
+    path.replace(/^\/+/, '')
+  )
+
+}
+
+
+/* =========================================================
+   PRELOADER
+========================================================= */
+
+let loadingFinished =
+  false
+
+let progress =
   0
 
-let pointerDownX =
-  0
 
-let pointerDownY =
-  0
+const progressTimer =
+  window.setInterval(() => {
 
-let previousPointerX =
-  0
+    if (
+      progress >= 91 ||
+      loadingFinished
+    )
+      return
 
-let previousPointerY =
-  0
+    progress +=
+      1 + Math.random() * 4
 
-let lastInteraction =
-  performance.now()
+    progress =
+      Math.min(progress, 91)
 
-const globeRadius =
-  1.42
+    updatePreloader(progress)
 
-const targetQuaternion =
-  new THREE.Quaternion()
+  }, 60)
 
-const markerObjects =
-  []
 
-const markerHitTargets =
+function updatePreloader(value) {
+
+  const safe =
+    Math.min(
+      100,
+      Math.max(0, value)
+    )
+
+  if (loadingRing) {
+
+    loadingRing.style.setProperty(
+      '--p',
+      `${safe}%`
+    )
+
+  }
+
+  if (preloaderPercentage) {
+
+    preloaderPercentage.textContent =
+      `${Math.floor(safe)}%`
+
+  }
+
+}
+
+
+function waitForPoster() {
+
+  if (
+    !introPoster ||
+    introPoster.complete
+  ) {
+
+    return Promise.resolve()
+
+  }
+
+  return new Promise(resolve => {
+
+    const done =
+      () => resolve()
+
+    introPoster.addEventListener(
+      'load',
+      done,
+      { once: true }
+    )
+
+    introPoster.addEventListener(
+      'error',
+      done,
+      { once: true }
+    )
+
+    setTimeout(
+      done,
+      1600
+    )
+
+  })
+
+}
+
+
+async function preparePage() {
+
+  const tasks = [
+    waitForPoster()
+  ]
+
+  if (
+    document.fonts?.ready
+  ) {
+
+    tasks.push(
+      document.fonts.ready
+    )
+
+  }
+
+  await Promise.race([
+
+    Promise.all(tasks),
+
+    new Promise(resolve => {
+
+      setTimeout(
+        resolve,
+        1800
+      )
+
+    })
+
+  ])
+
+  finishLoading()
+
+}
+
+
+function finishLoading() {
+
+  if (loadingFinished)
+    return
+
+  loadingFinished = true
+
+  clearInterval(
+    progressTimer
+  )
+
+  updatePreloader(100)
+
+  setTimeout(() => {
+
+    body.classList.remove(
+      'loading'
+    )
+
+    if (preloader) {
+
+      gsap.to(
+        preloader,
+        {
+          opacity: 0,
+          duration:
+            reducedMotion
+              ? 0.01
+              : 0.45,
+
+          ease:
+            'power2.out',
+
+          onComplete: () => {
+
+            preloader.remove()
+
+          }
+        }
+      )
+
+    }
+
+    playIntro()
+
+  }, reducedMotion ? 10 : 180)
+
+}
+
+
+if (preloaderSkip) {
+
+  setTimeout(() => {
+
+    preloaderSkip
+      .classList
+      .add('visible')
+
+  }, 700)
+
+
+  preloaderSkip.addEventListener(
+    'click',
+    event => {
+
+      event.stopPropagation()
+
+      finishLoading()
+
+    }
+  )
+
+}
+
+
+preparePage()
+
+
+/* =========================================================
+   INTRO
+========================================================= */
+
+function killIntroTimeline() {
+
+  if (introTimeline) {
+
+    introTimeline.kill()
+
+    introTimeline = null
+
+  }
+
+}
+
+
+function resetIntroElements() {
+
+  killIntroTimeline()
+
+  gsap.killTweensOf(
+    [
+      introOverlay,
+      introOpening,
+      '.sub-line',
+      '.title-layout'
+    ]
+  )
+
+  gsap.set(
+    introOverlay,
+    {
+      autoAlpha: 1
+    }
+  )
+
+  gsap.set(
+    introOpening,
+    {
+      autoAlpha: 1
+    }
+  )
+
+  gsap.set(
+    '.sub-line',
+    {
+      opacity: 0
+    }
+  )
+
+  gsap.set(
+    '.title-layout',
+    {
+      opacity: 0
+    }
+  )
+
+  gsap.set(
+    nextBtn,
+    {
+      pointerEvents: 'none'
+    }
+  )
+
+}
+
+
+function playIntro() {
+
+  mode =
+    'intro'
+
+  transitionRunning =
+    false
+
+  body.classList.remove(
+    'journey-mode',
+    'section-transition-active',
+    'wedding-trans-active'
+  )
+
+  body.classList.add(
+    'intro-mode'
+  )
+
+  setActiveNav(
+    'intro'
+  )
+
+  closeModal(
+    false
+  )
+
+  journeyInstruction
+    ?.classList
+    .remove('blinking')
+
+  resetIntroElements()
+
+
+  if (reducedMotion) {
+
+    gsap.set(
+      introOpening,
+      {
+        autoAlpha: 0
+      }
+    )
+
+    gsap.set(
+      '.title-layout',
+      {
+        opacity: 1
+      }
+    )
+
+    gsap.set(
+      nextBtn,
+      {
+        pointerEvents: 'auto'
+      }
+    )
+
+    return
+
+  }
+
+
+  const line1 =
+    document.querySelector(
+      '[data-t="introLine1"]'
+    )
+
+  const line2 =
+    document.querySelector(
+      '[data-t="introLine2"]'
+    )
+
+
+  introTimeline =
+    gsap.timeline()
+
+
+  introTimeline
+
+    .fromTo(
+      '.intro-main-title',
+      {
+        opacity: 0,
+        y: 18
+      },
+      {
+        opacity: 1,
+        y: 0,
+        duration: 1.25,
+        ease: 'power3.out'
+      }
+    )
+
+    .fromTo(
+      '#intro-opening > p',
+      {
+        opacity: 0,
+        y: 10
+      },
+      {
+        opacity: 0.8,
+        y: 0,
+        duration: 0.9,
+        ease: 'power2.out'
+      },
+      '-=0.75'
+    )
+
+    .to(
+      {},
+      {
+        duration: 1.25
+      }
+    )
+
+    .to(
+      introOpening,
+      {
+        autoAlpha: 0,
+        duration: 0.8,
+        ease: 'power2.inOut'
+      }
+    )
+
+    .to(
+      line1,
+      {
+        opacity: 1,
+        duration: 0.8,
+        ease: 'power2.inOut'
+      }
+    )
+
+    .to(
+      line1,
+      {
+        opacity: 0,
+        duration: 0.7,
+        delay: 0.85,
+        ease: 'power2.inOut'
+      }
+    )
+
+    .to(
+      line2,
+      {
+        opacity: 1,
+        duration: 0.8,
+        ease: 'power2.inOut'
+      }
+    )
+
+    .to(
+      line2,
+      {
+        opacity: 0,
+        duration: 0.7,
+        delay: 0.85,
+        ease: 'power2.inOut'
+      }
+    )
+
+    .to(
+      '.title-layout',
+      {
+        opacity: 1,
+        duration: 1.25,
+        ease: 'power2.out'
+      }
+    )
+
+    .set(
+      nextBtn,
+      {
+        pointerEvents: 'auto'
+      },
+      '<'
+    )
+
+}
+
+
+/* =========================================================
+   INTRO PARALLAX
+========================================================= */
+
+document.addEventListener(
+  'pointermove',
+  event => {
+
+    if (
+      mode !== 'intro' ||
+      isMobile
+    )
+      return
+
+    const x =
+      (
+        event.clientX /
+        window.innerWidth -
+        0.5
+      ) * -14
+
+    const y =
+      (
+        event.clientY /
+        window.innerHeight -
+        0.5
+      ) * -10
+
+    gsap.to(
+      [
+        introPoster,
+        introVideo
+      ],
+      {
+        x,
+        y,
+        duration: 1.1,
+        ease: 'power2.out',
+        overwrite: true
+      }
+    )
+
+  }
+)
+
+
+/* =========================================================
+   THREE.JS
+========================================================= */
+
+let scene
+let camera
+let renderer
+let controls
+
+let globeGroup
+let gridGroup
+let markerGroup
+
+let globeReady =
+  false
+
+let animationFrame =
+  null
+
+const markerData =
   []
 
 const raycaster =
   new THREE.Raycaster()
 
-const rayPointer =
+const pointer =
   new THREE.Vector2()
 
-const frontVector =
-  new THREE.Vector3(
-    0,
-    0,
-    1
-  )
+const worldTemp =
+  new THREE.Vector3()
 
-/* =========================================================
-   COORDINATES
-========================================================= */
 
-function latLngToVector(
+function latLonToVector3(
   lat,
-  lng,
-  radius = globeRadius
+  lon,
+  radius = GLOBE_RADIUS
 ) {
 
   const phi =
     THREE.MathUtils.degToRad(
-      90 -
-      lat
+      90 - lat
     )
 
   const theta =
     THREE.MathUtils.degToRad(
-      lng +
-      180
+      lon + 180
     )
 
   return new THREE.Vector3(
@@ -938,590 +873,625 @@ function latLngToVector(
 
 }
 
-/* =========================================================
-   LIGHTS
-========================================================= */
-
-function createLights() {
-
-  scene.add(
-    new THREE.AmbientLight(
-      0xffffff,
-      1.8
-    )
-  )
-
-  const key =
-    new THREE.DirectionalLight(
-      0xffffff,
-      1.3
-    )
-
-  key.position.set(
-    3,
-    4,
-    5
-  )
-
-  scene.add(
-    key
-  )
-
-  const fill =
-    new THREE.DirectionalLight(
-      0xdfe6df,
-      .65
-    )
-
-  fill.position.set(
-    -4,
-    -1,
-    3
-  )
-
-  scene.add(
-    fill
-  )
-
-}
 
 /* =========================================================
-   GLOBE
+   GLOBE GRID
 ========================================================= */
 
-function createGlobeSurface() {
+function createGlobeGrid() {
 
-  const geometry =
-    new THREE.SphereGeometry(
-      globeRadius,
-      96,
-      64
-    )
+  gridGroup =
+    new THREE.Group()
 
-  const material =
-    new THREE.MeshPhysicalMaterial({
 
-      color: 0xf7f7f4,
-
-      transparent: true,
-
-      opacity: .36,
-
-      roughness: 1,
-
-      metalness: 0,
-
-      depthWrite: true
-
-    })
-
-  globeSphere =
-    new THREE.Mesh(
-      geometry,
-      material
-    )
-
-  worldGroup.add(
-    globeSphere
-  )
-
-  const wireGeometry =
-    new THREE.SphereGeometry(
-      globeRadius *
-      1.003,
-      42,
-      28
-    )
-
-  const wireMaterial =
-    new THREE.MeshBasicMaterial({
-
-      color: 0x747874,
-
-      wireframe: true,
-
-      transparent: true,
-
-      opacity: .055,
-
-      depthWrite: false
-
-    })
-
-  worldGroup.add(
-    new THREE.Mesh(
-      wireGeometry,
-      wireMaterial
-    )
-  )
-
-}
-
-/* =========================================================
-   SURFACE DOTS
-========================================================= */
-
-function createSurfaceDots() {
-
-  const count =
-    window.innerWidth <
-    700
-      ? 600
-      : 950
-
-  const positions =
-    new Float32Array(
-      count *
-      3
-    )
-
-  const goldenAngle =
-    Math.PI *
-    (
-      3 -
-      Math.sqrt(5)
-    )
-
-  for (
-    let i = 0;
-    i < count;
-    i += 1
-  ) {
-
-    const y =
-      1 -
-      (
-        i /
-        (
-          count -
-          1
-        )
-      ) *
-      2
-
-    const radius =
-      Math.sqrt(
-        1 -
-        y *
-        y
-      )
-
-    const theta =
-      goldenAngle *
-      i
-
-    const point =
-      new THREE.Vector3(
-
-        Math.cos(theta) *
-        radius,
-
-        y,
-
-        Math.sin(theta) *
-        radius
-
-      )
-        .normalize()
-        .multiplyScalar(
-          globeRadius *
-          1.007
-        )
-
-    positions[
-      i *
-      3
-    ] =
-      point.x
-
-    positions[
-      i *
-      3 +
-      1
-    ] =
-      point.y
-
-    positions[
-      i *
-      3 +
-      2
-    ] =
-      point.z
-
-  }
-
-  const geometry =
-    new THREE.BufferGeometry()
-
-  geometry.setAttribute(
-
-    'position',
-
-    new THREE.BufferAttribute(
-      positions,
-      3
-    )
-
-  )
-
-  const material =
-    new THREE.PointsMaterial({
-
-      color: 0x4a4e4a,
-
-      size:
-        window.innerWidth <
-        700
-          ? .008
-          : .006,
-
-      transparent: true,
-
-      opacity: .13,
-
-      depthWrite: false
-
-    })
-
-  worldGroup.add(
-    new THREE.Points(
-      geometry,
-      material
-    )
-  )
-
-}
-
-/* =========================================================
-   GRATICULE
-========================================================= */
-
-function createGraticule() {
-
-  const material =
+  const normalMaterial =
     new THREE.LineBasicMaterial({
-
-      color: 0x676b67,
-
+      color: 0x6f736b,
       transparent: true,
-
-      opacity: .085,
-
+      opacity: 0.095,
       depthWrite: false
-
     })
 
-  const radius =
-    globeRadius *
-    1.009
 
-  ;[
-    -60,
-    -30,
-    0,
-    30,
-    60
-  ]
-    .forEach(
-      latitude => {
+  const strongMaterial =
+    new THREE.LineBasicMaterial({
+      color: 0x5c6058,
+      transparent: true,
+      opacity: 0.15,
+      depthWrite: false
+    })
 
-        const points = []
-
-        const latRad =
-          THREE.MathUtils
-            .degToRad(
-              latitude
-            )
-
-        const ringRadius =
-          Math.cos(
-            latRad
-          ) *
-          radius
-
-        const y =
-          Math.sin(
-            latRad
-          ) *
-          radius
-
-        for (
-          let i = 0;
-          i <= 150;
-          i += 1
-        ) {
-
-          const angle =
-            (
-              i /
-              150
-            ) *
-            Math.PI *
-            2
-
-          points.push(
-
-            new THREE.Vector3(
-
-              Math.cos(angle) *
-              ringRadius,
-
-              y,
-
-              Math.sin(angle) *
-              ringRadius
-
-            )
-
-          )
-
-        }
-
-        const geometry =
-          new THREE.BufferGeometry()
-            .setFromPoints(
-              points
-            )
-
-        worldGroup.add(
-          new THREE.Line(
-            geometry,
-            material
-          )
-        )
-
-      }
-    )
 
   for (
-    let longitude = -150;
-    longitude <= 180;
-    longitude += 30
+    let latitude = -75;
+    latitude <= 75;
+    latitude += 15
   ) {
 
     const points = []
 
-    const lngRad =
-      THREE.MathUtils
-        .degToRad(
-          longitude
-        )
-
     for (
-      let latitude = -90;
-      latitude <= 90;
-      latitude += 2
+      let longitude = -180;
+      longitude <= 180;
+      longitude += 3
     ) {
 
-      const latRad =
-        THREE.MathUtils
-          .degToRad(
-            latitude
-          )
-
       points.push(
-
-        new THREE.Vector3(
-
-          radius *
-          Math.cos(latRad) *
-          Math.sin(lngRad),
-
-          radius *
-          Math.sin(latRad),
-
-          radius *
-          Math.cos(latRad) *
-          Math.cos(lngRad)
-
+        latLonToVector3(
+          latitude,
+          longitude,
+          GLOBE_RADIUS + 0.012
         )
-
       )
 
     }
 
     const geometry =
       new THREE.BufferGeometry()
-        .setFromPoints(
-          points
+        .setFromPoints(points)
+
+    const line =
+      new THREE.Line(
+        geometry,
+        latitude === 0
+          ? strongMaterial
+          : normalMaterial
+      )
+
+    gridGroup.add(line)
+
+  }
+
+
+  for (
+    let longitude = -165;
+    longitude < 180;
+    longitude += 15
+  ) {
+
+    const points = []
+
+    for (
+      let latitude = -90;
+      latitude <= 90;
+      latitude += 3
+    ) {
+
+      points.push(
+        latLonToVector3(
+          latitude,
+          longitude,
+          GLOBE_RADIUS + 0.012
+        )
+      )
+
+    }
+
+    const geometry =
+      new THREE.BufferGeometry()
+        .setFromPoints(points)
+
+    const line =
+      new THREE.Line(
+        geometry,
+        longitude === 0
+          ? strongMaterial
+          : normalMaterial
+      )
+
+    gridGroup.add(line)
+
+  }
+
+
+  globeGroup.add(
+    gridGroup
+  )
+
+}
+
+
+/* =========================================================
+   COUNTRY OUTLINES
+========================================================= */
+
+async function createCountryOutlines() {
+
+  try {
+
+    const response =
+      await fetch(
+        'https://cdn.jsdelivr.net/gh/datasets/geo-countries@master/data/countries.geojson'
+      )
+
+    if (!response.ok)
+      return
+
+    const data =
+      await response.json()
+
+    const positions = []
+
+
+    function addRing(ring) {
+
+      if (
+        !Array.isArray(ring) ||
+        ring.length < 2
+      )
+        return
+
+
+      const stride =
+        Math.max(
+          1,
+          Math.floor(
+            ring.length / 180
+          )
         )
 
-    worldGroup.add(
-      new THREE.Line(
+
+      for (
+        let i = stride;
+        i < ring.length;
+        i += stride
+      ) {
+
+        const previous =
+          ring[
+            Math.max(
+              0,
+              i - stride
+            )
+          ]
+
+        const current =
+          ring[i]
+
+
+        if (
+          !previous ||
+          !current
+        )
+          continue
+
+
+        const lonA =
+          previous[0]
+
+        const latA =
+          previous[1]
+
+        const lonB =
+          current[0]
+
+        const latB =
+          current[1]
+
+
+        if (
+          Math.abs(
+            lonA - lonB
+          ) > 100
+        )
+          continue
+
+
+        const a =
+          latLonToVector3(
+            latA,
+            lonA,
+            GLOBE_RADIUS + 0.035
+          )
+
+        const b =
+          latLonToVector3(
+            latB,
+            lonB,
+            GLOBE_RADIUS + 0.035
+          )
+
+
+        positions.push(
+          a.x,
+          a.y,
+          a.z,
+          b.x,
+          b.y,
+          b.z
+        )
+
+      }
+
+    }
+
+
+    for (
+      const feature
+      of data.features || []
+    ) {
+
+      const geometry =
+        feature.geometry
+
+      if (!geometry)
+        continue
+
+
+      if (
+        geometry.type ===
+        'Polygon'
+      ) {
+
+        geometry.coordinates
+          .forEach(addRing)
+
+      }
+
+
+      if (
+        geometry.type ===
+        'MultiPolygon'
+      ) {
+
+        geometry.coordinates
+          .forEach(polygon => {
+
+            polygon
+              .forEach(addRing)
+
+          })
+
+      }
+
+    }
+
+
+    if (!positions.length)
+      return
+
+
+    const geometry =
+      new THREE.BufferGeometry()
+
+    geometry.setAttribute(
+      'position',
+      new THREE.Float32BufferAttribute(
+        positions,
+        3
+      )
+    )
+
+
+    const material =
+      new THREE.LineBasicMaterial({
+        color: 0x555a52,
+        transparent: true,
+        opacity: 0.24,
+        depthWrite: false
+      })
+
+
+    const countries =
+      new THREE.LineSegments(
         geometry,
         material
       )
+
+
+    globeGroup.add(
+      countries
+    )
+
+  }
+  catch (error) {
+
+    console.warn(
+      'Country outlines unavailable.',
+      error
     )
 
   }
 
 }
 
+
 /* =========================================================
-   CITY MARKERS
+   BACKGROUND DOTS
+========================================================= */
+
+function createBackgroundDots() {
+
+  const positions = []
+
+  const count =
+    isMobile
+      ? 80
+      : 150
+
+
+  for (
+    let i = 0;
+    i < count;
+    i++
+  ) {
+
+    const radius =
+      28 +
+      Math.random() * 55
+
+    const theta =
+      Math.random() *
+      Math.PI * 2
+
+    const phi =
+      Math.acos(
+        2 * Math.random() - 1
+      )
+
+
+    positions.push(
+
+      radius *
+      Math.sin(phi) *
+      Math.cos(theta),
+
+      radius *
+      Math.cos(phi),
+
+      radius *
+      Math.sin(phi) *
+      Math.sin(theta)
+
+    )
+
+  }
+
+
+  const geometry =
+    new THREE.BufferGeometry()
+
+  geometry.setAttribute(
+    'position',
+    new THREE.Float32BufferAttribute(
+      positions,
+      3
+    )
+  )
+
+
+  const material =
+    new THREE.PointsMaterial({
+      color: 0x74776f,
+      size:
+        isMobile
+          ? 0.035
+          : 0.045,
+
+      transparent: true,
+      opacity: 0.22,
+      depthWrite: false
+    })
+
+
+  const points =
+    new THREE.Points(
+      geometry,
+      material
+    )
+
+
+  scene.add(
+    points
+  )
+
+}
+
+
+/* =========================================================
+   DESTINATION MARKERS
 ========================================================= */
 
 function createMarkers() {
 
-  Object
-    .values(
-      cities
+  markerGroup =
+    new THREE.Group()
+
+  globeGroup.add(
+    markerGroup
+  )
+
+
+  const markerGeometry =
+    new THREE.SphereGeometry(
+      0.115,
+      16,
+      16
     )
-    .forEach(
-      (
-        city,
+
+
+  const hitGeometry =
+    new THREE.SphereGeometry(
+      0.48,
+      12,
+      12
+    )
+
+
+  locations.forEach(
+    (location, index) => {
+
+      const position =
+        latLonToVector3(
+          location.lat,
+          location.lon,
+          GLOBE_RADIUS + 0.11
+        )
+
+
+      const markerMaterial =
+        new THREE.MeshBasicMaterial({
+          color: 0x161812
+        })
+
+
+      const marker =
+        new THREE.Mesh(
+          markerGeometry,
+          markerMaterial
+        )
+
+      marker.position.copy(
+        position
+      )
+
+      marker.userData.index =
         index
-      ) => {
 
-        const position =
-          latLngToVector(
 
-            city.lat,
+      markerGroup.add(
+        marker
+      )
 
-            city.lng,
 
-            globeRadius *
-            1.018
+      const hit =
+        new THREE.Mesh(
+          hitGeometry,
+          new THREE.MeshBasicMaterial({
+            transparent: true,
+            opacity: 0,
+            depthWrite: false
+          })
+        )
 
+      hit.position.copy(
+        position
+      )
+
+      hit.userData.index =
+        index
+
+      markerGroup.add(
+        hit
+      )
+
+
+      const label =
+        document.createElement(
+          'div'
+        )
+
+      label.className =
+        'label'
+
+      label.textContent =
+        location.name
+
+      label.tabIndex =
+        0
+
+      label.setAttribute(
+        'role',
+        'button'
+      )
+
+      label.setAttribute(
+        'aria-label',
+        location.name
+      )
+
+
+      label.addEventListener(
+        'click',
+        () => {
+
+          selectLocation(
+            index
           )
 
-        const group =
-          new THREE.Group()
+        }
+      )
 
-        group.position.copy(
-          position
-        )
 
-        group.userData.cityKey =
-          city.key
+      label.addEventListener(
+        'keydown',
+        event => {
 
-        group.userData.phase =
-          index *
-          .8
+          if (
+            event.key === 'Enter' ||
+            event.key === ' '
+          ) {
 
-        const dot =
-          new THREE.Mesh(
+            event.preventDefault()
 
-            new THREE.SphereGeometry(
-              .024,
-              18,
-              18
-            ),
+            selectLocation(
+              index
+            )
 
-            new THREE.MeshBasicMaterial({
-              color:
-                0x141614
-            })
+          }
 
-          )
+        }
+      )
 
-        const ring =
-          new THREE.Mesh(
 
-            new THREE.SphereGeometry(
-              .038,
-              16,
-              16
-            ),
+      labelLayer.appendChild(
+        label
+      )
 
-            new THREE.MeshBasicMaterial({
 
-              color:
-                0x141614,
+      markerData.push({
+        location,
+        marker,
+        hit,
+        label
+      })
 
-              transparent:
-                true,
-
-              opacity:
-                .12,
-
-              depthWrite:
-                false
-
-            })
-
-          )
-
-        const hit =
-          new THREE.Mesh(
-
-            new THREE.SphereGeometry(
-              .085,
-              12,
-              12
-            ),
-
-            new THREE.MeshBasicMaterial({
-
-              transparent:
-                true,
-
-              opacity:
-                0,
-
-              depthWrite:
-                false
-
-            })
-
-          )
-
-        group.add(
-          ring
-        )
-
-        group.add(
-          dot
-        )
-
-        group.add(
-          hit
-        )
-
-        group.userData.ring =
-          ring
-
-        hit.userData.cityKey =
-          city.key
-
-        markerObjects.push(
-          group
-        )
-
-        markerHitTargets.push(
-          hit
-        )
-
-        worldGroup.add(
-          group
-        )
-
-      }
-    )
+    }
+  )
 
 }
 
+
 /* =========================================================
-   RESIZE
+   THREE INITIALIZATION
 ========================================================= */
 
-function resizeRenderer() {
+function ensureGlobe() {
 
-  if (
-    !renderer ||
-    !camera ||
-    !globeSticky
-  ) {
+  if (globeReady)
     return
-  }
 
-  const width =
-    globeSticky.clientWidth ||
-    window.innerWidth
+  globeReady = true
 
-  const height =
-    globeSticky.clientHeight ||
-    window.innerHeight
+
+  scene =
+    new THREE.Scene()
+
+
+  camera =
+    new THREE.PerspectiveCamera(
+      isMobile ? 34 : 31,
+      window.innerWidth /
+      window.innerHeight,
+      0.1,
+      400
+    )
+
+
+  camera.position.set(
+  0,
+  isMobile ? 1.2 : 0,
+  isMobile ? 78 : 58
+)
+
+
+  renderer =
+    new THREE.WebGLRenderer({
+      canvas,
+      alpha: true,
+      antialias: true
+    })
+
 
   renderer.setPixelRatio(
     Math.min(
@@ -1531,1981 +1501,2137 @@ function resizeRenderer() {
   )
 
   renderer.setSize(
-    width,
-    height,
+    window.innerWidth,
+    window.innerHeight,
     false
   )
 
-  camera.aspect =
-    width /
-    height
+  renderer.outputColorSpace =
+    THREE.SRGBColorSpace
 
-  camera.position.set(
 
-    0,
+  globeGroup =
+    new THREE.Group()
 
-    0,
-
-    window.innerWidth <
-    700
-      ? 5.7
-      : 6.65
-
+  scene.add(
+    globeGroup
   )
 
-  camera.updateProjectionMatrix()
 
-}
-
-/* =========================================================
-   FACE CITY
-========================================================= */
-
-function faceCoordinates(
-  lat,
-  lng,
-  immediate = false
-) {
-
-  if (
-    !worldGroup
-  ) {
-    return
-  }
-
-  const point =
-    latLngToVector(
-      lat,
-      lng,
-      1
+  const globeFill =
+    new THREE.Mesh(
+      new THREE.SphereGeometry(
+        GLOBE_RADIUS,
+        64,
+        64
+      ),
+      new THREE.MeshBasicMaterial({
+        color: 0xf0efe9,
+        transparent: true,
+        opacity: 0.16,
+        depthWrite: false
+      })
     )
-      .normalize()
 
-  const target =
-    new THREE.Quaternion()
-      .setFromUnitVectors(
-        point,
-        frontVector
-      )
-
-  targetQuaternion.copy(
-    target
+  globeGroup.add(
+    globeFill
   )
 
-  if (
-    immediate
-  ) {
 
-    worldGroup
-      .quaternion
-      .copy(
-        targetQuaternion
-      )
-
-  }
-
-}
-
-/* =========================================================
-   INSTAGRAM
-========================================================= */
-
-function stopInstagramVideo() {
-
-  if (
-    instagramFrame
-  ) {
-
-    instagramFrame.src =
-      'about:blank'
-
-  }
-
-  memoryPhoto
-    ?.classList
-    .remove(
-      'is-instagram'
+  const globeEdge =
+    new THREE.Mesh(
+      new THREE.SphereGeometry(
+        GLOBE_RADIUS + 0.018,
+        48,
+        48
+      ),
+      new THREE.MeshBasicMaterial({
+        color: 0x72766d,
+        wireframe: true,
+        transparent: true,
+        opacity: 0.035,
+        depthWrite: false
+      })
     )
 
-}
-
-function showInstagramVideo(
-  city
-) {
-
-  if (
-    !memoryPhoto ||
-    !instagramFrame
-  ) {
-    return
-  }
-
-  memoryPhoto
-    .classList
-    .add(
-      'is-instagram'
-    )
-
-  instagramFrame.src =
-    city.instagramEmbedUrl
-
-  if (
-    instagramFallbackLink
-  ) {
-
-    instagramFallbackLink.href =
-      city.instagramUrl
-
-  }
-
-}
-
-/* =========================================================
-   MEMORY CARD
-========================================================= */
-
-function updateActiveButtons(
-  key
-) {
-
-  cityButtons
-    .forEach(
-      button => {
-
-        button
-          .classList
-          .toggle(
-
-            'is-active',
-
-            button.dataset.city ===
-            key
-
-          )
-
-      }
-    )
-
-}
-
-function openMemory(
-  key
-) {
-
-  const city =
-    cities[key]
-
-  if (
-    !city ||
-    !memoryCard
-  ) {
-    return
-  }
-
-  activeCity =
-    key
-
-  lastInteraction =
-    performance.now()
-
-  if (
-    memoryNumber
-  ) {
-    memoryNumber.textContent =
-      city.number
-  }
-
-  if (
-    memoryCountry
-  ) {
-    memoryCountry.textContent =
-      city.country
-  }
-
-  if (
-    memoryTitle
-  ) {
-    memoryTitle.textContent =
-      city.title
-  }
-
-  if (
-    memoryText
-  ) {
-    memoryText.textContent =
-      city.text
-  }
-
-  if (
-    memoryLat
-  ) {
-    memoryLat.textContent =
-      city.latLabel
-  }
-
-  if (
-    memoryLng
-  ) {
-    memoryLng.textContent =
-      city.lngLabel
-  }
-
-  if (
-    city.instagramEmbedUrl
-  ) {
-
-    showInstagramVideo(
-      city
-    )
-
-    if (
-      memoryLink
-    ) {
-
-      memoryLink.href =
-        city.instagramUrl
-
-      memoryLink.style.display =
-        'inline-block'
-
-      memoryLink.textContent =
-        'WATCH REEL ↗'
-
-    }
-
-  } else {
-
-    stopInstagramVideo()
-
-    if (
-      memoryImage &&
-      city.image
-    ) {
-
-      memoryImage.src =
-        `${BASE}photos/${city.image}`
-
-      memoryImage.alt =
-        `${city.title} — Simona a Martin`
-
-      memoryImage.style.display =
-        ''
-
-    }
-
-    if (
-      memoryLink
-    ) {
-
-      memoryLink.style.display =
-        'none'
-
-    }
-
-  }
-
-  memoryCard
-    .classList
-    .add(
-      'is-open'
-    )
-
-  connectorSvg
-    .classList
-    .add(
-      'is-visible'
-    )
-
-  startMessage.style.opacity =
-    '0'
-
-  updateActiveButtons(
-    key
+  globeGroup.add(
+    globeEdge
   )
 
-  faceCoordinates(
-    city.lat,
-    city.lng
-  )
 
-  closeMobileMenu()
+  createGlobeGrid()
 
-}
+  createMarkers()
 
-function closeMemoryCard() {
+  createBackgroundDots()
 
-  activeCity =
-    null
+  createCountryOutlines()
 
-  memoryCard
-    ?.classList
-    .remove(
-      'is-open'
+
+  controls =
+    new OrbitControls(
+      camera,
+      renderer.domElement
     )
 
-  connectorSvg
-    .classList
-    .remove(
-      'is-visible'
-    )
 
-  startMessage.style.opacity =
-    '1'
-
-  updateActiveButtons(
-    null
-  )
-
-  stopInstagramVideo()
-
-}
-
-memoryClose
-  ?.addEventListener(
-    'click',
-    closeMemoryCard
-  )
-
-cityButtons
-  .forEach(
-    button => {
-
-      button
-        .addEventListener(
-          'click',
-          () => {
-
-            openMemory(
-              button.dataset.city
-            )
-
-          }
-        )
-
-    }
-  )
-
-/* =========================================================
-   MOBILE MENU
-========================================================= */
-
-function openMobileMenu() {
-
-  mobileMenu
-    .classList
-    .add(
-      'is-open'
-    )
-
-  const plus =
-    mobileCityButton
-      ?.querySelector(
-        'strong'
-      )
-
-  if (
-    plus
-  ) {
-
-    plus.textContent =
-      '×'
-
-  }
-
-}
-
-function closeMobileMenu() {
-
-  mobileMenu
-    .classList
-    .remove(
-      'is-open'
-    )
-
-  const plus =
-    mobileCityButton
-      ?.querySelector(
-        'strong'
-      )
-
-  if (
-    plus
-  ) {
-
-    plus.textContent =
-      '+'
-
-  }
-
-}
-
-mobileCityButton
-  ?.addEventListener(
-    'click',
-    () => {
-
-      if (
-        mobileMenu
-          .classList
-          .contains(
-            'is-open'
-          )
-      ) {
-
-        closeMobileMenu()
-
-      } else {
-
-        openMobileMenu()
-
-      }
-
-    }
-  )
-
-mobileMenu
-  .querySelectorAll(
-    '[data-mobile-city]'
-  )
-  .forEach(
-    button => {
-
-      button
-        .addEventListener(
-          'click',
-          () => {
-
-            openMemory(
-              button.dataset
-                .mobileCity
-            )
-
-          }
-        )
-
-    }
-  )
-
-/* =========================================================
-   DRAG
-========================================================= */
-
-function onPointerDown(
-  event
-) {
-
-  if (
-    !globeVisible ||
-    !worldGroup
-  ) {
-    return
-  }
-
-  dragging =
+  controls.enableDamping =
     true
 
-  dragDistance =
-    0
+  controls.dampingFactor =
+    0.045
 
-  pointerDownX =
-    event.clientX
-
-  pointerDownY =
-    event.clientY
-
-  previousPointerX =
-    event.clientX
-
-  previousPointerY =
-    event.clientY
-
-  lastInteraction =
-    performance.now()
-
-  canvas.style.cursor =
-    'grabbing'
-
-  try {
-
-    canvas.setPointerCapture(
-      event.pointerId
-    )
-
-  } catch {
-    // Safari fallback
-  }
-
-}
-
-function onPointerMove(
-  event
-) {
-
-  if (
-    !dragging ||
-    !worldGroup
-  ) {
-    return
-  }
-
-  const deltaX =
-    event.clientX -
-    previousPointerX
-
-  const deltaY =
-    event.clientY -
-    previousPointerY
-
-  dragDistance +=
-    Math.abs(
-      deltaX
-    ) +
-    Math.abs(
-      deltaY
-    )
-
-  previousPointerX =
-    event.clientX
-
-  previousPointerY =
-    event.clientY
-
-  const yaw =
-    new THREE.Quaternion()
-      .setFromAxisAngle(
-
-        new THREE.Vector3(
-          0,
-          1,
-          0
-        ),
-
-        deltaX *
-        .0055
-
-      )
-
-  const pitch =
-    new THREE.Quaternion()
-      .setFromAxisAngle(
-
-        new THREE.Vector3(
-          1,
-          0,
-          0
-        ),
-
-        deltaY *
-        (
-          window.innerWidth <
-          700
-            ? .0017
-            : .0038
-        )
-
-      )
-
-  targetQuaternion
-    .premultiply(
-      yaw
-    )
-
-  targetQuaternion
-    .premultiply(
-      pitch
-    )
-
-  targetQuaternion
-    .normalize()
-
-  if (
-    activeCity
-  ) {
-
-    closeMemoryCard()
-
-  }
-
-}
-
-function raycastCity(
-  event
-) {
-
-  if (
-    !renderer ||
-    !camera ||
-    !canvas
-  ) {
-    return
-  }
-
-  const rect =
-    canvas
-      .getBoundingClientRect()
-
-  rayPointer.x =
-    (
-      (
-        event.clientX -
-        rect.left
-      ) /
-      rect.width
-    ) *
-    2 -
-    1
-
-  rayPointer.y =
-    -(
-      (
-        event.clientY -
-        rect.top
-      ) /
-      rect.height
-    ) *
-    2 +
-    1
-
-  raycaster
-    .setFromCamera(
-      rayPointer,
-      camera
-    )
-
-  const intersections =
-    raycaster
-      .intersectObjects(
-        markerHitTargets,
-        false
-      )
-
-  if (
-    intersections.length
-  ) {
-
-    openMemory(
-      intersections[0]
-        .object
-        .userData
-        .cityKey
-    )
-
-  }
-
-}
-
-function onPointerUp(
-  event
-) {
-
-  if (
-    !dragging
-  ) {
-    return
-  }
-
-  dragging =
+  controls.enablePan =
     false
 
-  canvas.style.cursor =
-    'grab'
+  controls.enableZoom =
+    false
 
-  const movement =
-    Math.abs(
-      event.clientX -
-      pointerDownX
-    ) +
-    Math.abs(
-      event.clientY -
-      pointerDownY
-    )
+  controls.rotateSpeed =
+    isMobile
+      ? 0.42
+      : 0.34
 
-  if (
-    movement <
-    10 &&
-    dragDistance <
-    16
-  ) {
+  controls.autoRotate =
+    !reducedMotion
 
-    raycastCity(
-      event
-    )
+  controls.autoRotateSpeed =
+    0.38
 
-  }
 
-  lastInteraction =
-    performance.now()
-
-}
-
-canvas
-  ?.addEventListener(
-    'pointerdown',
-    onPointerDown
-  )
-
-canvas
-  ?.addEventListener(
-    'pointermove',
-    onPointerMove
-  )
-
-canvas
-  ?.addEventListener(
-    'pointerup',
-    onPointerUp
-  )
-
-canvas
-  ?.addEventListener(
-    'pointercancel',
+  controls.addEventListener(
+    'start',
     () => {
 
-      dragging =
+      userMovedGlobe =
+        true
+
+      controls.autoRotate =
         false
 
-      canvas.style.cursor =
-        'grab'
+      journeyInstruction
+        ?.classList
+        .remove('blinking')
 
     }
   )
 
-/* =========================================================
-   CONNECTOR POSITION
-========================================================= */
 
-function getActiveMarkerWorldPosition() {
+  addCanvasInteraction()
 
-  if (
-    !activeCity
-  ) {
-    return null
-  }
+  updateSvgViewBox()
 
-  const marker =
-    markerObjects
-      .find(
-        item =>
-          item.userData.cityKey ===
-          activeCity
-      )
-
-  if (
-    !marker
-  ) {
-    return null
-  }
-
-  const worldPosition =
-    new THREE.Vector3()
-
-  marker
-    .getWorldPosition(
-      worldPosition
-    )
-
-  return worldPosition
+  animateThree()
 
 }
+
+
+/* =========================================================
+   CANVAS CLICK
+========================================================= */
+
+function addCanvasInteraction() {
+
+  let startX = 0
+  let startY = 0
+
+
+  renderer.domElement
+    .addEventListener(
+      'pointerdown',
+      event => {
+
+        startX =
+          event.clientX
+
+        startY =
+          event.clientY
+
+      }
+    )
+
+
+  renderer.domElement
+    .addEventListener(
+      'pointerup',
+      event => {
+
+        const distance =
+          Math.hypot(
+            event.clientX - startX,
+            event.clientY - startY
+          )
+
+
+        if (
+          distance > 7 ||
+          transitionRunning
+        )
+          return
+
+
+        const rect =
+          renderer
+            .domElement
+            .getBoundingClientRect()
+
+
+        pointer.x =
+          (
+            (
+              event.clientX -
+              rect.left
+            ) /
+            rect.width
+          ) * 2 - 1
+
+
+        pointer.y =
+          -
+          (
+            (
+              event.clientY -
+              rect.top
+            ) /
+            rect.height
+          ) * 2 + 1
+
+
+        raycaster.setFromCamera(
+          pointer,
+          camera
+        )
+
+
+        const hits =
+          raycaster.intersectObjects(
+            markerData.map(
+              item => item.hit
+            ),
+            false
+          )
+
+
+        if (!hits.length)
+          return
+
+
+        selectLocation(
+          hits[0]
+            .object
+            .userData
+            .index
+        )
+
+      }
+    )
+
+}
+
+
+/* =========================================================
+   LABEL PROJECTION + CITY CONNECTORS
+========================================================= */
+
+const journeyConnectors =
+  new Map()
+
+
+function getJourneyConnector(index) {
+
+  if (
+    journeyConnectors.has(index)
+  ) {
+
+    return journeyConnectors.get(index)
+
+  }
+
+
+  const ns =
+    'http://www.w3.org/2000/svg'
+
+
+  const line =
+    document.createElementNS(
+      ns,
+      'line'
+    )
+
+
+  line.classList.add(
+    'journey-city-connector'
+  )
+
+
+  line.setAttribute(
+    'stroke',
+    'rgba(23, 25, 20, 0.28)'
+  )
+
+  line.setAttribute(
+    'stroke-width',
+    '0.8'
+  )
+
+  line.setAttribute(
+    'vector-effect',
+    'non-scaling-stroke'
+  )
+
+  line.style.pointerEvents =
+    'none'
+
+  line.style.opacity =
+    '0'
+
+
+  svgCanvas.prepend(
+    line
+  )
+
+
+  journeyConnectors.set(
+    index,
+    line
+  )
+
+
+  return line
+
+}
+
+
+function hideJourneyConnectors() {
+
+  journeyConnectors.forEach(
+    line => {
+
+      line.style.opacity =
+        '0'
+
+    }
+  )
+
+}
+
+
+function updateLabels() {
+
+  if (
+    !camera ||
+    !markerData.length
+  )
+    return
+
+
+  if (
+    mode !== 'journey'
+  ) {
+
+    markerData.forEach(
+      item => {
+
+        item.label.style.opacity =
+          '0'
+
+        item.label.style.pointerEvents =
+          'none'
+
+      }
+    )
+
+    hideJourneyConnectors()
+
+    return
+
+  }
+
+
+  const cameraDirection =
+    camera.position
+      .clone()
+      .normalize()
+
+
+  const sceneRect =
+    journeyScene
+      .getBoundingClientRect()
+
+
+  markerData.forEach(
+    (item, index) => {
+
+      const connector =
+        getJourneyConnector(
+          index
+        )
+
+
+      item.marker
+        .getWorldPosition(
+          worldTemp
+        )
+
+
+      const surfaceDirection =
+        worldTemp
+          .clone()
+          .normalize()
+
+
+      const visible =
+        surfaceDirection.dot(
+          cameraDirection
+        ) > 0.08
+
+
+      if (!visible) {
+
+        item.label.style.opacity =
+          '0'
+
+        item.label.style.pointerEvents =
+          'none'
+
+        connector.style.opacity =
+          '0'
+
+        return
+
+      }
+
+
+      const projected =
+        worldTemp
+          .clone()
+          .project(camera)
+
+
+      if (
+        projected.z > 1
+      ) {
+
+        item.label.style.opacity =
+          '0'
+
+        item.label.style.pointerEvents =
+          'none'
+
+        connector.style.opacity =
+          '0'
+
+        return
+
+      }
+
+
+      const markerX =
+        (
+          projected.x * 0.5 +
+          0.5
+        ) *
+        window.innerWidth
+
+
+      const markerY =
+        (
+          -projected.y * 0.5 +
+          0.5
+        ) *
+        window.innerHeight
+
+
+      const offset =
+        parseFloat(
+          item.location.x || '8'
+        )
+
+
+      const top =
+        parseFloat(
+          item.location.top || '50'
+        )
+
+
+      const labelX =
+        item.location.side === 'left'
+
+          ? sceneRect.left +
+            sceneRect.width *
+            offset /
+            100
+
+          : sceneRect.left +
+            sceneRect.width *
+            (
+              1 -
+              offset / 100
+            )
+
+
+      const labelY =
+        sceneRect.top +
+        sceneRect.height *
+        top /
+        100
+
+
+      item.label.style.left =
+        `${labelX}px`
+
+
+      item.label.style.top =
+        `${labelY}px`
+
+
+      item.label.style.transform =
+        item.location.side === 'left'
+
+          ? 'translate(0, -50%)'
+
+          : 'translate(-100%, -50%)'
+
+
+      item.label.style.opacity =
+        '1'
+
+
+      item.label.style.pointerEvents =
+        'auto'
+
+
+      const labelWidth =
+        item.label.offsetWidth
+
+
+      const lineEndX =
+        item.location.side === 'left'
+
+          ? labelX +
+            labelWidth +
+            4
+
+          : labelX -
+            labelWidth -
+            4
+
+
+      connector.setAttribute(
+        'x1',
+        markerX
+      )
+
+
+      connector.setAttribute(
+        'y1',
+        markerY
+      )
+
+
+      connector.setAttribute(
+        'x2',
+        lineEndX
+      )
+
+
+      connector.setAttribute(
+        'y2',
+        labelY
+      )
+
+
+      connector.style.opacity =
+        '1'
+
+    }
+  )
+
+}
+
+
+/* =========================================================
+   MODAL CONNECTOR
+========================================================= */
+
+let connectorPath =
+  null
+
+let connectorDot =
+  null
+
+
+function ensureConnector() {
+
+  if (
+    connectorPath &&
+    connectorDot
+  )
+    return
+
+
+  const ns =
+    'http://www.w3.org/2000/svg'
+
+
+  connectorPath =
+    document.createElementNS(
+      ns,
+      'path'
+    )
+
+
+  connectorDot =
+    document.createElementNS(
+      ns,
+      'circle'
+    )
+
+
+  connectorDot.setAttribute(
+    'r',
+    '2.2'
+  )
+
+
+  connectorPath.style.opacity =
+    '0'
+
+  connectorDot.style.opacity =
+    '0'
+
+
+  svgCanvas.append(
+    connectorPath,
+    connectorDot
+  )
+
+}
+
+
+function hideConnector() {
+
+  if (connectorPath) {
+
+    connectorPath.style.opacity =
+      '0'
+
+  }
+
+  if (connectorDot) {
+
+    connectorDot.style.opacity =
+      '0'
+
+  }
+
+}
+
 
 function updateConnector() {
 
   if (
-    !activeCity ||
-    !camera ||
-    !globeSticky ||
-    !memoryCard
-      ?.classList
-      .contains(
-        'is-open'
-      ) ||
-    window.innerWidth <
-    701
+    selectedIndex < 0 ||
+    !modal.classList.contains(
+      'active'
+    ) ||
+    !camera
   ) {
 
-    connectorSvg
-      .classList
-      .remove(
-        'is-visible'
-      )
+    hideConnector()
 
     return
+
   }
 
-  const markerWorld =
-    getActiveMarkerWorldPosition()
 
-  if (
-    !markerWorld
-  ) {
-    return
-  }
+  ensureConnector()
 
-  const projected =
-    markerWorld
-      .clone()
-      .project(
-        camera
-      )
 
-  const stickyRect =
-    globeSticky
-      .getBoundingClientRect()
-
-  const cardRect =
-    memoryCard
-      .getBoundingClientRect()
-
-  const markerX =
-    (
-      (
-        projected.x +
-        1
-      ) /
-      2
-    ) *
-    stickyRect.width
-
-  const markerY =
-    (
-      (
-        1 -
-        projected.y
-      ) /
-      2
-    ) *
-    stickyRect.height
-
-  const cardIsLeft =
-    cardRect.left <
-    stickyRect.left +
-    markerX
-
-  const cardX =
-    cardIsLeft
-      ?
-        cardRect.right -
-        stickyRect.left
-      :
-        cardRect.left -
-        stickyRect.left
-
-  const cardY =
-    cardRect.top -
-    stickyRect.top +
-    Math.min(
-      cardRect.height *
-      .42,
-      150
-    )
-
-  connectorLine
-    ?.setAttribute(
-      'x1',
-      markerX
-    )
-
-  connectorLine
-    ?.setAttribute(
-      'y1',
-      markerY
-    )
-
-  connectorLine
-    ?.setAttribute(
-      'x2',
-      cardX
-    )
-
-  connectorLine
-    ?.setAttribute(
-      'y2',
-      cardY
-    )
-
-  connectorDot
-    ?.setAttribute(
-      'cx',
-      markerX
-    )
-
-  connectorDot
-    ?.setAttribute(
-      'cy',
-      markerY
-    )
-
-  connectorSvg
-    .classList
-    .add(
-      'is-visible'
-    )
-
-}
-
-/* =========================================================
-   SECTION PROGRESS
-========================================================= */
-
-function clamp(
-  value,
-  min = 0,
-  max = 1
-) {
-
-  return Math.min(
-    Math.max(
-      value,
-      min
-    ),
-    max
-  )
-
-}
-
-function sectionProgress(
-  section
-) {
-
-  if (
-    !section
-  ) {
-    return 0
-  }
-
-  const rect =
-    section
-      .getBoundingClientRect()
-
-  const distance =
-    section.offsetHeight -
-    window.innerHeight
-
-  if (
-    distance <=
-    0
-  ) {
-    return 0
-  }
-
-  return clamp(
-    -rect.top /
-    distance
-  )
-
-}
-
-function updateScroll() {
-
-  const globeProgress =
-    sectionProgress(
-      globeSection
-    )
-
-  const florenceProgress =
-    sectionProgress(
-      florenceSection
-    )
-
-  root.style.setProperty(
-
-    '--globe-progress',
-
-    globeProgress.toFixed(
-      4
-    )
-
-  )
-
-  root.style.setProperty(
-
-    '--florence-progress',
-
-    florenceProgress.toFixed(
-      4
-    )
-
-  )
-
-}
-
-window.addEventListener(
-  'scroll',
-  updateScroll,
-  {
-    passive: true
-  }
-)
-
-/* =========================================================
-   INTRO
-========================================================= */
-
-function referenceClamp(
-  value,
-  min = 0,
-  max = 1
-) {
-
-  return Math.min(
-    Math.max(
-      value,
-      min
-    ),
-    max
-  )
-
-}
-
-function referenceSmoothstep(
-  min,
-  max,
-  value
-) {
-
-  const x =
-    referenceClamp(
-      (
-        value -
-        min
-      ) /
-      (
-        max -
-        min
-      )
-    )
-
-  return (
-    x *
-    x *
-    (
-      3 -
-      2 *
-      x
-    )
-  )
-
-}
-
-/* =========================================================
-   INTRO LOCK
-
-   Dôležité:
-   browser nedovolíme prescrollovať hranicu.
-   Až Explore nastaví introUnlocked = true.
-========================================================= */
-
-let introUnlocked =
-  false
-
-let introTouchY =
-  0
-
-function getIntroLockPosition() {
-
-  if (
-    !referenceHero
-  ) {
-    return 0
-  }
-
-  const distance =
-    Math.max(
-
-      referenceHero.offsetHeight -
-      window.innerHeight,
-
-      1
-
-    )
-
-  return (
-    referenceHero.offsetTop +
-    distance *
-    .72
-  )
-
-}
-
-function moveToIntroLock() {
-
-  window.scrollTo({
-    top:
-      getIntroLockPosition(),
-    behavior:
-      'auto'
-  })
-
-}
-
-/* -----------------------------------------
-   MOUSE / TRACKPAD
------------------------------------------ */
-
-window.addEventListener(
-
-  'wheel',
-
-  event => {
-
-    if (
-      introUnlocked ||
-      event.deltaY <=
-      0
-    ) {
-      return
-    }
-
-    const lock =
-      getIntroLockPosition()
-
-    if (
-      window.scrollY +
-      event.deltaY >=
-      lock
-    ) {
-
-      event.preventDefault()
-
-      moveToIntroLock()
-
-    }
-
-  },
-
-  {
-    passive: false
-  }
-
-)
-
-/* -----------------------------------------
-   TOUCH
------------------------------------------ */
-
-window.addEventListener(
-
-  'touchstart',
-
-  event => {
-
-    introTouchY =
-      event.touches[0]
-        ?.clientY ||
-      0
-
-  },
-
-  {
-    passive: true
-  }
-
-)
-
-window.addEventListener(
-
-  'touchmove',
-
-  event => {
-
-    if (
-      introUnlocked ||
-      !event.touches.length
-    ) {
-      return
-    }
-
-    const currentY =
-      event.touches[0]
-        .clientY
-
-    const deltaY =
-      introTouchY -
-      currentY
-
-    introTouchY =
-      currentY
-
-    if (
-      deltaY <=
-      0
-    ) {
-      return
-    }
-
-    const lock =
-      getIntroLockPosition()
-
-    if (
-      window.scrollY +
-      deltaY >=
-      lock
-    ) {
-
-      event.preventDefault()
-
-      moveToIntroLock()
-
-    }
-
-  },
-
-  {
-    passive: false
-  }
-
-)
-
-/* -----------------------------------------
-   KEYBOARD
------------------------------------------ */
-
-window.addEventListener(
-
-  'keydown',
-
-  event => {
-
-    if (
-      introUnlocked
-    ) {
-      return
-    }
-
-    const forwardKeys = [
-      'ArrowDown',
-      'PageDown',
-      ' ',
-      'End'
+  const data =
+    markerData[
+      selectedIndex
     ]
 
-    if (
-      !forwardKeys.includes(
-        event.key
-      )
-    ) {
-      return
-    }
 
-    const lock =
-      getIntroLockPosition()
+  if (!data)
+    return
 
-    /*
-      END by inak preskočil
-      rovno celú stránku.
-    */
 
-    if (
-      event.key ===
-      'End'
-    ) {
+  data.marker
+    .getWorldPosition(
+      worldTemp
+    )
 
-      event.preventDefault()
 
-      moveToIntroLock()
+  const projected =
+    worldTemp
+      .clone()
+      .project(camera)
 
-      return
-    }
-
-    if (
-      window.scrollY >=
-      lock -
-      window.innerHeight *
-      .8
-    ) {
-
-      event.preventDefault()
-
-      moveToIntroLock()
-
-    }
-
-  }
-
-)
-
-/* =========================================================
-   INTRO ANIMATION
-========================================================= */
-
-function updateReferenceIntro() {
 
   if (
-    !referenceHero
+    projected.z > 1
   ) {
+
+    hideConnector()
+
     return
+
   }
+
+
+  const startX =
+    (
+      projected.x * 0.5 +
+      0.5
+    ) *
+    window.innerWidth
+
+
+  const startY =
+    (
+      -projected.y * 0.5 +
+      0.5
+    ) *
+    window.innerHeight
+
 
   const rect =
-    referenceHero
+    modal
       .getBoundingClientRect()
 
-  const scrollDistance =
-    Math.max(
 
-      referenceHero.offsetHeight -
-      window.innerHeight,
+  let endX
+  let endY
 
-      1
 
-    )
+  if (isMobile) {
 
-  const progress =
-    referenceClamp(
+    endX =
+      rect.left +
+      rect.width * 0.5
 
-      -rect.top /
-      scrollDistance
+    endY =
+      rect.top
 
-    )
+  }
+  else {
 
-  /* FIRST SCENE */
+    endX =
+      rect.right
 
-  const introExit =
-    referenceSmoothstep(
-      .08,
-      .34,
-      progress
-    )
-
-  if (
-    referenceIntro
-  ) {
-
-    if (
-      progress >
-      .01
-    ) {
-
-      referenceIntro.style.animation =
-        'none'
-
-    }
-
-    referenceIntro.style.opacity =
-      String(
-        1 -
-        introExit
-      )
-
-    referenceIntro.style.transform =
-      `
-        translate3d(
-          0,
-          ${introExit * -14}px,
-          0
-        )
-      `
+    endY =
+      rect.top +
+      rect.height * 0.47
 
   }
 
-  /* SECOND SCENE */
 
-  const storyEnter =
-    referenceSmoothstep(
-      .39,
-      .64,
-      progress
-    )
+  const controlX =
+    startX +
+    (
+      endX - startX
+    ) * 0.56
 
-  if (
-    referenceStory
-  ) {
 
-    referenceStory.style.opacity =
-      String(
-        storyEnter
-      )
+  const controlY =
+    startY +
+    (
+      endY - startY
+    ) * 0.22
 
-    referenceStory.style.transform =
-      `
-        translate3d(
-          0,
-          ${(1 - storyEnter) * 18}px,
-          0
-        )
-      `
 
-    referenceStory.style.pointerEvents =
-      storyEnter >
-      .92
-        ? 'auto'
-        : 'none'
+  connectorPath.setAttribute(
+    'd',
+    `
+      M ${startX} ${startY}
+      Q ${controlX} ${controlY}
+        ${endX} ${endY}
+    `
+  )
 
-  }
 
-  /* PHOTO */
+  connectorDot.setAttribute(
+    'cx',
+    startX
+  )
 
-  if (
-    referenceImage
-  ) {
+  connectorDot.setAttribute(
+    'cy',
+    startY
+  )
 
-    const scale =
-      1.025 +
-      progress *
-      .026
 
-    const moveY =
-      progress *
-      .9
+  connectorPath.style.opacity =
+    '1'
 
-    referenceImage.style.transform =
-      `
-        translate3d(
-          0,
-          ${moveY}vh,
-          0
-        )
-
-        scale(
-          ${scale}
-        )
-      `
-
-    referenceImage.style.filter =
-      `
-        saturate(.72)
-        contrast(1.04)
-        brightness(.69)
-      `
-
-  }
+  connectorDot.style.opacity =
+    '1'
 
 }
 
-window.addEventListener(
-  'scroll',
-  updateReferenceIntro,
-  {
-    passive: true
-  }
-)
-
-window.addEventListener(
-  'resize',
-  updateReferenceIntro,
-  {
-    passive: true
-  }
-)
 
 /* =========================================================
-   EXPLORE -> GLOBE
+   RENDER LOOP
 ========================================================= */
 
-referenceExplore
-  ?.addEventListener(
+function animateThree() {
 
-    'click',
-
-    event => {
-
-      event.preventDefault()
-
-      event.stopImmediatePropagation()
-
-      /*
-        Toto je jediný moment,
-        kedy sa stránka odomkne.
-      */
-
-      introUnlocked =
-        true
-
-      if (
-        !globeSection
-      ) {
-        return
-      }
-
-      if (
-        referenceStory
-      ) {
-
-        referenceStory.style.transition =
-          `
-            opacity .35s ease,
-            transform .45s
-            cubic-bezier(
-              .22,
-              1,
-              .36,
-              1
-            )
-          `
-
-        referenceStory.style.opacity =
-          '0'
-
-        referenceStory.style.transform =
-          `
-            translate3d(
-              0,
-              -10px,
-              0
-            )
-          `
-
-      }
-
-      if (
-        referenceImage
-      ) {
-
-        referenceImage.style.transition =
-          `
-            transform .55s
-            cubic-bezier(
-              .22,
-              1,
-              .36,
-              1
-            )
-          `
-
-        referenceImage.style.transform =
-          `
-            translate3d(
-              0,
-              1vh,
-              0
-            )
-
-            scale(
-              1.06
-            )
-          `
-
-      }
-
-      window.setTimeout(
-
-        () => {
-
-          globeSection
-            .scrollIntoView({
-
-              behavior:
-                reducedMotion.matches
-                  ? 'auto'
-                  : 'smooth',
-
-              block:
-                'start'
-
-            })
-
-        },
-
-        220
-
-      )
-
-    },
-
-    true
-
-  )
-
-/* =========================================================
-   GLOBE VISIBILITY
-========================================================= */
-
-const globeObserver =
-  new IntersectionObserver(
-
-    entries => {
-
-      entries
-        .forEach(
-          entry => {
-
-            globeVisible =
-              entry.isIntersecting
-
-          }
-        )
-
-    },
-
-    {
-      threshold: .05
-    }
-
-  )
-
-if (
-  globeSection
-) {
-
-  globeObserver.observe(
-    globeSection
-  )
-
-}
-
-/* =========================================================
-   ANIMATION LOOP
-========================================================= */
-
-const clock =
-  new THREE.Clock()
-
-function animate() {
-
-  requestAnimationFrame(
-    animate
-  )
-
-  if (
-    !renderer ||
-    !scene ||
-    !camera ||
-    !worldGroup
-  ) {
+  if (!renderer)
     return
-  }
 
-  const delta =
-    Math.min(
-      clock.getDelta(),
-      .05
-    )
 
-  const elapsed =
-    clock.elapsedTime
+  controls?.update()
 
-  if (
-    !dragging &&
-    !activeCity &&
-    !reducedMotion.matches &&
-    performance.now() -
-    lastInteraction >
-    2200
-  ) {
-
-    const idle =
-      new THREE.Quaternion()
-        .setFromAxisAngle(
-
-          new THREE.Vector3(
-            0,
-            1,
-            0
-          ),
-
-          delta *
-          .018
-
-        )
-
-    targetQuaternion
-      .premultiply(
-        idle
-      )
-      .normalize()
-
-  }
-
-  worldGroup
-    .quaternion
-    .slerp(
-
-      targetQuaternion,
-
-      reducedMotion.matches
-        ? 1
-        : .065
-
-    )
-
-  markerObjects
-    .forEach(
-      marker => {
-
-        const pulse =
-          1 +
-          Math.sin(
-
-            elapsed *
-            2 +
-            marker.userData.phase
-
-          ) *
-          .11
-
-        marker.userData
-          .ring
-          .scale
-          .setScalar(
-            pulse
-          )
-
-      }
-    )
+  updateLabels()
 
   updateConnector()
+
 
   renderer.render(
     scene,
     camera
   )
 
+
+  animationFrame =
+    requestAnimationFrame(
+      animateThree
+    )
+
 }
 
+
 /* =========================================================
-   INIT GLOBE
+   SELECT LOCATION
 ========================================================= */
 
-function initGlobe() {
+function resetSelectedMarker() {
+
+  markerData.forEach(
+    item => {
+
+      gsap.to(
+        item.marker.scale,
+        {
+          x: 1,
+          y: 1,
+          z: 1,
+          duration: 0.3,
+          overwrite: true
+        }
+      )
+
+      item.label
+        .classList
+        .remove('active')
+
+    }
+  )
+
+}
+
+
+function selectLocation(
+  index
+) {
 
   if (
-    !canvas
-  ) {
+    transitionRunning ||
+    mode !== 'journey' ||
+    !locations[index]
+  )
     return
+
+
+  ensureGlobe()
+
+  closeModal(
+    false
+  )
+
+  selectedIndex =
+    index
+
+
+  visited.add(
+    index
+  )
+
+
+  updateJourneyProgress()
+
+
+  journeyInstruction
+    ?.classList
+    .remove('blinking')
+
+
+  controls.autoRotate =
+    false
+
+
+  resetSelectedMarker()
+
+
+  const item =
+    markerData[index]
+
+
+  item.label
+    .classList
+    .add('active')
+
+
+  gsap.to(
+    item.marker.scale,
+    {
+      x: 1.8,
+      y: 1.8,
+      z: 1.8,
+      duration: 0.4,
+      ease: 'back.out(2)'
+    }
+  )
+
+
+  item.marker
+    .getWorldPosition(
+      worldTemp
+    )
+
+
+  const targetDirection =
+    worldTemp
+      .clone()
+      .normalize()
+
+
+  const distance =
+    isMobile
+      ? 64
+      : 50
+
+
+  const targetCamera =
+    targetDirection
+      .clone()
+      .multiplyScalar(
+        distance
+      )
+
+
+  transitionRunning =
+    true
+
+  controls.enabled =
+    false
+
+
+  gsap.to(
+    camera.position,
+    {
+      x: targetCamera.x,
+      y: targetCamera.y,
+      z: targetCamera.z,
+
+      duration:
+        reducedMotion
+          ? 0.01
+          : 1.35,
+
+      ease:
+        'power3.inOut',
+
+      onUpdate: () => {
+
+        camera.lookAt(
+          0,
+          0,
+          0
+        )
+
+      },
+
+      onComplete: () => {
+
+        camera.lookAt(
+          0,
+          0,
+          0
+        )
+
+        controls.target.set(
+          0,
+          0,
+          0
+        )
+
+        controls.update()
+
+        controls.enabled =
+          true
+
+        transitionRunning =
+          false
+
+        openMemory(
+          index
+        )
+
+      }
+    }
+  )
+
+}
+
+
+/* =========================================================
+   MEMORY CARD
+========================================================= */
+
+function openMemory(
+  index
+) {
+
+  const location =
+    locations[index]
+
+  if (!location)
+    return
+
+
+  modalCity.textContent =
+    location.name || ''
+
+
+  modalLocation.textContent =
+    location.subname || ''
+
+
+  modal.classList.remove(
+    'instagram-mode'
+  )
+
+
+  modalImage.style.display =
+    'block'
+
+  modalInstagram.style.display =
+    'none'
+
+
+  modalInstagram.removeAttribute(
+    'src'
+  )
+
+
+  if (
+    location.type ===
+    'instagram'
+  ) {
+
+    modal.classList.add(
+      'instagram-mode'
+    )
+
+    modalImage.style.display =
+      'none'
+
+    modalInstagram.style.display =
+      'block'
+
+    modalInstagram.src =
+      location.media
+
+  }
+  else {
+
+    modalImage.src =
+      resolveMedia(
+        location.media
+      )
+
+    modalImage.alt =
+      location.name || ''
+
   }
 
-  renderer =
-    new THREE.WebGLRenderer({
 
-      canvas,
+  modal.setAttribute(
+    'aria-hidden',
+    'false'
+  )
 
-      antialias: true,
 
-      alpha: true,
+  requestAnimationFrame(
+    () => {
 
-      powerPreference:
-        'high-performance'
+      modal
+        .classList
+        .add('active')
 
-    })
+    }
+  )
 
-  renderer.outputColorSpace =
-    THREE.SRGBColorSpace
+}
 
-  renderer.setClearColor(
-    0x000000,
+
+function closeModal(
+  clearSelection = true
+) {
+
+  modal
+    ?.classList
+    .remove(
+      'active',
+      'instagram-mode'
+    )
+
+
+  modal
+    ?.setAttribute(
+      'aria-hidden',
+      'true'
+    )
+
+
+  if (
+    modalInstagram
+  ) {
+
+    modalInstagram
+      .removeAttribute(
+        'src'
+      )
+
+  }
+
+
+  hideConnector()
+
+
+  if (
+    clearSelection
+  ) {
+
+    selectedIndex =
+      -1
+
+    resetSelectedMarker()
+
+  }
+
+}
+
+
+modalClose
+  ?.addEventListener(
+    'click',
+    () => {
+
+      closeModal()
+
+    }
+  )
+
+
+modalSkip
+  ?.addEventListener(
+    'click',
+    () => {
+
+      closeModal()
+
+      goWedding()
+
+    }
+  )
+
+
+document.addEventListener(
+  'keydown',
+  event => {
+
+    if (
+      event.key === 'Escape' &&
+      modal.classList.contains(
+        'active'
+      )
+    ) {
+
+      closeModal()
+
+    }
+
+  }
+)
+
+
+/* =========================================================
+   NAVIGATION PROGRESS
+========================================================= */
+
+function updateJourneyProgress() {
+
+  if (
+    mode !== 'journey'
+  )
+    return
+
+
+  const ratio =
+    locations.length
+      ? visited.size /
+        locations.length
+      : 0
+
+
+  const width =
+    50 +
+    ratio * 45
+
+
+  navFill.style.width =
+    `${width}%`
+
+}
+
+
+function setActiveNav(
+  active
+) {
+
+  navIntro.classList.remove(
+    'active'
+  )
+
+  navJourney.classList.remove(
+    'active'
+  )
+
+  navWedding.classList.remove(
+    'active'
+  )
+
+
+  navDots.forEach(
+    dot => {
+
+      dot?.classList
+        .remove('active')
+
+    }
+  )
+
+
+  if (
+    active === 'intro'
+  ) {
+
+    navIntro.classList.add(
+      'active'
+    )
+
+    navDots[0]
+      ?.classList
+      .add('active')
+
+    navFill.style.width =
+      '0%'
+
+  }
+
+
+  if (
+    active === 'journey'
+  ) {
+
+    navJourney.classList.add(
+      'active'
+    )
+
+    navDots[0]
+      ?.classList
+      .add('active')
+
+    navDots[1]
+      ?.classList
+      .add('active')
+
+    updateJourneyProgress()
+
+  }
+
+
+  if (
+    active === 'wedding'
+  ) {
+
+    navWedding.classList.add(
+      'active'
+    )
+
+    navDots.forEach(
+      dot => {
+
+        dot?.classList
+          .add('active')
+
+      }
+    )
+
+    navFill.style.width =
+      '100%'
+
+  }
+
+}
+
+
+/* =========================================================
+   INTRO -> JOURNEY
+========================================================= */
+
+function goJourney() {
+
+  if (
+    transitionRunning
+  )
+    return
+
+
+  if (
+    mode === 'journey'
+  ) {
+
+    closeModal()
+
+    return
+
+  }
+
+
+  killIntroTimeline()
+
+  ensureGlobe()
+
+
+  transitionRunning =
+    true
+
+  mode =
+    'journey'
+
+
+  body.classList.remove(
+    'intro-mode'
+  )
+
+  body.classList.add(
+    'journey-mode',
+    'section-transition-active'
+  )
+
+
+  setActiveNav(
+    'journey'
+  )
+
+
+  transitionScreen
+    .classList
+    .add('is-active')
+
+
+  transitionScreen.setAttribute(
+    'aria-hidden',
+    'false'
+  )
+
+
+  gsap.set(
+    '.transition-screen .trans-line',
+    {
+      opacity: 0
+    }
+  )
+
+
+  gsap.set(
+    labelLayer,
+    {
+      opacity: 0
+    }
+  )
+
+
+  camera.position.set(
+    0,
+    isMobile ? 1.2 : 0,
+    isMobile ? 88 : 68
+  )
+
+  camera.lookAt(
+    0,
+    0,
     0
   )
 
-  scene =
-    new THREE.Scene()
 
-  camera =
-    new THREE.PerspectiveCamera(
-      36,
-      1,
-      .1,
-      50
+  if (
+    transitionTimeline
+  ) {
+
+    transitionTimeline.kill()
+
+  }
+
+
+  transitionTimeline =
+    gsap.timeline({
+
+      onComplete: () => {
+
+        transitionScreen
+          .classList
+          .remove('is-active')
+
+        transitionScreen.setAttribute(
+          'aria-hidden',
+          'true'
+        )
+
+        body.classList.remove(
+          'section-transition-active'
+        )
+
+        transitionRunning =
+          false
+
+        if (
+          !userMovedGlobe
+        ) {
+
+          journeyInstruction
+            ?.classList
+            .add('blinking')
+
+        }
+
+      }
+
+    })
+
+
+  const lines =
+    transitionScreen
+      .querySelectorAll(
+        '.trans-line'
+      )
+
+
+  transitionTimeline
+
+    .to(
+      introOverlay,
+      {
+        autoAlpha: 0,
+        duration:
+          reducedMotion
+            ? 0.01
+            : 1.05,
+
+        ease:
+          'power2.inOut'
+      }
     )
 
-  worldGroup =
-    new THREE.Group()
+    .to(
+      camera.position,
+      {
+        x: 0,
 
-  scene.add(
-    worldGroup
-  )
+        y:
+          isMobile
+            ? 1.2
+            : 0,
 
-  createLights()
+        z:
+          isMobile
+            ? 78
+            : 58,
 
-  createGlobeSurface()
+        duration:
+          reducedMotion
+            ? 0.01
+            : 2.1,
 
-  createSurfaceDots()
+        ease:
+          'power3.inOut',
 
-  createGraticule()
+        onUpdate: () => {
 
-  createMarkers()
+          camera.lookAt(
+            0,
+            0,
+            0
+          )
 
-  resizeRenderer()
+        }
+      },
+      '-=0.7'
+    )
 
-  faceCoordinates(
-    47,
-    15,
-    true
-  )
+    .to(
+      lines[0],
+      {
+        opacity: 1,
+        duration:
+          reducedMotion
+            ? 0.01
+            : 0.75
+      },
+      '-=1.2'
+    )
 
-  canvas.style.cursor =
-    'grab'
+    .to(
+      lines[0],
+      {
+        opacity: 0,
+        duration:
+          reducedMotion
+            ? 0.01
+            : 0.55,
 
-  animate()
+        delay:
+          reducedMotion
+            ? 0
+            : 0.65
+      }
+    )
+
+    .to(
+      lines[1],
+      {
+        opacity: 1,
+        duration:
+          reducedMotion
+            ? 0.01
+            : 0.75
+      }
+    )
+
+    .to(
+      lines[1],
+      {
+        opacity: 0,
+        duration:
+          reducedMotion
+            ? 0.01
+            : 0.55,
+
+        delay:
+          reducedMotion
+            ? 0
+            : 0.65
+      }
+    )
+
+    .to(
+      labelLayer,
+      {
+        opacity: 1,
+        duration:
+          reducedMotion
+            ? 0.01
+            : 0.8
+      },
+      '-=0.35'
+    )
 
 }
+
+
+/* =========================================================
+   JOURNEY -> INTRO
+========================================================= */
+
+function goIntro() {
+
+  if (
+    transitionRunning
+  )
+    return
+
+
+  transitionRunning =
+    true
+
+
+  closeModal()
+
+  journeyInstruction
+    ?.classList
+    .remove('blinking')
+
+
+  controls &&
+    (
+      controls.autoRotate =
+        false
+    )
+
+
+  gsap.to(
+    journeyScene,
+    {
+      opacity: 0,
+      duration:
+        reducedMotion
+          ? 0.01
+          : 0.55,
+
+      ease:
+        'power2.inOut',
+
+      onComplete: () => {
+
+        body.classList.remove(
+          'journey-mode',
+          'section-transition-active',
+          'wedding-trans-active'
+        )
+
+        body.classList.add(
+          'intro-mode'
+        )
+
+        gsap.set(
+          journeyScene,
+          {
+            clearProps:
+              'opacity'
+          }
+        )
+
+        transitionRunning =
+          false
+
+        playIntro()
+
+      }
+    }
+  )
+
+}
+
+
+/* =========================================================
+   WEDDING TRANSITION
+========================================================= */
+
+function goWedding() {
+
+  if (
+    transitionRunning
+  )
+    return
+
+
+  if (
+    mode === 'intro'
+  ) {
+
+    goJourney()
+
+    return
+
+  }
+
+
+  transitionRunning =
+    true
+
+  mode =
+    'wedding'
+
+
+  closeModal()
+
+
+  journeyInstruction
+    ?.classList
+    .remove('blinking')
+
+
+  body.classList.add(
+    'wedding-trans-active'
+  )
+
+
+  setActiveNav(
+    'wedding'
+  )
+
+
+  finalTransitionScreen
+    .classList
+    .add('is-active')
+
+
+  finalTransitionScreen
+    .setAttribute(
+      'aria-hidden',
+      'false'
+    )
+
+
+  weddingHandoff
+    .classList
+    .remove('active')
+
+
+  weddingHandoff
+    .setAttribute(
+      'aria-hidden',
+      'true'
+    )
+
+
+  const lines =
+    finalTransitionScreen
+      .querySelectorAll(
+        '.trans-line'
+      )
+
+
+  gsap.set(
+    lines,
+    {
+      opacity: 0
+    }
+  )
+
+
+  if (
+    finalTimeline
+  ) {
+
+    finalTimeline.kill()
+
+  }
+
+
+  finalTimeline =
+    gsap.timeline()
+
+
+  finalTimeline
+
+    .to(
+      lines[0],
+      {
+        opacity: 1,
+        duration:
+          reducedMotion
+            ? 0.01
+            : 0.8,
+
+        ease:
+          'power2.inOut'
+      }
+    )
+
+    .to(
+      lines[0],
+      {
+        opacity: 0,
+        duration:
+          reducedMotion
+            ? 0.01
+            : 0.65,
+
+        delay:
+          reducedMotion
+            ? 0
+            : 0.75
+      }
+    )
+
+    .to(
+      lines[1],
+      {
+        opacity: 1,
+        duration:
+          reducedMotion
+            ? 0.01
+            : 0.85,
+
+        ease:
+          'power2.inOut'
+      }
+    )
+
+    .to(
+      lines[1],
+      {
+        opacity: 0,
+        duration:
+          reducedMotion
+            ? 0.01
+            : 0.65,
+
+        delay:
+          reducedMotion
+            ? 0
+            : 0.9
+      }
+    )
+
+    .call(
+      showWeddingHandoff
+    )
+
+}
+
+
+/* =========================================================
+   WEDDING HANDOFF
+========================================================= */
+
+function showWeddingHandoff() {
+
+  finalTransitionScreen
+    .classList
+    .remove('is-active')
+
+
+  finalTransitionScreen
+    .setAttribute(
+      'aria-hidden',
+      'true'
+    )
+
+
+  weddingHandoff
+    .classList
+    .add('active')
+
+
+  weddingHandoff
+    .setAttribute(
+      'aria-hidden',
+      'false'
+    )
+
+
+  const date =
+    weddingHandoff
+      .querySelector('p')
+
+  const title =
+    weddingHandoff
+      .querySelector('h2')
+
+  const mark =
+    weddingHandoff
+      .querySelector(
+        '.wedding-handoff-mark'
+      )
+
+
+  gsap.set(
+    [
+      date,
+      title,
+      mark
+    ],
+    {
+      opacity: 0,
+      y: 16
+    }
+  )
+
+
+  gsap.timeline({
+
+    onComplete: () => {
+
+      window.setTimeout(
+        () => {
+
+          window.location.assign(
+            WEDDING_URL
+          )
+
+        },
+        reducedMotion
+          ? 50
+          : 900
+      )
+
+    }
+
+  })
+
+    .to(
+      date,
+      {
+        opacity: 1,
+        y: 0,
+        duration:
+          reducedMotion
+            ? 0.01
+            : 0.7
+      }
+    )
+
+    .to(
+      title,
+      {
+        opacity: 1,
+        y: 0,
+        duration:
+          reducedMotion
+            ? 0.01
+            : 1.05,
+
+        ease:
+          'power3.out'
+      },
+      '-=0.35'
+    )
+
+    .to(
+      mark,
+      {
+        opacity: 1,
+        y: 0,
+        duration:
+          reducedMotion
+            ? 0.01
+            : 0.7
+      },
+      '-=0.4'
+    )
+
+}
+
+
+/* =========================================================
+   BUTTONS
+========================================================= */
+
+nextBtn
+  ?.addEventListener(
+    'click',
+    goJourney
+  )
+
+
+navIntro
+  ?.addEventListener(
+    'click',
+    goIntro
+  )
+
+
+navJourney
+  ?.addEventListener(
+    'click',
+    goJourney
+  )
+
+
+navWedding
+  ?.addEventListener(
+    'click',
+    goWedding
+  )
+
+
+headerHome
+  ?.addEventListener(
+    'click',
+    goIntro
+  )
+
+
+/* =========================================================
+   AUDIO
+========================================================= */
+
+let muted =
+  false
+
+
+muteBtn
+  ?.addEventListener(
+    'click',
+    () => {
+
+      muted =
+        !muted
+
+      if (bgm) {
+
+        bgm.muted =
+          muted
+
+      }
+
+      muteBtn.style.opacity =
+        muted
+          ? '0.4'
+          : '1'
+
+      muteBtn.setAttribute(
+        'aria-label',
+        muted
+          ? 'Zapnúť zvuk'
+          : 'Vypnúť zvuk'
+      )
+
+    }
+  )
+
+
+/* =========================================================
+   SVG VIEWBOX
+========================================================= */
+
+function updateSvgViewBox() {
+
+  if (!svgCanvas)
+    return
+
+  svgCanvas.setAttribute(
+    'viewBox',
+    `0 0 ${window.innerWidth} ${window.innerHeight}`
+  )
+
+}
+
 
 /* =========================================================
    RESIZE
 ========================================================= */
 
-window.addEventListener(
+function handleResize() {
 
-  'resize',
+  const wasMobile =
+    isMobile
 
-  () => {
+  isMobile =
+    mobileQuery.matches
 
-    resizeRenderer()
 
-    updateScroll()
+  updateSvgViewBox()
 
-    updateReferenceIntro()
-
-  },
-
-  {
-    passive: true
-  }
-
-)
-
-/* =========================================================
-   LINKS
-
-   Kým nie je Explore stlačené,
-   žiadny horný link nesmie obísť intro.
-========================================================= */
-
-document
-  .querySelectorAll(
-    'a[href^="#"]'
-  )
-  .forEach(
-    link => {
-
-      link
-        .addEventListener(
-          'click',
-          event => {
-
-            if (
-              link ===
-              referenceExplore
-            ) {
-              return
-            }
-
-            const selector =
-              link.getAttribute(
-                'href'
-              )
-
-            if (
-              !selector ||
-              selector === '#'
-            ) {
-              return
-            }
-
-            /*
-              Home môžeme používať vždy.
-              Ostatné odkazy sú pred Explore
-              uzamknuté.
-            */
-
-            if (
-              !introUnlocked &&
-              selector !==
-              '#home'
-            ) {
-
-              event.preventDefault()
-
-              return
-            }
-
-            const target =
-              document.querySelector(
-                selector
-              )
-
-            if (
-              !target
-            ) {
-              return
-            }
-
-            event.preventDefault()
-
-            target
-              .scrollIntoView({
-
-                behavior:
-                  reducedMotion.matches
-                    ? 'auto'
-                    : 'smooth',
-
-                block:
-                  'start'
-
-              })
-
-          }
-        )
-
-    }
-  )
-
-/* =========================================================
-   START
-========================================================= */
-
-async function start() {
-
-  /*
-    Ak by niekto stránku otvoril
-    priamo cez #wedding alebo #globe-section,
-    intro sa nesmie obísť.
-  */
 
   if (
-    window.location.hash &&
-    window.location.hash !==
-    '#home'
+    !globeReady ||
+    !camera ||
+    !renderer
+  )
+    return
+
+
+  camera.aspect =
+    window.innerWidth /
+    window.innerHeight
+
+
+  camera.fov =
+    isMobile
+      ? 34
+      : 31
+
+
+  camera.updateProjectionMatrix()
+
+
+  renderer.setSize(
+    window.innerWidth,
+    window.innerHeight,
+    false
+  )
+
+
+  renderer.setPixelRatio(
+    Math.min(
+      window.devicePixelRatio,
+      2
+    )
+  )
+
+
+  if (
+    wasMobile !== isMobile &&
+    selectedIndex < 0
   ) {
 
-    history.replaceState(
-      null,
-      '',
-      window.location.pathname +
-      window.location.search
-    )
+    camera.position
+      .normalize()
+      .multiplyScalar(
+        isMobile
+          ? 78
+          : 58
+      )
 
-    window.scrollTo(
+    camera.lookAt(
+      0,
       0,
       0
     )
 
   }
 
-  setLoaderProgress(
-    5
-  )
+}
 
-  const preloadPromise =
-    preloadImages()
 
-  try {
+window.addEventListener(
+  'resize',
+  handleResize
+)
 
-    initGlobe()
 
-    setLoaderProgress(
-      18
+mobileQuery.addEventListener(
+  'change',
+  handleResize
+)
+
+
+/* =========================================================
+   DIRECT VIEW SUPPORT
+========================================================= */
+
+function handleInitialHash() {
+
+  const hash =
+    window.location.hash
+      .toLowerCase()
+
+
+  if (
+    hash.includes(
+      'journey'
     )
-
-  } catch (
-    error
   ) {
 
-    console.warn(
-      'Globe initialization failed:',
-      error
+    setTimeout(
+      goJourney,
+      50
     )
 
   }
 
-  await preloadPromise
-
-  updateScroll()
-
-  updateReferenceIntro()
-
-  finishLoader()
-
 }
 
-start()
+
+window.addEventListener(
+  'load',
+  handleInitialHash
+)
