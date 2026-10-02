@@ -199,257 +199,126 @@
 
   const locations = [
 
-    {
+  {
+    key: 'london',
+    name: 'London',
+    subname: 'United Kingdom',
 
-      key:
-        'hlohovec',
+    lat: 51.5074,
+    lon: -0.1278,
 
-      name:
-        'Hlohovec',
+    side: 'left',
+    x: '7%',
+    top: '29%',
 
-      subname:
-        'Martin',
+    type: 'image',
+    media: 'photos/02-west-ham.jpeg'
+  },
 
-      lat:
-        48.4317,
+  {
+    key: 'madeira',
+    name: 'Madeira',
+    subname: 'Portugal',
 
-      lon:
-        17.8031,
+    lat: 32.7607,
+    lon: -16.9595,
 
-      side:
-        'left',
+    side: 'left',
+    x: '4%',
+    top: '47%',
 
-      x:
-        '7%',
+    type: 'image',
+    media: 'photos/03-madeira-waterfall.jpeg'
+  },
 
-      top:
-        '20%',
+  {
+    key: 'sevilla',
+    name: 'Sevilla',
+    subname: 'Spain',
 
-      type:
-        'image',
+    lat: 37.3891,
+    lon: -5.9845,
 
-      media:
-        'photos/01-historic-selfie.jpeg',
+    side: 'left',
+    x: '8%',
+    top: '65%',
 
-      date:
-        'Our beginning'
+    type: 'image',
+    media: 'photos/03-madeira-waterfall.jpeg'
+  },
 
-    },
+  {
+    key: 'firenze',
+    name: 'Firenze',
+    subname: '01 · 04 · 2026',
 
-    {
+    lat: 43.7696,
+    lon: 11.2558,
 
-      key:
-        'cifer',
+    side: 'right',
+    x: '8%',
+    top: '25%',
 
-      name:
-        'Cífer',
+    type: 'image',
+    media: 'photos/07-florence-engagement.jpeg',
 
-      subname:
-        'Simona',
+    special: 'engagement'
+  },
 
-      lat:
-        48.3150,
+  {
+    key: 'granada',
+    name: 'Granada',
+    subname: 'Spain',
 
-      lon:
-        17.4910,
+    lat: 37.1773,
+    lon: -3.5986,
 
-      side:
-        'left',
+    side: 'right',
+    x: '5%',
+    top: '43%',
 
-      x:
-        '10%',
+    type: 'image',
+    media: 'photos/08-formal-outdoor.jpeg'
+  },
 
-      top:
-        '33%',
+  {
+    key: 'malaga',
+    name: 'Málaga',
+    subname: 'Spain',
 
-      type:
-        'image',
+    lat: 36.7213,
+    lon: -4.4214,
 
-      media:
-        'photos/08-formal-outdoor.jpeg',
+    side: 'right',
+    x: '9%',
+    top: '61%',
 
-      date:
-        'Our beginning'
+    type: 'image',
+    media: 'photos/01-historic-selfie.jpeg'
+  },
 
-    },
+  {
+    key: 'tokyo',
+    name: 'Tokyo',
+    subname: 'Japan',
 
-    {
+    lat: 35.6762,
+    lon: 139.6503,
 
-      key:
-        'london',
+    side: 'right',
+    x: '13%',
+    top: '74%',
 
-      name:
-        'London',
+    type: 'instagram',
 
-      subname:
-        'United Kingdom',
+    media:
+      'https://www.instagram.com/reel/DN_BgiWktOJ/embed/',
 
-      lat:
-        51.5074,
+    external:
+      'https://www.instagram.com/reel/DN_BgiWktOJ/'
+  }
 
-      lon:
-        -0.1278,
-
-      side:
-        'left',
-
-      x:
-        '4%',
-
-      top:
-        '48%',
-
-      type:
-        'image',
-
-      media:
-        'photos/02-west-ham.jpeg'
-
-    },
-
-    {
-
-      key:
-        'madeira',
-
-      name:
-        'Madeira',
-
-      subname:
-        'Portugal',
-
-      lat:
-        32.7607,
-
-      lon:
-        -16.9595,
-
-      side:
-        'right',
-
-      x:
-        '8%',
-
-      top:
-        '61%',
-
-      type:
-        'image',
-
-      media:
-        'photos/03-madeira-waterfall.jpeg'
-
-    },
-
-    {
-
-      key:
-        'liverpool',
-
-      name:
-        'Liverpool',
-
-      subname:
-        'United Kingdom',
-
-      lat:
-        53.4084,
-
-      lon:
-        -2.9916,
-
-      side:
-        'left',
-
-      x:
-        '9%',
-
-      top:
-        '65%',
-
-      type:
-        'image',
-
-      media:
-        'photos/06-liverpool-waterfront.jpeg'
-
-    },
-
-    {
-
-      key:
-        'tokyo',
-
-      name:
-        'Tokyo',
-
-      subname:
-        'Japan',
-
-      lat:
-        35.6762,
-
-      lon:
-        139.6503,
-
-      side:
-        'right',
-
-      x:
-        '7%',
-
-      top:
-        '27%',
-
-      type:
-        'instagram',
-
-      media:
-        'https://www.instagram.com/reel/DN_BgiWktOJ/embed/',
-
-      external:
-        'https://www.instagram.com/reel/DN_BgiWktOJ/'
-
-    },
-
-    {
-
-      key:
-        'firenze',
-
-      name:
-        'Firenze',
-
-      subname:
-        '01 · 04 · 2026',
-
-      lat:
-        43.7696,
-
-      lon:
-        11.2558,
-
-      side:
-        'right',
-
-      x:
-        '10%',
-
-      top:
-        '43%',
-
-      type:
-        'image',
-
-      media:
-        'photos/07-florence-engagement.jpeg',
-
-      special:
-        'engagement'
-
-    }
-
-  ]
+]
 
   /* =======================================================
      WEDDING
