@@ -1,10 +1,6 @@
 import * as THREE from 'three'
 import './style.css'
 
-/* =========================================================
-   BASE
-========================================================= */
-
 const BASE = import.meta.env.BASE_URL
 
 const reducedMotion =
@@ -23,85 +19,112 @@ const cities = {
     number: '01 / 07',
     title: 'Hlohovec',
     country: 'Slovensko',
+
     lat: 48.4317,
     lng: 17.8031,
+
     latLabel: '48.4317° N',
     lngLabel: '17.8031° E',
-    image: '01-historic-selfie.jpeg',
+
+    image:
+      '01-historic-selfie.jpeg',
+
     text:
       'Jeden z dvoch začiatkov nášho príbehu. Miesto, odkiaľ vyrazil Martin.'
   },
+
 
   cifer: {
     key: 'cifer',
     number: '02 / 07',
     title: 'Cífer',
     country: 'Slovensko',
+
     lat: 48.3150,
     lng: 17.4910,
+
     latLabel: '48.3150° N',
     lngLabel: '17.4910° E',
-    image: '08-formal-outdoor.jpeg',
+
+    image:
+      '08-formal-outdoor.jpeg',
+
     text:
       'Druhý začiatok. Miesto, odkiaľ do spoločného príbehu vykročila Simona.'
   },
+
 
   london: {
     key: 'london',
     number: '03 / 07',
     title: 'London',
     country: 'United Kingdom',
+
     lat: 51.5074,
     lng: -0.1278,
+
     latLabel: '51.5074° N',
     lngLabel: '0.1278° W',
-    image: '02-west-ham.jpeg',
+
+    image:
+      '02-west-ham.jpeg',
+
     text:
       'Futbal, mesto a ďalšia spoločná spomienka. Jedna z ciest, ktoré sú najlepšie vo dvojici.'
   },
+
 
   madeira: {
     key: 'madeira',
     number: '04 / 07',
     title: 'Madeira',
     country: 'Portugal',
+
     lat: 32.7607,
     lng: -16.9595,
+
     latLabel: '32.7607° N',
     lngLabel: '16.9595° W',
-    image: '03-madeira-waterfall.jpeg',
+
+    image:
+      '03-madeira-waterfall.jpeg',
+
     text:
       'Hory, oceán, vodopády a chvíle, pri ktorých človek na všetko ostatné zabudne.'
   },
+
 
   liverpool: {
     key: 'liverpool',
     number: '05 / 07',
     title: 'Liverpool',
     country: 'United Kingdom',
+
     lat: 53.4084,
     lng: -2.9916,
+
     latLabel: '53.4084° N',
     lngLabel: '2.9916° W',
-    image: '06-liverpool-waterfront.jpeg',
+
+    image:
+      '06-liverpool-waterfront.jpeg',
+
     text:
       'Aj keď počasie nebolo vždy dokonalé, spoločná cesta áno.'
   },
+
 
   japan: {
     key: 'japan',
     number: '06 / 07',
     title: 'Tokyo',
     country: 'Japan',
+
     lat: 35.6762,
     lng: 139.6503,
+
     latLabel: '35.6762° N',
     lngLabel: '139.6503° E',
-
-    /*
-      Japan zatiaľ nemá lokálnu fotku.
-      Preto karta zobrazí špeciálny Reel cover.
-    */
 
     image: null,
 
@@ -109,19 +132,27 @@ const cities = {
       'Jedna z ciest na druhý koniec sveta. Tokyo, Japonsko — ďalšia spomienka, ktorú si chceme nechať navždy.',
 
     instagramUrl:
-      'https://www.instagram.com/reel/DN_BgiWktOJ/'
+      'https://www.instagram.com/reel/DN_BgiWktOJ/',
+
+    instagramEmbedUrl:
+      'https://www.instagram.com/reel/DN_BgiWktOJ/embed/'
   },
+
 
   florence: {
     key: 'florence',
     number: '07 / 07',
     title: 'Firenze',
     country: 'Italia',
+
     lat: 43.7696,
     lng: 11.2558,
+
     latLabel: '43.7696° N',
     lngLabel: '11.2558° E',
-    image: '07-florence-engagement.jpeg',
+
+    image:
+      '07-florence-engagement.jpeg',
 
     text:
       'Miesto, kde jedna otázka zmenila ďalšiu cestu. Florencia, 1. apríla 2026.'
@@ -147,33 +178,40 @@ const cityOrder = [
 const root =
   document.documentElement
 
+
 const body =
   document.body
+
 
 const canvas =
   document.querySelector(
     '#globe-canvas'
   )
 
+
 const globeSection =
   document.querySelector(
     '#globe-section'
   )
+
 
 const globeSticky =
   document.querySelector(
     '.globe-sticky'
   )
 
+
 const florenceSection =
   document.querySelector(
     '.florence'
   )
 
+
 const hero =
   document.querySelector(
     '.hero'
   )
+
 
 const heroImage =
   document.querySelector(
@@ -186,50 +224,60 @@ const memoryCard =
     '#memory-card'
   )
 
+
 const memoryPhoto =
   document.querySelector(
     '.memory-photo'
   )
+
 
 const memoryImage =
   document.querySelector(
     '#memory-image'
   )
 
+
 const memoryNumber =
   document.querySelector(
     '#memory-number'
   )
+
 
 const memoryCountry =
   document.querySelector(
     '#memory-country'
   )
 
+
 const memoryTitle =
   document.querySelector(
     '#memory-title'
   )
+
 
 const memoryText =
   document.querySelector(
     '#memory-text'
   )
 
+
 const memoryLink =
   document.querySelector(
     '#memory-link'
   )
+
 
 const memoryLat =
   document.querySelector(
     '#memory-lat'
   )
 
+
 const memoryLng =
   document.querySelector(
     '#memory-lng'
   )
+
 
 const memoryClose =
   document.querySelector(
@@ -256,471 +304,565 @@ const loaderProgress =
     '#loader-progress'
   )
 
+
 const loaderPercent =
   document.querySelector(
     '#loader-percent'
   )
 
 /* =========================================================
-   LIGHT GLOBE VISUAL
+   RUNTIME STYLE
 ========================================================= */
 
-const lightGlobeStyle =
+const runtimeStyle =
   document.createElement(
     'style'
   )
 
-lightGlobeStyle.textContent = `
+
+runtimeStyle.textContent = `
 
 .globe-section {
-  background: #f4f3ef !important;
-  color: #171714 !important;
+  background:
+    #f5f4f0 !important;
+
+  color:
+    #171714 !important;
 }
+
 
 .globe-sticky {
   background:
+
     radial-gradient(
-      circle at 50% 44%,
+      circle at 50% 45%,
       #ffffff 0%,
-      #f7f6f2 42%,
-      #f1f0eb 100%
+      #faf9f6 48%,
+      #f2f1ed 100%
     ) !important;
 
-  color: #171714 !important;
+  color:
+    #171714 !important;
 }
+
 
 .globe-atmosphere {
-  width: min(58vw, 660px) !important;
+  width:
+    min(58vw, 660px) !important;
 
   background:
+
     radial-gradient(
       circle,
-      rgba(80, 86, 80, .045),
-      rgba(80, 86, 80, .018) 48%,
-      transparent 70%
+      rgba(70,75,70,.035),
+      rgba(70,75,70,.012) 50%,
+      transparent 72%
     ) !important;
 
-  filter: blur(28px) !important;
+  filter:
+    blur(26px) !important;
 }
+
 
 .globe-title {
-  color: rgba(20, 22, 19, .027) !important;
+  color:
+    rgba(20,22,19,.022) !important;
 }
 
-.globe-instruction {
-  color: #171714 !important;
+
+.globe-instruction,
+.city-list,
+.city-list button,
+.globe-progress,
+.mobile-city-button {
+
+  color:
+    #171714 !important;
 }
+
 
 .globe-instruction-icon {
   border-color:
-    rgba(20, 22, 19, .22) !important;
+    rgba(20,22,19,.2) !important;
 }
 
-.city-list {
-  color: #171714 !important;
-}
-
-.city-list button {
-  color: #171714 !important;
-}
-
-.globe-progress {
-  color: #171714 !important;
-}
 
 .globe-progress > div {
   background:
-    rgba(20, 22, 19, .13) !important;
+    rgba(20,22,19,.12) !important;
 }
+
 
 .globe-progress i {
   background:
     #171714 !important;
 }
 
-.mobile-city-button {
-  color: #171714 !important;
 
-  border-color:
-    rgba(20, 22, 19, .18) !important;
-}
+/* -----------------------------------------
+   MEMORY PHOTO
+----------------------------------------- */
 
-.memory-link {
-  display: none;
-
-  width: max-content;
-
-  margin-top: 20px;
-
-  padding-bottom: 5px;
-
-  border-bottom:
-    1px solid rgba(17, 19, 15, .35);
-
-  font-size: 8px;
-
-  font-weight: 600;
-
-  letter-spacing: .14em;
-
-  text-transform: uppercase;
-
-  color: #11130f;
-
-  transition:
-    transform .25s ease,
-    opacity .25s ease;
-}
-
-.memory-link:hover {
-  transform: translateX(4px);
-  opacity: .6;
+.memory-photo {
+  position:
+    relative !important;
 }
 
 
-/* Japan Reel Cover */
+/* -----------------------------------------
+   INSTAGRAM REEL
+----------------------------------------- */
 
-.reel-cover {
-  position: absolute;
+.instagram-reel-wrap {
 
-  inset: 0;
+  position:
+    absolute;
 
-  display: none;
+  inset:
+    0;
 
-  flex-direction: column;
+  z-index:
+    2;
 
-  justify-content: space-between;
+  display:
+    none;
 
-  padding: 24px;
-
-  color: #f2eee5;
+  overflow:
+    hidden;
 
   background:
-    radial-gradient(
-      circle at 70% 25%,
-      #454b43,
-      transparent 42%
-    ),
-    linear-gradient(
-      145deg,
-      #151815,
-      #30362f
-    );
+    #ffffff;
 }
 
-.memory-photo.is-reel .reel-cover {
-  display: flex;
+
+.memory-photo.is-instagram
+.instagram-reel-wrap {
+
+  display:
+    block;
 }
 
-.memory-photo.is-reel #memory-image {
-  display: none;
+
+.memory-photo.is-instagram
+#memory-image {
+
+  display:
+    none !important;
 }
 
-.reel-cover-top {
-  display: flex;
 
-  justify-content: space-between;
+.instagram-reel-wrap iframe {
 
-  font-size: 7px;
+  display:
+    block;
 
-  letter-spacing: .16em;
+  width:
+    100%;
 
-  text-transform: uppercase;
-
-  opacity: .65;
-}
-
-.reel-cover-center {
-  display: grid;
-
-  place-items: center;
-
-  flex: 1;
-}
-
-.reel-play {
-  display: grid;
-
-  place-items: center;
-
-  width: 72px;
-
-  height: 72px;
+  height:
+    100%;
 
   border:
-    1px solid rgba(255,255,255,.5);
+    0;
 
-  border-radius: 50%;
-
-  font-size: 18px;
-
-  padding-left: 4px;
-}
-
-.reel-cover-bottom span {
-  display: block;
-
-  font-size: 9px;
-
-  letter-spacing: .18em;
-
-  text-transform: uppercase;
-
-  opacity: .65;
-}
-
-.reel-cover-bottom strong {
-  display: block;
-
-  margin-top: 5px;
-
-  font-family:
-    "Cormorant Garamond",
-    Georgia,
-    serif;
-
-  font-size: 52px;
-
-  font-weight: 400;
-
-  line-height: .85;
+  background:
+    #ffffff;
 }
 
 
-/* active city label */
+.instagram-fallback {
 
-.globe-active-label {
-  position: absolute;
+  position:
+    absolute;
 
-  z-index: 15;
+  left:
+    10px;
 
-  display: flex;
+  right:
+    10px;
 
-  align-items: center;
+  bottom:
+    8px;
 
-  gap: 10px;
+  z-index:
+    5;
 
-  pointer-events: none;
+  display:
+    flex;
 
-  opacity: 0;
+  justify-content:
+    center;
+
+  pointer-events:
+    none;
+}
+
+
+.instagram-fallback a {
+
+  pointer-events:
+    auto;
+
+  padding:
+    8px 12px;
+
+  border:
+    1px solid
+    rgba(0,0,0,.14);
+
+  background:
+    rgba(255,255,255,.94);
+
+  color:
+    #11130f;
+
+  font-size:
+    7px;
+
+  font-weight:
+    600;
+
+  letter-spacing:
+    .12em;
+
+  text-transform:
+    uppercase;
+}
+
+
+/* -----------------------------------------
+   MEMORY LINK
+----------------------------------------- */
+
+.memory-link {
+
+  display:
+    none;
+
+  width:
+    max-content;
+
+  margin-top:
+    18px;
+
+  padding-bottom:
+    4px;
+
+  border-bottom:
+    1px solid
+    rgba(17,19,15,.34);
+
+  color:
+    #11130f;
+
+  font-size:
+    8px;
+
+  font-weight:
+    600;
+
+  letter-spacing:
+    .14em;
+
+  text-transform:
+    uppercase;
+
+  transition:
+    opacity .25s ease,
+    transform .25s ease;
+}
+
+
+.memory-link:hover {
+
+  opacity:
+    .6;
 
   transform:
-    translateY(-50%);
+    translateX(3px);
+}
+
+
+/* -----------------------------------------
+   CONNECTOR
+
+   jediná čiara:
+   CITY POINT -> VIDEO / PHOTO CARD
+----------------------------------------- */
+
+.memory-connector {
+
+  position:
+    absolute;
+
+  inset:
+    0;
+
+  z-index:
+    24;
+
+  width:
+    100%;
+
+  height:
+    100%;
+
+  overflow:
+    visible;
+
+  pointer-events:
+    none;
+
+  opacity:
+    0;
 
   transition:
     opacity .3s ease;
 }
 
-.globe-active-label.is-visible {
-  opacity: 1;
-}
 
-.globe-active-label-line {
-  width: 65px;
+.memory-connector.is-visible {
 
-  height: 1px;
-
-  background:
-    rgba(17, 19, 15, .45);
-}
-
-.globe-active-label-copy {
-  white-space: nowrap;
-}
-
-.globe-active-label-copy span {
-  display: block;
-
-  font-size: 6px;
-
-  letter-spacing: .15em;
-
-  text-transform: uppercase;
-
-  opacity: .48;
-}
-
-.globe-active-label-copy strong {
-  display: block;
-
-  margin-top: 2px;
-
-  font-family:
-    "Cormorant Garamond",
-    Georgia,
-    serif;
-
-  font-size: 22px;
-
-  font-weight: 400;
+  opacity:
+    1;
 }
 
 
-/* globe prompt */
+.memory-connector line {
+
+  stroke:
+    rgba(20,22,19,.38);
+
+  stroke-width:
+    1;
+
+  vector-effect:
+    non-scaling-stroke;
+}
+
+
+.memory-connector circle {
+
+  fill:
+    #171714;
+}
+
+
+/* -----------------------------------------
+   START MESSAGE
+----------------------------------------- */
 
 .globe-start-message {
-  position: absolute;
 
-  left: 50%;
+  position:
+    absolute;
 
-  bottom: 76px;
+  left:
+    50%;
 
-  z-index: 11;
+  bottom:
+    76px;
+
+  z-index:
+    11;
 
   transform:
     translateX(-50%);
 
-  white-space: nowrap;
+  white-space:
+    nowrap;
 
-  font-size: 7px;
+  color:
+    rgba(17,19,15,.48);
 
-  font-weight: 500;
+  font-size:
+    7px;
 
-  letter-spacing: .2em;
+  font-weight:
+    500;
 
-  text-transform: uppercase;
+  letter-spacing:
+    .2em;
 
-  color: rgba(17, 19, 15, .52);
+  text-transform:
+    uppercase;
 
-  pointer-events: none;
+  pointer-events:
+    none;
+
+  transition:
+    opacity .3s ease;
 }
 
 
-@media (max-width: 700px) {
+@media (max-width:700px) {
 
   .globe-atmosphere {
-    width: 88vw !important;
+
+    width:
+      88vw !important;
   }
 
-  .globe-active-label-line {
-    width: 32px;
+
+  .memory-connector {
+
+    display:
+      none;
   }
 
-  .globe-active-label-copy strong {
-    font-size: 18px;
-  }
 
   .globe-start-message {
-    bottom: 118px;
 
-    font-size: 6px;
+    bottom:
+      118px;
+
+    font-size:
+      6px;
   }
+
 
   .memory-link {
-    margin-top: 15px;
-    font-size: 7px;
-  }
 
-  .reel-cover {
-    padding: 18px;
-  }
+    margin-top:
+      14px;
 
-  .reel-cover-bottom strong {
-    font-size: 42px;
+    font-size:
+      7px;
   }
 
 }
 
 `
 
+
 document.head.appendChild(
-  lightGlobeStyle
+  runtimeStyle
 )
 
 /* =========================================================
-   REEL COVER
+   INSTAGRAM IFRAME
 ========================================================= */
 
-const reelCover =
+const instagramWrap =
   document.createElement(
     'div'
   )
 
-reelCover.className =
-  'reel-cover'
 
-reelCover.innerHTML = `
-
-  <div class="reel-cover-top">
-
-    <span>
-      SIMONA & MARTIN
-    </span>
-
-    <span>
-      06 / 07
-    </span>
-
-  </div>
+instagramWrap.className =
+  'instagram-reel-wrap'
 
 
-  <div class="reel-cover-center">
+instagramWrap.innerHTML = `
 
-    <div class="reel-play">
-      ▶
-    </div>
+  <iframe
+    id="instagram-reel-frame"
+    title="Japan Instagram Reel"
+    loading="lazy"
+    allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
+    allowfullscreen
+  ></iframe>
 
-  </div>
-
-
-  <div class="reel-cover-bottom">
-
-    <span>
-      JAPAN
-    </span>
-
-    <strong>
-      Tokyo
-    </strong>
-
-  </div>
-
-`
-
-memoryPhoto?.appendChild(
-  reelCover
-)
-
-/* =========================================================
-   ACTIVE LABEL
-========================================================= */
-
-const activeLabel =
-  document.createElement(
-    'div'
-  )
-
-activeLabel.className =
-  'globe-active-label'
-
-activeLabel.innerHTML = `
 
   <div
-    class="globe-active-label-line"
-  ></div>
-
-  <div
-    class="globe-active-label-copy"
+    class="instagram-fallback"
   >
 
-    <span>
-      SELECTED
-    </span>
-
-    <strong>
-      Tokyo
-    </strong>
+    <a
+      id="instagram-fallback-link"
+      href="https://www.instagram.com/reel/DN_BgiWktOJ/"
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      OPEN ON INSTAGRAM ↗
+    </a>
 
   </div>
 
 `
 
-globeSticky?.appendChild(
-  activeLabel
-)
+
+memoryPhoto
+  ?.appendChild(
+    instagramWrap
+  )
+
+
+const instagramFrame =
+  instagramWrap.querySelector(
+    '#instagram-reel-frame'
+  )
+
+
+const instagramFallbackLink =
+  instagramWrap.querySelector(
+    '#instagram-fallback-link'
+  )
 
 /* =========================================================
-   SELECT MESSAGE
+   CONNECTOR SVG
+========================================================= */
+
+const SVG_NS =
+  'http://www.w3.org/2000/svg'
+
+
+const connectorSvg =
+  document.createElementNS(
+    SVG_NS,
+    'svg'
+  )
+
+
+connectorSvg.setAttribute(
+  'class',
+  'memory-connector'
+)
+
+
+connectorSvg.setAttribute(
+  'aria-hidden',
+  'true'
+)
+
+
+connectorSvg.innerHTML = `
+
+  <line
+    x1="0"
+    y1="0"
+    x2="0"
+    y2="0"
+  ></line>
+
+  <circle
+    cx="0"
+    cy="0"
+    r="3"
+  ></circle>
+
+`
+
+
+globeSticky
+  ?.appendChild(
+    connectorSvg
+  )
+
+
+const connectorLine =
+  connectorSvg.querySelector(
+    'line'
+  )
+
+
+const connectorDot =
+  connectorSvg.querySelector(
+    'circle'
+  )
+
+/* =========================================================
+   START MESSAGE
 ========================================================= */
 
 const startMessage =
@@ -728,34 +870,38 @@ const startMessage =
     'div'
   )
 
+
 startMessage.className =
   'globe-start-message'
+
 
 startMessage.textContent =
   'SELECT A CITY TO START'
 
-globeSticky?.appendChild(
-  startMessage
-)
 
-/* =========================================================
-   CHANGE INSTRUCTION TEXT
-========================================================= */
+globeSticky
+  ?.appendChild(
+    startMessage
+  )
+
 
 const instructionText =
   document.querySelector(
     '.globe-instruction p'
   )
 
+
 if (
   instructionText
 ) {
+
   instructionText.innerHTML =
     `
       DRAG TO ROTATE
       <br>
       SELECT A CITY
     `
+
 }
 
 /* =========================================================
@@ -763,14 +909,23 @@ if (
 ========================================================= */
 
 const preloadFiles = [
+
   '01-historic-selfie.jpeg',
+
   '02-west-ham.jpeg',
+
   '03-madeira-waterfall.jpeg',
+
   '04-madeira-swing.jpeg',
+
   '06-liverpool-waterfront.jpeg',
+
   '07-florence-engagement.jpeg',
+
   '08-formal-outdoor.jpeg'
+
 ]
+
 
 let loadedResources =
   0
@@ -819,10 +974,13 @@ function resourceLoaded() {
 
 
   setLoaderProgress(
+
     (
       loadedResources /
       preloadFiles.length
-    ) * 88
+    ) *
+    88
+
   )
 
 }
@@ -847,6 +1005,7 @@ function preloadImages() {
               () => {
 
                 resourceLoaded()
+
                 resolve()
 
               }
@@ -856,6 +1015,7 @@ function preloadImages() {
               () => {
 
                 resourceLoaded()
+
                 resolve()
 
               }
@@ -888,6 +1048,7 @@ function finishLoader() {
         'is-loading'
       )
 
+
       body.classList.add(
         'is-loaded'
       )
@@ -903,16 +1064,21 @@ function finishLoader() {
 ========================================================= */
 
 let renderer
+
 let scene
+
 let camera
 
 let worldGroup
+
 let globeSphere
 
 let animationFrame
 
+
 let globeVisible =
   false
+
 
 let activeCity =
   null
@@ -929,15 +1095,14 @@ const targetQuaternion =
 const markerObjects =
   []
 
-const markerHitTargets =
-  []
 
-const routeObjects =
+const markerHitTargets =
   []
 
 
 const raycaster =
   new THREE.Raycaster()
+
 
 const rayPointer =
   new THREE.Vector2()
@@ -946,20 +1111,26 @@ const rayPointer =
 let dragging =
   false
 
+
 let pointerDownX =
   0
+
 
 let pointerDownY =
   0
 
+
 let previousPointerX =
   0
+
 
 let previousPointerY =
   0
 
+
 let dragDistance =
   0
+
 
 let lastInteraction =
   performance.now()
@@ -976,7 +1147,8 @@ function latLngToVector(
 
   const phi =
     (
-      90 - lat
+      90 -
+      lat
     ) *
     Math.PI /
     180
@@ -984,7 +1156,8 @@ function latLngToVector(
 
   const theta =
     (
-      lng + 180
+      lng +
+      180
     ) *
     Math.PI /
     180
@@ -1008,14 +1181,10 @@ function latLngToVector(
 }
 
 /* =========================================================
-   GLOBE SPHERE
+   GLOBE
 ========================================================= */
 
 function createGlobeSurface() {
-
-  /*
-    skoro biela transparentná guľa
-  */
 
   const geometry =
     new THREE.SphereGeometry(
@@ -1029,25 +1198,19 @@ function createGlobeSurface() {
     new THREE.MeshPhysicalMaterial({
 
       color:
-        0xf4f4f1,
+        0xf7f7f4,
 
       transparent:
         true,
 
       opacity:
-        0.48,
+        .35,
 
       roughness:
         1,
 
       metalness:
-        0,
-
-      transmission:
-        0,
-
-      side:
-        THREE.FrontSide
+        0
 
     })
 
@@ -1064,16 +1227,18 @@ function createGlobeSurface() {
   )
 
 
-  /*
-    veľmi jemný wireframe povrch
-  */
+  /* subtle triangular wire structure */
 
   const wireGeometry =
     new THREE.SphereGeometry(
+
       globeRadius *
       1.003,
+
       42,
+
       28
+
     )
 
 
@@ -1081,7 +1246,7 @@ function createGlobeSurface() {
     new THREE.MeshBasicMaterial({
 
       color:
-        0x6f746f,
+        0x747874,
 
       wireframe:
         true,
@@ -1090,7 +1255,7 @@ function createGlobeSurface() {
         true,
 
       opacity:
-        0.065,
+        .055,
 
       depthWrite:
         false
@@ -1112,20 +1277,22 @@ function createGlobeSurface() {
 }
 
 /* =========================================================
-   SURFACE DOTS
+   GLOBE DOTS
 ========================================================= */
 
 function createSurfaceDots() {
 
   const count =
-    window.innerWidth < 700
-      ? 650
-      : 1000
+    window.innerWidth <
+    700
+      ? 600
+      : 950
 
 
   const positions =
     new Float32Array(
-      count * 3
+      count *
+      3
     )
 
 
@@ -1133,7 +1300,9 @@ function createSurfaceDots() {
     Math.PI *
     (
       3 -
-      Math.sqrt(5)
+      Math.sqrt(
+        5
+      )
     )
 
 
@@ -1148,7 +1317,8 @@ function createSurfaceDots() {
       (
         i /
         (
-          count - 1
+          count -
+          1
         )
       ) *
       2
@@ -1157,7 +1327,8 @@ function createSurfaceDots() {
     const radius =
       Math.sqrt(
         1 -
-        y * y
+        y *
+        y
       )
 
 
@@ -1166,26 +1337,28 @@ function createSurfaceDots() {
       i
 
 
-    const x =
-      Math.cos(theta) *
-      radius
-
-
-    const z =
-      Math.sin(theta) *
-      radius
-
-
     const point =
       new THREE.Vector3(
-        x,
+
+        Math.cos(
+          theta
+        ) *
+        radius,
+
         y,
-        z
+
+        Math.sin(
+          theta
+        ) *
+        radius
+
       )
         .normalize()
         .multiplyScalar(
+
           globeRadius *
           1.007
+
         )
 
 
@@ -1229,18 +1402,19 @@ function createSurfaceDots() {
     new THREE.PointsMaterial({
 
       color:
-        0x454945,
+        0x4a4e4a,
 
       size:
-        window.innerWidth < 700
-          ? 0.008
-          : 0.006,
+        window.innerWidth <
+        700
+          ? .008
+          : .006,
 
       transparent:
         true,
 
       opacity:
-        0.16,
+        .13,
 
       depthWrite:
         false
@@ -1248,21 +1422,19 @@ function createSurfaceDots() {
     })
 
 
-  const points =
+  worldGroup.add(
+
     new THREE.Points(
       geometry,
       material
     )
 
-
-  worldGroup.add(
-    points
   )
 
 }
 
 /* =========================================================
-   GRATICULE
+   GRID
 ========================================================= */
 
 function createGraticule() {
@@ -1271,13 +1443,13 @@ function createGraticule() {
     new THREE.LineBasicMaterial({
 
       color:
-        0x5f645f,
+        0x676b67,
 
       transparent:
         true,
 
       opacity:
-        0.115,
+        .085,
 
       depthWrite:
         false
@@ -1290,14 +1462,13 @@ function createGraticule() {
     1.009
 
 
-  /* Latitude */
-
   ;[
     -60,
     -30,
     0,
     30,
     60
+
   ].forEach(
     latitude => {
 
@@ -1345,13 +1516,17 @@ function createGraticule() {
 
           new THREE.Vector3(
 
-            Math.cos(angle) *
-              ringRadius,
+            Math.cos(
+              angle
+            ) *
+            ringRadius,
 
             y,
 
-            Math.sin(angle) *
-              ringRadius
+            Math.sin(
+              angle
+            ) *
+            ringRadius
 
           )
 
@@ -1361,7 +1536,8 @@ function createGraticule() {
 
 
       const geometry =
-        new THREE.BufferGeometry()
+        new THREE
+          .BufferGeometry()
           .setFromPoints(
             points
           )
@@ -1379,8 +1555,6 @@ function createGraticule() {
     }
   )
 
-
-  /* Longitude */
 
   for (
     let longitude = 0;
@@ -1423,21 +1597,21 @@ function createGraticule() {
         new THREE.Vector3(
 
           radius *
-            cosLat *
-            Math.cos(
-              lngRad
-            ),
+          cosLat *
+          Math.cos(
+            lngRad
+          ),
 
           radius *
-            Math.sin(
-              latRad
-            ),
+          Math.sin(
+            latRad
+          ),
 
           radius *
-            cosLat *
-            Math.sin(
-              lngRad
-            )
+          cosLat *
+          Math.sin(
+            lngRad
+          )
 
         )
 
@@ -1447,7 +1621,8 @@ function createGraticule() {
 
 
     const geometry =
-      new THREE.BufferGeometry()
+      new THREE
+        .BufferGeometry()
         .setFromPoints(
           points
         )
@@ -1467,222 +1642,13 @@ function createGraticule() {
 }
 
 /* =========================================================
-   ROUTES
+   IMPORTANT
+
+   ŽIADNE TRASY MEDZI MESTAMI.
+
+   ČIARA SA VYKRESLÍ AŽ PO VÝBERE
+   A IDE Z BODU MESTA PRIAMO KU KARTE.
 ========================================================= */
-
-function createArc(
-  startData,
-  endData
-) {
-
-  const start =
-    latLngToVector(
-      startData.lat,
-      startData.lng,
-      1
-    ).normalize()
-
-
-  const end =
-    latLngToVector(
-      endData.lat,
-      endData.lng,
-      1
-    ).normalize()
-
-
-  const dot =
-    THREE.MathUtils.clamp(
-      start.dot(
-        end
-      ),
-      -1,
-      1
-    )
-
-
-  const omega =
-    Math.acos(
-      dot
-    )
-
-
-  const sinOmega =
-    Math.sin(
-      omega
-    )
-
-
-  const points =
-    []
-
-
-  const segments =
-    80
-
-
-  for (
-    let i = 0;
-    i <= segments;
-    i += 1
-  ) {
-
-    const t =
-      i /
-      segments
-
-
-    let point
-
-
-    if (
-      Math.abs(
-        sinOmega
-      ) <
-      0.0001
-    ) {
-
-      point =
-        start.clone()
-          .lerp(
-            end,
-            t
-          )
-          .normalize()
-
-    } else {
-
-      const a =
-        Math.sin(
-          (
-            1 - t
-          ) *
-          omega
-        ) /
-        sinOmega
-
-
-      const b =
-        Math.sin(
-          t *
-          omega
-        ) /
-        sinOmega
-
-
-      point =
-        start.clone()
-          .multiplyScalar(
-            a
-          )
-          .add(
-            end.clone()
-              .multiplyScalar(
-                b
-              )
-          )
-          .normalize()
-
-    }
-
-
-    const lift =
-      1 +
-      Math.sin(
-        Math.PI *
-        t
-      ) *
-      0.07
-
-
-    point.multiplyScalar(
-      globeRadius *
-      1.014 *
-      lift
-    )
-
-
-    points.push(
-      point
-    )
-
-  }
-
-
-  const geometry =
-    new THREE.BufferGeometry()
-      .setFromPoints(
-        points
-      )
-
-
-  const material =
-    new THREE.LineBasicMaterial({
-
-      color:
-        0x5f645f,
-
-      transparent:
-        true,
-
-      opacity:
-        0.16,
-
-      depthWrite:
-        false
-
-    })
-
-
-  const line =
-    new THREE.Line(
-      geometry,
-      material
-    )
-
-
-  line.userData.cityKey =
-    endData.key
-
-
-  routeObjects.push(
-    line
-  )
-
-
-  worldGroup.add(
-    line
-  )
-
-}
-
-
-function createRoutes() {
-
-  const origin = {
-    lat: 48.37,
-    lng: 17.64
-  }
-
-
-  ;[
-    cities.london,
-    cities.madeira,
-    cities.liverpool,
-    cities.japan,
-    cities.florence
-  ].forEach(
-    city => {
-
-      createArc(
-        origin,
-        city
-      )
-
-    }
-  )
-
-}
 
 /* =========================================================
    MARKERS
@@ -1694,10 +1660,14 @@ function createMarker(
 
   const position =
     latLngToVector(
+
       city.lat,
+
       city.lng,
+
       globeRadius *
       1.026
+
     )
 
 
@@ -1711,7 +1681,8 @@ function createMarker(
 
 
   const normal =
-    position.clone()
+    position
+      .clone()
       .normalize()
 
 
@@ -1729,27 +1700,20 @@ function createMarker(
     )
 
 
-  /* small black point */
-
-  const pointGeometry =
-    new THREE.SphereGeometry(
-      0.018,
-      16,
-      16
-    )
-
-
-  const pointMaterial =
-    new THREE.MeshBasicMaterial({
-      color:
-        0x171714
-    })
-
-
   const point =
     new THREE.Mesh(
-      pointGeometry,
-      pointMaterial
+
+      new THREE.SphereGeometry(
+        .018,
+        16,
+        16
+      ),
+
+      new THREE.MeshBasicMaterial({
+        color:
+          0x171714
+      })
+
     )
 
 
@@ -1758,46 +1722,39 @@ function createMarker(
   )
 
 
-  /* tiny ring */
-
-  const ringGeometry =
-    new THREE.RingGeometry(
-      0.033,
-      0.038,
-      32
-    )
-
-
-  const ringMaterial =
-    new THREE.MeshBasicMaterial({
-
-      color:
-        0x171714,
-
-      transparent:
-        true,
-
-      opacity:
-        0.35,
-
-      side:
-        THREE.DoubleSide,
-
-      depthWrite:
-        false
-
-    })
-
-
   const ring =
     new THREE.Mesh(
-      ringGeometry,
-      ringMaterial
+
+      new THREE.RingGeometry(
+        .031,
+        .037,
+        32
+      ),
+
+      new THREE.MeshBasicMaterial({
+
+        color:
+          0x171714,
+
+        transparent:
+          true,
+
+        opacity:
+          .3,
+
+        side:
+          THREE.DoubleSide,
+
+        depthWrite:
+          false
+
+      })
+
     )
 
 
   ring.position.z =
-    0.006
+    .006
 
 
   marker.add(
@@ -1805,35 +1762,30 @@ function createMarker(
   )
 
 
-  /* invisible larger clickable area */
-
-  const hitGeometry =
-    new THREE.SphereGeometry(
-      0.11,
-      12,
-      12
-    )
-
-
-  const hitMaterial =
-    new THREE.MeshBasicMaterial({
-
-      transparent:
-        true,
-
-      opacity:
-        0,
-
-      depthWrite:
-        false
-
-    })
-
+  /* larger invisible clicking surface */
 
   const hit =
     new THREE.Mesh(
-      hitGeometry,
-      hitMaterial
+
+      new THREE.SphereGeometry(
+        .11,
+        12,
+        12
+      ),
+
+      new THREE.MeshBasicMaterial({
+
+        transparent:
+          true,
+
+        opacity:
+          0,
+
+        depthWrite:
+          false
+
+      })
+
     )
 
 
@@ -1895,27 +1847,25 @@ function createMarkers() {
 }
 
 /* =========================================================
-   LIGHTING
+   LIGHT
 ========================================================= */
 
 function createLights() {
 
-  const ambient =
+  scene.add(
+
     new THREE.AmbientLight(
       0xffffff,
       2.1
     )
 
-
-  scene.add(
-    ambient
   )
 
 
   const key =
     new THREE.DirectionalLight(
       0xffffff,
-      1.9
+      1.8
     )
 
 
@@ -1933,8 +1883,8 @@ function createLights() {
 
   const fill =
     new THREE.DirectionalLight(
-      0xdde1db,
-      1
+      0xe5e8e2,
+      .9
     )
 
 
@@ -1952,7 +1902,7 @@ function createLights() {
 }
 
 /* =========================================================
-   FACE LOCATION
+   FACE CITY
 ========================================================= */
 
 function faceCoordinates(
@@ -2013,7 +1963,7 @@ function faceCoordinates(
 }
 
 /* =========================================================
-   RESIZE
+   RENDER SIZE
 ========================================================= */
 
 function resizeRenderer() {
@@ -2037,11 +1987,14 @@ function resizeRenderer() {
   renderer.setPixelRatio(
 
     Math.min(
+
       window.devicePixelRatio,
 
-      width < 700
+      width <
+      700
         ? 1.3
         : 1.7
+
     )
 
   )
@@ -2059,12 +2012,9 @@ function resizeRenderer() {
     height
 
 
-  /*
-    menší glóbus + viac whitespace
-  */
-
   camera.position.z =
-    width < 700
+    width <
+    700
       ? 5.5
       : 5.9
 
@@ -2074,7 +2024,7 @@ function resizeRenderer() {
 }
 
 /* =========================================================
-   ACTIVE UI
+   ACTIVE MARKER
 ========================================================= */
 
 function updateActiveUI(
@@ -2110,9 +2060,11 @@ function updateActiveUI(
         .point
         .scale
         .setScalar(
+
           active
-            ? 1.7
+            ? 1.65
             : 1
+
         )
 
 
@@ -2120,27 +2072,10 @@ function updateActiveUI(
         .ring
         .material
         .opacity =
+
           active
-            ? 0.85
-            : 0.35
-
-    }
-  )
-
-
-  routeObjects.forEach(
-    route => {
-
-      const active =
-        route.userData
-          .cityKey ===
-        key
-
-
-      route.material.opacity =
-        active
-          ? 0.52
-          : 0.12
+            ? .8
+            : .3
 
     }
   )
@@ -2148,7 +2083,79 @@ function updateActiveUI(
 }
 
 /* =========================================================
-   MEMORY
+   INSTAGRAM
+========================================================= */
+
+function stopInstagramVideo() {
+
+  if (
+    !instagramFrame
+  ) {
+    return
+  }
+
+
+  /*
+    týmto sa video naozaj zastaví,
+    keď kartu zavrieme
+  */
+
+  instagramFrame.src =
+    'about:blank'
+
+}
+
+
+function showInstagramVideo(
+  city
+) {
+
+  memoryPhoto
+    .classList
+    .add(
+      'is-instagram'
+    )
+
+
+  instagramFrame.src =
+    city.instagramEmbedUrl
+
+
+  instagramFallbackLink.href =
+    city.instagramUrl
+
+}
+
+
+function showMemoryImage(
+  city
+) {
+
+  memoryPhoto
+    .classList
+    .remove(
+      'is-instagram'
+    )
+
+
+  stopInstagramVideo()
+
+
+  memoryImage.style.display =
+    'block'
+
+
+  memoryImage.src =
+    `${BASE}photos/${city.image}`
+
+
+  memoryImage.alt =
+    `${city.title} — Simona a Martin`
+
+}
+
+/* =========================================================
+   OPEN MEMORY
 ========================================================= */
 
 function openMemory(
@@ -2198,42 +2205,22 @@ function openMemory(
     city.lngLabel
 
 
-  /* image / Reel cover */
-
   if (
-    city.image
+    city.instagramEmbedUrl
   ) {
 
-    memoryPhoto
-      .classList
-      .remove(
-        'is-reel'
-      )
-
-
-    memoryImage.style.display =
-      'block'
-
-
-    memoryImage.src =
-      `${BASE}photos/${city.image}`
-
-
-    memoryImage.alt =
-      `${city.title} — Simona a Martin`
+    showInstagramVideo(
+      city
+    )
 
   } else {
 
-    memoryPhoto
-      .classList
-      .add(
-        'is-reel'
-      )
+    showMemoryImage(
+      city
+    )
 
   }
 
-
-  /* Instagram button */
 
   if (
     city.instagramUrl
@@ -2244,7 +2231,7 @@ function openMemory(
 
 
     memoryLink.textContent =
-      'WATCH JAPAN REEL ↗'
+      'OPEN REEL ON INSTAGRAM ↗'
 
 
     memoryLink.style.display =
@@ -2269,48 +2256,7 @@ function openMemory(
     )
 
 
-  updateActiveUI(
-    key
-  )
-
-
-  faceCoordinates(
-    city.lat,
-    city.lng
-  )
-
-
-  const labelStrong =
-    activeLabel
-      .querySelector(
-        'strong'
-      )
-
-
-  const labelSmall =
-    activeLabel
-      .querySelector(
-        'span'
-      )
-
-
-  if (
-    labelStrong
-  ) {
-    labelStrong.textContent =
-      city.title
-  }
-
-
-  if (
-    labelSmall
-  ) {
-    labelSmall.textContent =
-      city.country
-  }
-
-
-  activeLabel
+  connectorSvg
     .classList
     .add(
       'is-visible'
@@ -2321,10 +2267,29 @@ function openMemory(
     '0'
 
 
+  updateActiveUI(
+    key
+  )
+
+
+  /*
+    natočenie glóbusu
+    na vybrané miesto
+  */
+
+  faceCoordinates(
+    city.lat,
+    city.lng
+  )
+
+
   closeMobileMenu()
 
 }
 
+/* =========================================================
+   CLOSE MEMORY
+========================================================= */
 
 function closeMemoryCard() {
 
@@ -2335,7 +2300,7 @@ function closeMemoryCard() {
     )
 
 
-  activeLabel
+  connectorSvg
     .classList
     .remove(
       'is-visible'
@@ -2344,6 +2309,9 @@ function closeMemoryCard() {
 
   startMessage.style.opacity =
     '1'
+
+
+  stopInstagramVideo()
 
 
   activeCity =
@@ -2462,25 +2430,40 @@ const mobileMenuStyle =
 mobileMenuStyle.textContent = `
 
 .mobile-city-menu {
-  position: absolute;
 
-  left: 18px;
-  right: 18px;
-  bottom: 118px;
+  position:
+    absolute;
 
-  z-index: 45;
+  left:
+    18px;
 
-  padding: 14px 18px;
+  right:
+    18px;
 
-  color: #171714;
-  background: #efeee9;
+  bottom:
+    118px;
+
+  z-index:
+    45;
+
+  padding:
+    14px 18px;
+
+  color:
+    #171714;
+
+  background:
+    #efeee9;
 
   box-shadow:
     0 25px 70px
     rgba(0,0,0,.15);
 
-  opacity: 0;
-  visibility: hidden;
+  opacity:
+    0;
+
+  visibility:
+    hidden;
 
   transform:
     translateY(20px);
@@ -2488,67 +2471,106 @@ mobileMenuStyle.textContent = `
   transition:
     opacity .3s ease,
     visibility .3s ease,
-    transform .4s cubic-bezier(.22,1,.36,1);
+    transform .4s
+      cubic-bezier(.22,1,.36,1);
 }
 
+
 .mobile-city-menu.is-open {
-  opacity: 1;
-  visibility: visible;
+
+  opacity:
+    1;
+
+  visibility:
+    visible;
 
   transform:
     translateY(0);
 }
 
+
 .mobile-city-menu button {
-  display: grid;
+
+  display:
+    grid;
 
   grid-template-columns:
     35px 1fr auto;
 
-  align-items: center;
+  align-items:
+    center;
 
-  width: 100%;
+  width:
+    100%;
 
-  padding: 13px 0;
+  padding:
+    13px 0;
 
   border-bottom:
     1px solid
     rgba(17,19,15,.12);
 
-  text-align: left;
+  text-align:
+    left;
 }
+
 
 .mobile-city-menu button:last-child {
-  border-bottom: 0;
+
+  border-bottom:
+    0;
 }
+
 
 .mobile-city-menu span {
-  font-size: 7px;
-  letter-spacing: .15em;
-  opacity: .45;
+
+  font-size:
+    7px;
+
+  letter-spacing:
+    .15em;
+
+  opacity:
+    .45;
 }
 
+
 .mobile-city-menu strong {
+
   font-family:
     "Cormorant Garamond",
     Georgia,
     serif;
 
-  font-size: 27px;
+  font-size:
+    27px;
 
-  font-weight: 400;
+  font-weight:
+    400;
 }
+
 
 .mobile-city-menu i {
-  font-size: 11px;
-  font-style: normal;
-  opacity: .5;
+
+  font-size:
+    11px;
+
+  font-style:
+    normal;
+
+  opacity:
+    .5;
 }
 
-@media (min-width: 701px) {
+
+@media (min-width:701px) {
+
   .mobile-city-menu {
-    display: none;
+
+    display:
+      none;
   }
+
 }
 
 `
@@ -2578,8 +2600,10 @@ function openMobileMenu() {
   if (
     plus
   ) {
+
     plus.textContent =
       '×'
+
   }
 
 }
@@ -2604,8 +2628,10 @@ function closeMobileMenu() {
   if (
     plus
   ) {
+
     plus.textContent =
       '+'
+
   }
 
 }
@@ -2713,7 +2739,9 @@ function onPointerDown(
 
   } catch {
 
-    /* mobile Safari */
+    /*
+      Safari fallback
+    */
 
   }
 
@@ -2770,7 +2798,7 @@ function onPointerMove(
         ),
 
         deltaX *
-        0.0055
+        .0055
 
       )
 
@@ -2789,8 +2817,8 @@ function onPointerMove(
         (
           window.innerWidth <
           700
-            ? 0.0017
-            : 0.0038
+            ? .0017
+            : .0038
         )
 
       )
@@ -2816,27 +2844,7 @@ function onPointerMove(
     activeCity
   ) {
 
-    memoryCard
-      .classList
-      .remove(
-        'is-open'
-      )
-
-
-    activeLabel
-      .classList
-      .remove(
-        'is-visible'
-      )
-
-
-    activeCity =
-      null
-
-
-    updateActiveUI(
-      null
-    )
+    closeMemoryCard()
 
   }
 
@@ -2904,13 +2912,17 @@ function raycastCity(
     0
   ) {
 
-    openMemory(
-
-      intersections[0]
+    const cityKey =
+      intersections[
+        0
+      ]
         .object
         .userData
         .cityKey
 
+
+    openMemory(
+      cityKey
     )
 
   }
@@ -3005,79 +3017,203 @@ canvas
   )
 
 /* =========================================================
-   ACTIVE LABEL POSITION
+   CONNECTOR
+
+   marker -> video/photo card
 ========================================================= */
 
-function updateActiveLabelPosition() {
+function getActiveMarkerWorldPosition() {
+
+  if (
+    !activeCity
+  ) {
+    return null
+  }
+
+
+  const marker =
+    markerObjects.find(
+      item =>
+        item.userData
+          .cityKey ===
+        activeCity
+    )
+
+
+  if (
+    !marker
+  ) {
+    return null
+  }
+
+
+  const worldPosition =
+    new THREE.Vector3()
+
+
+  marker.getWorldPosition(
+    worldPosition
+  )
+
+
+  return worldPosition
+
+}
+
+
+function updateConnector() {
 
   if (
     !activeCity ||
     !camera ||
-    !worldGroup
+    !globeSticky ||
+    !memoryCard
+      .classList
+      .contains(
+        'is-open'
+      ) ||
+    window.innerWidth <
+    701
+  ) {
+
+    connectorSvg
+      .classList
+      .remove(
+        'is-visible'
+      )
+
+
+    return
+  }
+
+
+  const markerWorld =
+    getActiveMarkerWorldPosition()
+
+
+  if (
+    !markerWorld
   ) {
     return
   }
 
 
-  const city =
-    cities[
-      activeCity
-    ]
+  const projected =
+    markerWorld
+      .clone()
+      .project(
+        camera
+      )
 
 
-  const point =
-    latLngToVector(
+  const stickyRect =
+    globeSticky
+      .getBoundingClientRect()
 
-      city.lat,
-      city.lng,
 
-      globeRadius *
-      1.04
+  const cardRect =
+    memoryCard
+      .getBoundingClientRect()
 
+
+  const markerX =
+    (
+      (
+        projected.x +
+        1
+      ) /
+      2
+    ) *
+    stickyRect.width
+
+
+  const markerY =
+    (
+      (
+        1 -
+        projected.y
+      ) /
+      2
+    ) *
+    stickyRect.height
+
+
+  /*
+    karta je väčšinou vľavo.
+    Čiara sa preto pripája
+    na jej pravú hranu.
+  */
+
+  const cardIsLeft =
+    cardRect.left <
+    (
+      stickyRect.left +
+      markerX
     )
 
 
-  point.applyQuaternion(
-    worldGroup.quaternion
+  const cardX =
+    cardIsLeft
+
+      ? cardRect.right -
+        stickyRect.left
+
+      : cardRect.left -
+        stickyRect.left
+
+
+  const cardY =
+
+    cardRect.top -
+    stickyRect.top +
+    Math.min(
+      cardRect.height *
+      .42,
+      150
+    )
+
+
+  connectorLine.setAttribute(
+    'x1',
+    markerX
   )
 
 
-  point.project(
-    camera
+  connectorLine.setAttribute(
+    'y1',
+    markerY
   )
 
 
-  const x =
-    (
-      point.x *
-      0.5 +
-      0.5
-    ) *
-    window.innerWidth
+  connectorLine.setAttribute(
+    'x2',
+    cardX
+  )
 
 
-  const y =
-    (
-      -point.y *
-      0.5 +
-      0.5
-    ) *
-    window.innerHeight
+  connectorLine.setAttribute(
+    'y2',
+    cardY
+  )
 
 
-  const offset =
-    window.innerWidth <
-    700
-      ? 28
-      : 40
+  connectorDot.setAttribute(
+    'cx',
+    markerX
+  )
 
 
-  activeLabel.style.left =
-    `${x + offset}px`
+  connectorDot.setAttribute(
+    'cy',
+    markerY
+  )
 
 
-  activeLabel.style.top =
-    `${y}px`
+  connectorSvg
+    .classList
+    .add(
+      'is-visible'
+    )
 
 }
 
@@ -3124,7 +3260,8 @@ function sectionProgress(
 
 
   if (
-    distance <= 0
+    distance <=
+    0
   ) {
     return 0
   }
@@ -3182,13 +3319,16 @@ function updateScroll() {
   ) {
 
     const heroRect =
-      hero.getBoundingClientRect()
+      hero
+        .getBoundingClientRect()
 
 
     const progress =
       clamp(
+
         -heroRect.top /
         window.innerHeight
+
       )
 
 
@@ -3199,8 +3339,9 @@ function updateScroll() {
           ${progress * 4}vh,
           0
         )
+
         scale(
-          ${1.07 + progress * 0.035}
+          ${1.07 + progress * .035}
         )
       `
 
@@ -3216,13 +3357,14 @@ window.addEventListener(
   updateScroll,
 
   {
-    passive: true
+    passive:
+      true
   }
 
 )
 
 /* =========================================================
-   VISIBILITY
+   GLOBE VISIBILITY
 ========================================================= */
 
 const globeObserver =
@@ -3243,7 +3385,7 @@ const globeObserver =
 
     {
       threshold:
-        0.05
+        .05
     }
 
   )
@@ -3288,7 +3430,7 @@ function animate() {
   const delta =
     Math.min(
       clock.getDelta(),
-      0.05
+      .05
     )
 
 
@@ -3297,7 +3439,8 @@ function animate() {
 
 
   /*
-    veľmi pomalé samovoľné otáčanie
+    veľmi jemné automatické
+    otáčanie bez aktívneho mesta
   */
 
   if (
@@ -3320,7 +3463,7 @@ function animate() {
           ),
 
           delta *
-          0.018
+          .018
 
         )
 
@@ -3342,7 +3485,7 @@ function animate() {
 
       reducedMotion.matches
         ? 1
-        : 0.065
+        : .065
 
     )
 
@@ -3353,11 +3496,15 @@ function animate() {
       const pulse =
         1 +
         Math.sin(
+
           elapsed *
           2 +
-          marker.userData.phase
+
+          marker.userData
+            .phase
+
         ) *
-        0.12
+        .11
 
 
       marker.userData
@@ -3371,7 +3518,12 @@ function animate() {
   )
 
 
-  updateActiveLabelPosition()
+  /*
+    čiara sa preto hýbe
+    spolu s bodom na glóbuse
+  */
+
+  updateConnector()
 
 
   renderer.render(
@@ -3426,12 +3578,18 @@ function initGlobe() {
 
 
   camera =
-    new THREE.PerspectiveCamera(
-      36,
-      1,
-      0.1,
-      50
-    )
+    new THREE
+      .PerspectiveCamera(
+
+        36,
+
+        1,
+
+        .1,
+
+        50
+
+      )
 
 
   worldGroup =
@@ -3445,21 +3603,24 @@ function initGlobe() {
 
   createLights()
 
+
   createGlobeSurface()
+
 
   createSurfaceDots()
 
+
   createGraticule()
 
-  createRoutes()
 
   createMarkers()
+
 
   resizeRenderer()
 
 
   /*
-    začiatok orientovaný na Európu
+    úvod: Európa
   */
 
   faceCoordinates(
@@ -3488,18 +3649,20 @@ window.addEventListener(
   () => {
 
     resizeRenderer()
+
     updateScroll()
 
   },
 
   {
-    passive: true
+    passive:
+      true
   }
 
 )
 
 /* =========================================================
-   SMOOTH ANCHORS
+   SMOOTH LINKS
 ========================================================= */
 
 document
@@ -3528,9 +3691,10 @@ document
 
 
           const target =
-            document.querySelector(
-              selector
-            )
+            document
+              .querySelector(
+                selector
+              )
 
 
           if (
