@@ -45,11 +45,12 @@ function resize() {
   const viewWidth = viewHeight * camera.aspect
   planes.forEach(({ mesh, ratio }, index) => {
     const mobile = width < 700
-    const maxHeight = viewHeight * (mobile ? 0.43 : 0.66)
+    const shortMobile = mobile && window.innerHeight < 740
+    const maxHeight = viewHeight * (mobile ? (shortMobile ? 0.30 : 0.43) : 0.66)
     const maxWidth = viewWidth * (mobile ? 0.82 : 0.40)
     const height = Math.min(maxHeight, maxWidth / ratio)
     mesh.scale.set(height * ratio, height, 1)
-    mesh.position.set(mobile ? 0 : viewWidth * 0.235, mobile ? viewHeight * 0.115 : 0, -index * 10)
+    mesh.position.set(mobile ? 0 : viewWidth * 0.235, mobile ? viewHeight * (shortMobile ? 0.21 : 0.115) : 0, -index * 10)
   })
 }
 
@@ -137,3 +138,4 @@ document.querySelector('#scene').addEventListener('webglcontextlost', event => {
 })
 updateMode()
 init()
+
