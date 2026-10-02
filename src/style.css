@@ -15,34 +15,31 @@
     optimizeLegibility;
 
   --ink:
-    #11130f;
-
-  --forest:
-    #1b211b;
-
-  --forest-soft:
-    #252d25;
+    #181a17;
 
   --paper:
-    #e8e2d6;
+    #f5f4ef;
 
-  --paper-light:
-    #f1ece3;
+  --paper-soft:
+    #ece9e1;
 
   --cream:
-    #eee8dd;
+    #eee9df;
 
-  --muted:
-    #9d9d91;
+  --green:
+    #66705f;
+
+  --green-soft:
+    #879080;
 
   --gold:
-    #b79b6f;
+    #b29c78;
+
+  --line:
+    rgba(24, 26, 23, 0.14);
 
   --line-light:
-    rgba(255, 255, 255, 0.18);
-
-  --line-dark:
-    rgba(17, 19, 15, 0.18);
+    rgba(255, 255, 255, 0.17);
 
   --globe-progress:
     0;
@@ -50,6 +47,7 @@
   --florence-progress:
     0;
 }
+
 
 /* =========================================================
    RESET
@@ -68,7 +66,7 @@ html {
     smooth;
 
   background:
-    var(--ink);
+    var(--paper);
 }
 
 body {
@@ -81,20 +79,15 @@ body {
   overflow-x:
     hidden;
 
-  background:
+  color:
     var(--ink);
 
-  color:
-    var(--cream);
+  background:
+    var(--paper);
 }
 
 body.is-loading {
   overflow:
-    hidden;
-}
-
-body.is-loaded {
-  overflow-x:
     hidden;
 }
 
@@ -121,6 +114,12 @@ a {
 }
 
 button {
+  padding:
+    0;
+
+  border:
+    0;
+
   font:
     inherit;
 
@@ -128,13 +127,7 @@ button {
     inherit;
 
   background:
-    none;
-
-  border:
-    0;
-
-  padding:
-    0;
+    transparent;
 
   cursor:
     pointer;
@@ -143,18 +136,20 @@ button {
 p,
 h1,
 h2,
-h3 {
+h3,
+figure {
   margin:
     0;
 }
 
 ::selection {
   color:
-    var(--ink);
+    #fff;
 
   background:
-    var(--gold);
+    var(--green);
 }
+
 
 /* =========================================================
    LOADER
@@ -176,8 +171,11 @@ h3 {
   place-items:
     center;
 
+  color:
+    #eee9df;
+
   background:
-    #0e100d;
+    #121410;
 
   transition:
     opacity 0.8s ease,
@@ -187,7 +185,8 @@ h3 {
     none;
 }
 
-body.is-loaded .loader {
+body.is-loaded
+.loader {
   opacity:
     0;
 
@@ -211,7 +210,7 @@ body.is-loaded .loader {
     block;
 
   margin-bottom:
-    35px;
+    32px;
 
   font-family:
     "Cormorant Garamond",
@@ -219,13 +218,13 @@ body.is-loaded .loader {
     serif;
 
   font-size:
-    42px;
-
-  font-style:
-    italic;
+    43px;
 
   font-weight:
     400;
+
+  font-style:
+    italic;
 }
 
 .loader-line {
@@ -239,12 +238,7 @@ body.is-loaded .loader {
     hidden;
 
   background:
-    rgba(
-      255,
-      255,
-      255,
-      0.18
-    );
+    rgba(255, 255, 255, 0.14);
 }
 
 .loader-line span {
@@ -252,13 +246,13 @@ body.is-loaded .loader {
     block;
 
   width:
-    0%;
+    0;
 
   height:
     100%;
 
   background:
-    var(--cream);
+    #eee9df;
 }
 
 .loader-percent {
@@ -266,23 +260,21 @@ body.is-loaded .loader {
     block;
 
   margin-top:
-    14px;
+    13px;
 
   font-size:
-    8px;
+    7px;
 
   letter-spacing:
-    0.18em;
-
-  text-transform:
-    uppercase;
+    0.2em;
 
   opacity:
-    0.5;
+    0.55;
 }
 
+
 /* =========================================================
-   TOP BAR
+   FIXED HEADER
 ========================================================= */
 
 .topbar {
@@ -311,7 +303,7 @@ body.is-loaded .loader {
     100%;
 
   padding:
-    23px 28px;
+    22px 28px;
 
   color:
     white;
@@ -343,16 +335,22 @@ body.is-loaded .loader {
   font-style:
     italic;
 
+  line-height:
+    1;
+
   letter-spacing:
     -0.05em;
 }
 
 .topbar-logo span {
+  display:
+    inline-block;
+
   margin:
     0 4px;
 
   font-size:
-    19px;
+    18px;
 }
 
 .topbar-center {
@@ -363,16 +361,16 @@ body.is-loaded .loader {
     center;
 
   gap:
-    9px;
+    8px;
 
   font-size:
-    8px;
+    7px;
 
   font-weight:
     500;
 
   letter-spacing:
-    0.16em;
+    0.18em;
 }
 
 .topbar-center i {
@@ -386,7 +384,7 @@ body.is-loaded .loader {
     currentColor;
 
   opacity:
-    0.45;
+    0.4;
 }
 
 .topbar-nav {
@@ -397,26 +395,27 @@ body.is-loaded .loader {
     flex;
 
   gap:
-    25px;
+    24px;
 
   font-size:
-    9px;
+    8px;
 
   font-weight:
     500;
 
   letter-spacing:
-    0.14em;
+    0.15em;
 
   text-transform:
     uppercase;
 }
 
+
 /* =========================================================
-   HERO
+   INTRO HERO
 ========================================================= */
 
-.hero {
+.hero-intro {
   position:
     relative;
 
@@ -427,97 +426,39 @@ body.is-loaded .loader {
     100svh;
 
   min-height:
-    660px;
+    680px;
 
   overflow:
     hidden;
 
-  background:
-    #151813;
-}
-
-.hero-media {
-  position:
-    absolute;
-
-  inset:
-    0;
-}
-
-.hero-media img {
-  object-position:
-    center 43%;
-
-  transform:
-    scale(1.07);
-
-  filter:
-    saturate(0.72)
-    contrast(1.04)
-    brightness(0.72);
-}
-
-.hero-shade {
-  position:
-    absolute;
-
-  inset:
-    0;
+  color:
+    var(--ink);
 
   background:
 
     radial-gradient(
-      circle
-      at 50% 45%,
+      circle at 72% 24%,
+      rgba(203, 211, 198, 0.32),
+      transparent 26%
+    ),
 
-      transparent
-      10%,
-
-      rgba(
-        9,
-        11,
-        8,
-        0.18
-      )
-      58%,
-
-      rgba(
-        8,
-        10,
-        7,
-        0.7
-      )
-      100%
+    radial-gradient(
+      circle at 18% 80%,
+      rgba(221, 213, 197, 0.32),
+      transparent 28%
     ),
 
     linear-gradient(
       180deg,
-
-      rgba(
-        7,
-        8,
-        6,
-        0.2
-      )
-      0%,
-
-      transparent
-      28%,
-
-      transparent
-      60%,
-
-      rgba(
-        7,
-        9,
-        6,
-        0.62
-      )
-      100%
+      #faf9f6 0%,
+      #f4f3ee 100%
     );
 }
 
-.hero::after {
+
+/* subtle grain */
+
+.hero-intro::after {
   content:
     "";
 
@@ -527,38 +468,37 @@ body.is-loaded .loader {
   inset:
     0;
 
-  pointer-events:
-    none;
+  z-index:
+    20;
 
   opacity:
-    0.11;
+    0.16;
+
+  pointer-events:
+    none;
 
   background-image:
 
     radial-gradient(
-      circle
-      at 20% 30%,
-
-      rgba(
-        255,
-        255,
-        255,
-        0.65
-      )
-      0 0.5px,
-
-      transparent
-      0.8px
+      circle at 20% 30%,
+      rgba(25, 28, 24, 0.4)
+      0 0.35px,
+      transparent 0.55px
     );
 
   background-size:
-    5px 5px;
+    6px 6px;
 
   mix-blend-mode:
-    soft-light;
+    multiply;
 }
 
-.hero-copy {
+
+/* =========================================================
+   INTRO WORLD
+========================================================= */
+
+.intro-world {
   position:
     absolute;
 
@@ -566,7 +506,335 @@ body.is-loaded .loader {
     0;
 
   z-index:
-    5;
+    1;
+
+  overflow:
+    hidden;
+
+  pointer-events:
+    none;
+}
+
+
+/* dots */
+
+.intro-dot {
+  position:
+    absolute;
+
+  width:
+    4px;
+
+  height:
+    4px;
+
+  border-radius:
+    50%;
+
+  background:
+    rgba(42, 47, 41, 0.36);
+
+  animation:
+    introDotFloat
+    9s
+    ease-in-out
+    infinite;
+}
+
+.intro-dot--1 {
+  top:
+    16%;
+
+  left:
+    12%;
+}
+
+.intro-dot--2 {
+  top:
+    27%;
+
+  left:
+    34%;
+
+  animation-delay:
+    -2s;
+}
+
+.intro-dot--3 {
+  top:
+    18%;
+
+  right:
+    19%;
+
+  animation-delay:
+    -4s;
+}
+
+.intro-dot--4 {
+  top:
+    49%;
+
+  left:
+    9%;
+
+  animation-delay:
+    -1s;
+}
+
+.intro-dot--5 {
+  top:
+    56%;
+
+  right:
+    11%;
+
+  animation-delay:
+    -6s;
+}
+
+.intro-dot--6 {
+  bottom:
+    18%;
+
+  left:
+    27%;
+
+  animation-delay:
+    -3s;
+}
+
+.intro-dot--7 {
+  bottom:
+    11%;
+
+  right:
+    27%;
+
+  animation-delay:
+    -5s;
+}
+
+.intro-dot--8 {
+  top:
+    71%;
+
+  left:
+    53%;
+
+  animation-delay:
+    -7s;
+}
+
+.intro-dot--9 {
+  top:
+    36%;
+
+  right:
+    37%;
+
+  animation-delay:
+    -2.7s;
+}
+
+.intro-dot--10 {
+  bottom:
+    26%;
+
+  right:
+    8%;
+
+  animation-delay:
+    -1.5s;
+}
+
+
+/* translucent spheres */
+
+.intro-orb {
+  position:
+    absolute;
+
+  display:
+    block;
+
+  border-radius:
+    50%;
+
+  border:
+    1px solid
+    rgba(52, 58, 50, 0.1);
+
+  background:
+
+    radial-gradient(
+      circle at 35% 28%,
+      rgba(255, 255, 255, 0.82),
+      rgba(141, 151, 134, 0.09) 48%,
+      rgba(87, 96, 83, 0.03) 70%,
+      transparent 74%
+    );
+
+  box-shadow:
+
+    inset
+    -18px
+    -18px
+    40px
+    rgba(83, 91, 79, 0.04),
+
+    0
+    20px
+    60px
+    rgba(56, 60, 53, 0.04);
+
+  animation:
+    introOrbFloat
+    12s
+    ease-in-out
+    infinite;
+
+  backdrop-filter:
+    blur(1px);
+}
+
+.intro-orb--1 {
+  top:
+    13%;
+
+  right:
+    10%;
+
+  width:
+    170px;
+
+  height:
+    170px;
+}
+
+.intro-orb--2 {
+  bottom:
+    9%;
+
+  left:
+    7%;
+
+  width:
+    105px;
+
+  height:
+    105px;
+
+  animation-delay:
+    -4s;
+}
+
+.intro-orb--3 {
+  top:
+    45%;
+
+  left:
+    19%;
+
+  width:
+    48px;
+
+  height:
+    48px;
+
+  animation-delay:
+    -7s;
+}
+
+
+/* orbit rings */
+
+.intro-orbit {
+  position:
+    absolute;
+
+  display:
+    block;
+
+  border:
+    1px solid
+    rgba(43, 48, 41, 0.09);
+
+  border-radius:
+    50%;
+
+  transform:
+    rotate(-18deg);
+}
+
+.intro-orbit--1 {
+  top:
+    18%;
+
+  left:
+    50%;
+
+  width:
+    49vw;
+
+  height:
+    49vw;
+
+  max-width:
+    680px;
+
+  max-height:
+    680px;
+
+  transform:
+    translateX(-50%)
+    rotate(-14deg);
+}
+
+.intro-orbit--2 {
+  top:
+    26%;
+
+  left:
+    50%;
+
+  width:
+    34vw;
+
+  height:
+    34vw;
+
+  max-width:
+    470px;
+
+  max-height:
+    470px;
+
+  transform:
+    translateX(-50%)
+    rotate(31deg);
+
+  opacity:
+    0.7;
+}
+
+
+/* =========================================================
+   INTRO BRAND
+========================================================= */
+
+.intro-brand {
+  position:
+    absolute;
+
+  top:
+    88px;
+
+  left:
+    50%;
+
+  z-index:
+    8;
 
   display:
     flex;
@@ -577,66 +845,22 @@ body.is-loaded .loader {
   align-items:
     center;
 
-  justify-content:
-    center;
+  transform:
+    translateX(-50%);
 
   text-align:
     center;
 }
 
-.hero-overline {
-  margin-bottom:
-    22px;
-
-  font-size:
-    9px;
-
-  font-weight:
-    500;
-
-  letter-spacing:
-    0.35em;
-
-  text-transform:
-    uppercase;
-
-  opacity:
-    0.72;
-}
-
-.hero h1 {
+.intro-brand-names {
   display:
     flex;
 
-  flex-direction:
-    column;
-
   align-items:
-    center;
+    baseline;
 
-  font-size:
-    clamp(
-      90px,
-      13vw,
-      205px
-    );
-
-  font-weight:
-    500;
-
-  letter-spacing:
-    -0.085em;
-
-  line-height:
-    0.67;
-}
-
-.hero h1 em {
-  z-index:
-    2;
-
-  margin:
-    0.02em 0 -0.02em;
+  gap:
+    7px;
 
   font-family:
     "Cormorant Garamond",
@@ -644,7 +868,154 @@ body.is-loaded .loader {
     serif;
 
   font-size:
-    0.7em;
+    20px;
+
+  letter-spacing:
+    -0.025em;
+}
+
+.intro-brand-names em {
+  font-size:
+    15px;
+
+  font-style:
+    italic;
+
+  color:
+    var(--green);
+}
+
+.intro-brand-divider {
+  width:
+    1px;
+
+  height:
+    26px;
+
+  margin:
+    10px 0;
+
+  background:
+    rgba(24, 26, 23, 0.22);
+}
+
+.intro-brand p {
+  font-size:
+    6px;
+
+  font-weight:
+    600;
+
+  letter-spacing:
+    0.24em;
+
+  text-transform:
+    uppercase;
+
+  opacity:
+    0.52;
+}
+
+
+/* =========================================================
+   INTRO MAIN COPY
+========================================================= */
+
+.intro-copy {
+  position:
+    absolute;
+
+  top:
+    50%;
+
+  left:
+    50%;
+
+  z-index:
+    10;
+
+  width:
+    min(
+      920px,
+      72vw
+    );
+
+  transform:
+    translate(-50%, -48%);
+
+  text-align:
+    center;
+}
+
+.intro-kicker {
+  margin-bottom:
+    21px;
+
+  font-size:
+    7px;
+
+  font-weight:
+    600;
+
+  letter-spacing:
+    0.24em;
+
+  text-transform:
+    uppercase;
+
+  color:
+    #777b73;
+}
+
+.intro-copy h1 {
+  display:
+    flex;
+
+  flex-direction:
+    column;
+
+  align-items:
+    center;
+
+  color:
+    #1b1d19;
+
+  font-size:
+    clamp(
+      74px,
+      8.7vw,
+      136px
+    );
+
+  font-weight:
+    500;
+
+  letter-spacing:
+    -0.075em;
+
+  line-height:
+    0.79;
+}
+
+.intro-line {
+  display:
+    block;
+}
+
+.intro-line-script {
+  position:
+    relative;
+
+  margin-top:
+    0.05em;
+
+  font-family:
+    "Cormorant Garamond",
+    Georgia,
+    serif;
+
+  font-size:
+    1.06em;
 
   font-weight:
     400;
@@ -652,13 +1023,16 @@ body.is-loaded .loader {
   font-style:
     italic;
 
+  letter-spacing:
+    -0.045em;
+
   color:
-    #d7c7a9;
+    var(--green);
 }
 
-.hero-subtitle {
+.intro-text {
   margin-top:
-    36px;
+    35px;
 
   font-family:
     "Cormorant Garamond",
@@ -666,23 +1040,38 @@ body.is-loaded .loader {
     serif;
 
   font-size:
-    21px;
+    18px;
 
   font-style:
     italic;
 
   line-height:
-    1.35;
+    1.4;
 
-  opacity:
-    0.9;
+  color:
+    #696d65;
 }
 
+
 /* =========================================================
-   EXPLORE BUTTON
+   INTRO EXPLORE
 ========================================================= */
 
-.explore-button {
+.intro-explore {
+  position:
+    relative;
+
+  z-index:
+    12;
+
+  display:
+    inline-block;
+
+  margin-top:
+    34px;
+}
+
+.intro-explore-circle {
   position:
     relative;
 
@@ -693,144 +1082,359 @@ body.is-loaded .loader {
     center;
 
   width:
-    112px;
+    103px;
 
   height:
-    112px;
+    103px;
 
-  margin-top:
-    38px;
+  border:
+    1px solid
+    rgba(30, 33, 29, 0.34);
+
+  border-radius:
+    50%;
+
+  transition:
+    transform 0.45s
+    cubic-bezier(
+      0.22,
+      1,
+      0.36,
+      1
+    ),
+    background 0.35s ease;
+}
+
+.intro-explore-circle::before {
+  content:
+    "";
+
+  position:
+    absolute;
+
+  inset:
+    7px;
+
+  border:
+    1px solid
+    rgba(30, 33, 29, 0.1);
 
   border-radius:
     50%;
 }
 
-.explore-button-ring {
+.intro-explore:hover
+.intro-explore-circle {
+  transform:
+    scale(1.07);
+
+  background:
+    rgba(255, 255, 255, 0.4);
+}
+
+.intro-explore-label {
+  margin-top:
+    -10px;
+
+  font-size:
+    7px;
+
+  font-weight:
+    600;
+
+  letter-spacing:
+    0.18em;
+}
+
+.intro-explore-arrow {
+  position:
+    absolute;
+
+  bottom:
+    22px;
+
+  font-size:
+    13px;
+
+  opacity:
+    0.55;
+
+  animation:
+    introArrow
+    2s
+    ease-in-out
+    infinite;
+}
+
+
+/* =========================================================
+   INTRO MEMORY
+========================================================= */
+
+.intro-memory {
+  position:
+    absolute;
+
+  right:
+    5vw;
+
+  bottom:
+    9vh;
+
+  z-index:
+    6;
+
+  width:
+    min(
+      210px,
+      17vw
+    );
+
+  transform:
+    rotate(2.5deg);
+
+  transition:
+    transform
+    0.7s
+    cubic-bezier(
+      0.22,
+      1,
+      0.36,
+      1
+    );
+}
+
+.intro-memory:hover {
+  transform:
+    rotate(0deg)
+    translateY(-8px)
+    scale(1.03);
+}
+
+.intro-memory-frame {
+  position:
+    relative;
+
+  width:
+    100%;
+
+  aspect-ratio:
+    0.78;
+
+  overflow:
+    hidden;
+
+  background:
+    #ddd;
+}
+
+.intro-memory-frame::after {
+  content:
+    "";
+
   position:
     absolute;
 
   inset:
     0;
 
-  border:
-    1px solid
-    rgba(
-      255,
-      255,
-      255,
-      0.45
+  background:
+    linear-gradient(
+      180deg,
+      transparent 55%,
+      rgba(12, 14, 11, 0.28)
+      100%
     );
+}
 
-  border-radius:
-    50%;
+.intro-memory img {
+  filter:
+    saturate(0.72)
+    contrast(1.03);
+
+  transform:
+    scale(1.03);
 
   transition:
-    transform 0.5s ease,
-    background 0.5s ease;
+    transform 0.8s ease;
 }
 
-.explore-button:hover
-.explore-button-ring {
+.intro-memory:hover img {
   transform:
-    scale(1.08);
-
-  background:
-    rgba(
-      255,
-      255,
-      255,
-      0.08
-    );
+    scale(1.07);
 }
 
-.explore-button-label {
+.intro-memory figcaption {
+  display:
+    flex;
+
+  justify-content:
+    space-between;
+
+  gap:
+    10px;
+
+  margin-top:
+    8px;
+
   font-size:
-    9px;
+    6px;
 
   font-weight:
-    500;
+    600;
+
+  letter-spacing:
+    0.13em;
+
+  color:
+    #74776f;
+}
+
+
+/* =========================================================
+   INTRO BOTTOM DETAILS
+========================================================= */
+
+.intro-bottom {
+  position:
+    absolute;
+
+  left:
+    28px;
+
+  bottom:
+    25px;
+
+  z-index:
+    8;
+
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  gap:
+    11px;
+
+  font-size:
+    6px;
+
+  font-weight:
+    600;
+
+  letter-spacing:
+    0.14em;
+
+  text-transform:
+    uppercase;
+
+  color:
+    #696d65;
+}
+
+.intro-bottom i {
+  display:
+    block;
+
+  width:
+    24px;
+
+  height:
+    1px;
+
+  background:
+    rgba(24, 26, 23, 0.22);
+}
+
+.intro-scroll {
+  position:
+    absolute;
+
+  right:
+    27px;
+
+  bottom:
+    25px;
+
+  z-index:
+    8;
+
+  writing-mode:
+    vertical-rl;
+
+  font-size:
+    6px;
+
+  font-weight:
+    600;
 
   letter-spacing:
     0.18em;
 
   text-transform:
     uppercase;
+
+  color:
+    #6c7068;
 }
 
-.explore-button-arrow {
-  position:
-    absolute;
 
-  bottom:
-    23px;
+/* =========================================================
+   INTRO LOAD ANIMATION
+========================================================= */
 
-  font-size:
-    13px;
-
+body.is-loading
+.intro-copy,
+body.is-loading
+.intro-brand,
+body.is-loading
+.intro-memory,
+body.is-loading
+.intro-bottom,
+body.is-loading
+.intro-scroll {
   opacity:
-    0.7;
+    0;
 }
 
-.hero-meta {
-  position:
-    absolute;
-
-  bottom:
-    28px;
-
-  left:
-    28px;
-
-  z-index:
-    6;
-
-  display:
-    flex;
-
-  gap:
-    9px;
-
-  font-size:
-    8px;
-
-  letter-spacing:
-    0.16em;
-
-  text-transform:
-    uppercase;
-
-  opacity:
-    0.68;
+body.is-loaded
+.intro-brand {
+  animation:
+    introReveal
+    0.9s
+    both;
 }
 
-.hero-scroll {
-  position:
-    absolute;
-
-  right:
-    28px;
-
-  bottom:
-    28px;
-
-  z-index:
-    6;
-
-  writing-mode:
-    vertical-rl;
-
-  font-size:
-    7px;
-
-  letter-spacing:
-    0.2em;
-
-  text-transform:
-    uppercase;
-
-  opacity:
-    0.55;
+body.is-loaded
+.intro-copy {
+  animation:
+    introReveal
+    1.2s
+    0.12s
+    both;
 }
+
+body.is-loaded
+.intro-memory {
+  animation:
+    memoryReveal
+    1.15s
+    0.4s
+    both;
+}
+
+body.is-loaded
+.intro-bottom,
+body.is-loaded
+.intro-scroll {
+  animation:
+    introReveal
+    0.9s
+    0.55s
+    both;
+}
+
 
 /* =========================================================
    SHARED TYPOGRAPHY
@@ -841,10 +1445,10 @@ body.is-loaded .loader {
     8px;
 
   font-weight:
-    500;
+    600;
 
   letter-spacing:
-    0.24em;
+    0.23em;
 
   text-transform:
     uppercase;
@@ -852,14 +1456,18 @@ body.is-loaded .loader {
 
 .section-index {
   font-size:
-    8px;
+    7px;
+
+  font-weight:
+    500;
 
   letter-spacing:
     0.18em;
 
   opacity:
-    0.55;
+    0.52;
 }
+
 
 /* =========================================================
    JOURNEY INTRO
@@ -885,7 +1493,7 @@ body.is-loaded .loader {
     var(--ink);
 
   background:
-    var(--paper-light);
+    #eeeae1;
 }
 
 .journey-intro-copy {
@@ -902,7 +1510,8 @@ body.is-loaded .loader {
     center;
 }
 
-.journey-intro .section-index {
+.journey-intro
+.section-index {
   position:
     absolute;
 
@@ -913,19 +1522,20 @@ body.is-loaded .loader {
     0;
 }
 
-.journey-intro .eyebrow {
+.journey-intro
+.eyebrow {
   margin-bottom:
-    25px;
+    24px;
 
   color:
-    #6e6e65;
+    #74776f;
 }
 
 .journey-intro h2 {
   font-size:
     clamp(
-      62px,
-      8.6vw,
+      64px,
+      8.5vw,
       132px
     );
 
@@ -936,7 +1546,7 @@ body.is-loaded .loader {
     -0.075em;
 
   line-height:
-    0.92;
+    0.9;
 }
 
 .journey-intro h2 em {
@@ -958,7 +1568,7 @@ body.is-loaded .loader {
     -0.045em;
 
   color:
-    #69715f;
+    var(--green);
 }
 
 .journey-lead {
@@ -966,16 +1576,16 @@ body.is-loaded .loader {
     31ch;
 
   margin:
-    45px auto 0;
+    43px auto 0;
 
   font-size:
-    13px;
+    12px;
 
   line-height:
-    1.7;
+    1.75;
 
   color:
-    #66675f;
+    #676a63;
 }
 
 .journey-intro-arrow {
@@ -983,7 +1593,7 @@ body.is-loaded .loader {
     absolute;
 
   bottom:
-    35px;
+    32px;
 
   left:
     50%;
@@ -991,15 +1601,16 @@ body.is-loaded .loader {
   transform:
     translateX(-50%);
 
-  font-size:
-    17px;
-
   color:
-    #76776f;
+    #70746b;
+
+  font-size:
+    16px;
 }
 
+
 /* =========================================================
-   GLOBE SECTION
+   GLOBE
 ========================================================= */
 
 .globe-section {
@@ -1007,13 +1618,13 @@ body.is-loaded .loader {
     relative;
 
   height:
-    260vh;
+    250vh;
 
   color:
-    var(--cream);
+    var(--ink);
 
   background:
-    #0e110d;
+    #f5f4f0;
 }
 
 .globe-sticky {
@@ -1032,23 +1643,16 @@ body.is-loaded .loader {
   overflow:
     hidden;
 
+  color:
+    var(--ink);
+
   background:
 
     radial-gradient(
-      circle
-      at 50% 50%,
-
-      #273027
-      0%,
-
-      #181e18
-      31%,
-
-      #10130f
-      68%,
-
-      #0b0d0a
-      100%
+      circle at 50% 45%,
+      #ffffff 0%,
+      #f9f8f5 50%,
+      #f1f0eb 100%
     );
 }
 
@@ -1087,8 +1691,8 @@ body.is-loaded .loader {
 
   width:
     min(
-      76vw,
-      900px
+      58vw,
+      660px
     );
 
   aspect-ratio:
@@ -1104,29 +1708,15 @@ body.is-loaded .loader {
 
     radial-gradient(
       circle,
-
-      rgba(
-        128,
-        145,
-        113,
-        0.2
-      )
-      0%,
-
-      rgba(
-        80,
-        96,
-        72,
-        0.08
-      )
-      48%,
-
+      rgba(72, 79, 70, 0.04),
+      rgba(72, 79, 70, 0.015)
+      52%,
       transparent
       72%
     );
 
   filter:
-    blur(35px);
+    blur(26px);
 
   pointer-events:
     none;
@@ -1143,7 +1733,7 @@ body.is-loaded .loader {
     50%;
 
   z-index:
-    2;
+    1;
 
   display:
     flex;
@@ -1163,6 +1753,9 @@ body.is-loaded .loader {
   pointer-events:
     none;
 
+  color:
+    rgba(20, 22, 19, 0.025);
+
   font-size:
     clamp(
       100px,
@@ -1178,14 +1771,6 @@ body.is-loaded .loader {
 
   letter-spacing:
     -0.085em;
-
-  color:
-    rgba(
-      239,
-      234,
-      222,
-      0.045
-    );
 }
 
 .globe-title span:last-child {
@@ -1201,22 +1786,18 @@ body.is-loaded .loader {
     400;
 }
 
-/* =========================================================
-   GLOBE INSTRUCTION
-========================================================= */
-
 .globe-instruction {
   position:
     absolute;
 
   top:
-    115px;
+    105px;
 
   left:
     28px;
 
   z-index:
-    10;
+    12;
 
   display:
     flex;
@@ -1225,7 +1806,10 @@ body.is-loaded .loader {
     center;
 
   gap:
-    14px;
+    13px;
+
+  color:
+    var(--ink);
 
   pointer-events:
     none;
@@ -1239,43 +1823,42 @@ body.is-loaded .loader {
     center;
 
   width:
-    38px;
+    36px;
 
   height:
-    38px;
+    36px;
 
   border:
     1px solid
-    rgba(
-      255,
-      255,
-      255,
-      0.24
-    );
+    rgba(24, 26, 23, 0.2);
 
   border-radius:
     50%;
 
   font-size:
-    14px;
+    13px;
 }
 
 .globe-instruction p {
   font-size:
-    8px;
+    6px;
+
+  font-weight:
+    600;
 
   line-height:
     1.6;
 
   letter-spacing:
-    0.15em;
+    0.16em;
 
   text-transform:
     uppercase;
 
   opacity:
-    0.65;
+    0.58;
 }
+
 
 /* =========================================================
    CITY LIST
@@ -1292,7 +1875,7 @@ body.is-loaded .loader {
     28px;
 
   z-index:
-    12;
+    15;
 
   display:
     flex;
@@ -1304,7 +1887,7 @@ body.is-loaded .loader {
     flex-end;
 
   gap:
-    11px;
+    10px;
 
   transform:
     translateY(-50%);
@@ -1318,31 +1901,33 @@ body.is-loaded .loader {
     baseline;
 
   gap:
-    12px;
+    11px;
+
+  color:
+    var(--ink);
 
   font-size:
-    12px;
-
-  letter-spacing:
-    0.02em;
+    11px;
 
   opacity:
-    0.38;
+    0.34;
 
   transition:
-    opacity 0.3s ease,
-    transform 0.3s ease;
+    opacity
+    0.25s ease,
+    transform
+    0.25s ease;
 }
 
 .city-list button span {
   font-size:
-    7px;
+    6px;
 
   letter-spacing:
     0.14em;
 
   opacity:
-    0.55;
+    0.48;
 }
 
 .city-list button:hover,
@@ -1351,8 +1936,9 @@ body.is-loaded .loader {
     1;
 
   transform:
-    translateX(-8px);
+    translateX(-7px);
 }
+
 
 /* =========================================================
    MEMORY CARD
@@ -1375,15 +1961,13 @@ body.is-loaded .loader {
     grid;
 
   grid-template-columns:
-    240px 230px;
+    235px 225px;
 
   width:
-    500px;
+    460px;
 
   max-width:
-    calc(
-      100vw - 56px
-    );
+    calc(100vw - 56px);
 
   overflow:
     hidden;
@@ -1392,7 +1976,11 @@ body.is-loaded .loader {
     var(--ink);
 
   background:
-    #e8e2d7;
+    #efede6;
+
+  box-shadow:
+    0 25px 70px
+    rgba(33, 35, 31, 0.11);
 
   transform:
     translateY(-50%)
@@ -1405,23 +1993,18 @@ body.is-loaded .loader {
     hidden;
 
   transition:
-    transform 0.7s cubic-bezier(
+    transform
+    0.65s
+    cubic-bezier(
       0.22,
       1,
       0.36,
       1
     ),
-    opacity 0.45s ease,
-    visibility 0.45s ease;
-
-  box-shadow:
-    0 35px 90px
-    rgba(
-      0,
-      0,
-      0,
-      0.32
-    );
+    opacity
+    0.35s ease,
+    visibility
+    0.35s ease;
 }
 
 .memory-card.is-open {
@@ -1437,30 +2020,28 @@ body.is-loaded .loader {
 }
 
 .memory-photo {
+  position:
+    relative;
+
   height:
-    350px;
+    330px;
 
   overflow:
     hidden;
 
   background:
-    #777;
+    #ddd;
 }
 
 .memory-photo img {
   transition:
-    transform 0.9s cubic-bezier(
-      0.22,
-      1,
-      0.36,
-      1
-    );
+    transform 0.75s ease;
 }
 
 .memory-card.is-open
 .memory-photo img {
   transform:
-    scale(1.04);
+    scale(1.035);
 }
 
 .memory-content {
@@ -1471,21 +2052,21 @@ body.is-loaded .loader {
     column;
 
   padding:
-    28px 23px 22px;
+    26px 22px 20px;
 }
 
 .memory-number {
   margin-bottom:
-    40px;
+    34px;
 
   font-size:
-    7px;
+    6px;
 
   letter-spacing:
     0.15em;
 
   color:
-    #717168;
+    #74776f;
 }
 
 .memory-country {
@@ -1493,19 +2074,19 @@ body.is-loaded .loader {
     6px;
 
   font-size:
-    8px;
+    7px;
 
   font-weight:
-    500;
+    600;
 
   letter-spacing:
-    0.17em;
+    0.16em;
 
   text-transform:
     uppercase;
 
   color:
-    #77766c;
+    #73766e;
 }
 
 .memory-content h3 {
@@ -1515,30 +2096,30 @@ body.is-loaded .loader {
     serif;
 
   font-size:
-    47px;
+    46px;
 
   font-weight:
     400;
 
+  line-height:
+    0.94;
+
   letter-spacing:
     -0.045em;
-
-  line-height:
-    0.95;
 }
 
 .memory-text {
   margin-top:
-    18px;
+    17px;
 
   font-size:
-    11px;
+    10px;
 
   line-height:
     1.65;
 
   color:
-    #66675f;
+    #666960;
 }
 
 .memory-coordinates {
@@ -1549,31 +2130,26 @@ body.is-loaded .loader {
     space-between;
 
   gap:
-    10px;
+    8px;
 
   margin-top:
     auto;
 
   padding-top:
-    22px;
+    19px;
 
   border-top:
     1px solid
-    rgba(
-      17,
-      19,
-      15,
-      0.14
-    );
+    rgba(24, 26, 23, 0.12);
 
   font-size:
-    7px;
+    6px;
 
   letter-spacing:
     0.08em;
 
   color:
-    #73736a;
+    #74776f;
 }
 
 .memory-close {
@@ -1581,13 +2157,13 @@ body.is-loaded .loader {
     absolute;
 
   top:
-    11px;
+    10px;
 
   right:
-    12px;
+    11px;
 
   z-index:
-    5;
+    8;
 
   display:
     grid;
@@ -1596,19 +2172,19 @@ body.is-loaded .loader {
     center;
 
   width:
-    30px;
+    28px;
 
   height:
-    30px;
+    28px;
 
   border-radius:
     50%;
 
-  font-size:
-    20px;
-
   color:
     var(--ink);
+
+  font-size:
+    18px;
 
   transition:
     transform 0.25s ease;
@@ -1619,14 +2195,36 @@ body.is-loaded .loader {
     rotate(90deg);
 }
 
-/* =========================================================
-   MOBILE SELECT
-========================================================= */
-
-.mobile-city-button {
+.memory-link {
   display:
     none;
+
+  width:
+    max-content;
+
+  margin-top:
+    17px;
+
+  padding-bottom:
+    4px;
+
+  border-bottom:
+    1px solid
+    rgba(24, 26, 23, 0.3);
+
+  font-size:
+    7px;
+
+  font-weight:
+    600;
+
+  letter-spacing:
+    0.14em;
+
+  text-transform:
+    uppercase;
 }
+
 
 /* =========================================================
    GLOBE PROGRESS
@@ -1637,7 +2235,7 @@ body.is-loaded .loader {
     absolute;
 
   bottom:
-    27px;
+    26px;
 
   left:
     50%;
@@ -1649,19 +2247,25 @@ body.is-loaded .loader {
     grid;
 
   grid-template-columns:
-    auto 150px auto;
+    auto 140px auto;
 
   align-items:
     center;
 
   gap:
-    14px;
+    13px;
 
   transform:
     translateX(-50%);
 
+  color:
+    var(--ink);
+
   font-size:
-    7px;
+    6px;
+
+  font-weight:
+    600;
 
   letter-spacing:
     0.16em;
@@ -1670,15 +2274,12 @@ body.is-loaded .loader {
     uppercase;
 
   opacity:
-    0.55;
+    0.5;
 }
 
 .globe-progress > div {
-  position:
-    relative;
-
   width:
-    150px;
+    140px;
 
   height:
     1px;
@@ -1687,12 +2288,7 @@ body.is-loaded .loader {
     hidden;
 
   background:
-    rgba(
-      255,
-      255,
-      255,
-      0.16
-    );
+    rgba(24, 26, 23, 0.13);
 }
 
 .globe-progress i {
@@ -1709,8 +2305,14 @@ body.is-loaded .loader {
     100%;
 
   background:
-    var(--cream);
+    var(--ink);
 }
+
+.mobile-city-button {
+  display:
+    none;
+}
+
 
 /* =========================================================
    MOMENTS
@@ -1730,7 +2332,7 @@ body.is-loaded .loader {
     var(--ink);
 
   background:
-    var(--paper);
+    #e8e4da;
 }
 
 .moments-heading {
@@ -1750,27 +2352,29 @@ body.is-loaded .loader {
     650px;
 }
 
-.moments-heading .section-index {
+.moments-heading
+.section-index {
   display:
     block;
 
   margin-bottom:
-    34px;
+    32px;
 }
 
-.moments-heading .eyebrow {
+.moments-heading
+.eyebrow {
   margin-bottom:
-    18px;
+    17px;
 
   color:
-    #6f7067;
+    #6d7169;
 }
 
 .moments-heading h2 {
   font-size:
     clamp(
       72px,
-      9.5vw,
+      9.4vw,
       148px
     );
 
@@ -1803,7 +2407,7 @@ body.is-loaded .loader {
     -0.045em;
 
   color:
-    #68715d;
+    var(--green);
 }
 
 .moments-grid {
@@ -1820,20 +2424,12 @@ body.is-loaded .loader {
 .moment {
   position:
     absolute;
-
-  margin:
-    0;
 }
 
 .moment img {
   box-shadow:
-    0 25px 80px
-    rgba(
-      33,
-      30,
-      25,
-      0.12
-    );
+    0 25px 70px
+    rgba(31, 33, 29, 0.11);
 }
 
 .moment figcaption {
@@ -1844,22 +2440,25 @@ body.is-loaded .loader {
     space-between;
 
   gap:
-    15px;
+    10px;
 
   margin-top:
-    12px;
+    10px;
+
+  color:
+    #686c64;
 
   font-size:
-    7px;
+    6px;
+
+  font-weight:
+    600;
 
   letter-spacing:
-    0.12em;
+    0.11em;
 
   text-transform:
     uppercase;
-
-  color:
-    #686960;
 }
 
 .moment-large {
@@ -1913,6 +2512,7 @@ body.is-loaded .loader {
     54vh;
 }
 
+
 /* =========================================================
    FLORENCE
 ========================================================= */
@@ -1934,7 +2534,7 @@ body.is-loaded .loader {
     white;
 
   background:
-    #0f0d0d;
+    #0f100d;
 }
 
 .florence-photo {
@@ -1961,16 +2561,17 @@ body.is-loaded .loader {
   transform:
     scale(
       calc(
-        1.13
-        - var(--florence-progress)
-        * 0.06
+        1.12
+        -
+        var(--florence-progress)
+        * 0.055
       )
     );
 
   filter:
     saturate(0.72)
     contrast(1.04)
-    brightness(0.7);
+    brightness(0.72);
 }
 
 .florence-overlay {
@@ -1993,39 +2594,16 @@ body.is-loaded .loader {
 
     linear-gradient(
       180deg,
-
-      rgba(
-        5,
-        4,
-        4,
-        0.28
-      ),
-
-      transparent
-      35%,
-
-      rgba(
-        5,
-        4,
-        4,
-        0.45
-      )
+      rgba(5, 6, 4, 0.26),
+      transparent 34%,
+      rgba(5, 6, 4, 0.45)
       100%
     ),
 
     radial-gradient(
-      circle
-      at center,
-
-      transparent
-      30%,
-
-      rgba(
-        10,
-        8,
-        8,
-        0.35
-      )
+      circle at center,
+      transparent 30%,
+      rgba(7, 8, 6, 0.35)
       100%
     );
 }
@@ -2046,10 +2624,10 @@ body.is-loaded .loader {
   flex-direction:
     column;
 
-  justify-content:
+  align-items:
     center;
 
-  align-items:
+  justify-content:
     center;
 
   width:
@@ -2068,12 +2646,13 @@ body.is-loaded .loader {
     none;
 }
 
-.florence-copy .eyebrow {
+.florence-copy
+.eyebrow {
   margin-bottom:
-    24px;
+    22px;
 
   opacity:
-    0.7;
+    0.66;
 }
 
 .florence-copy h2 {
@@ -2131,18 +2710,18 @@ body.is-loaded .loader {
     -0.055em;
 
   color:
-    #e1cba8;
+    #dfc9a6;
 }
 
 .florence-date {
   margin-top:
-    45px;
+    42px;
 
   font-size:
-    10px;
+    8px;
 
   letter-spacing:
-    0.28em;
+    0.27em;
 }
 
 .florence-coordinates {
@@ -2150,7 +2729,7 @@ body.is-loaded .loader {
     sticky;
 
   bottom:
-    28px;
+    27px;
 
   z-index:
     6;
@@ -2168,17 +2747,18 @@ body.is-loaded .loader {
     0 28px;
 
   margin-top:
-    -30px;
+    -29px;
 
   font-size:
-    7px;
+    6px;
 
   letter-spacing:
-    0.13em;
+    0.12em;
 
   opacity:
-    0.6;
+    0.55;
 }
+
 
 /* =========================================================
    NEW ADVENTURE
@@ -2210,15 +2790,16 @@ body.is-loaded .loader {
     var(--ink);
 
   background:
-    var(--paper-light);
+    #f2f0ea;
 }
 
-.new-adventure .eyebrow {
+.new-adventure
+.eyebrow {
   margin-bottom:
-    22px;
+    21px;
 
   color:
-    #73746a;
+    #73776e;
 }
 
 .new-adventure h2 {
@@ -2254,11 +2835,11 @@ body.is-loaded .loader {
   font-style:
     italic;
 
-  color:
-    #69725f;
-
   letter-spacing:
     -0.05em;
+
+  color:
+    var(--green);
 }
 
 .new-adventure-date {
@@ -2269,10 +2850,10 @@ body.is-loaded .loader {
     center;
 
   gap:
-    18px;
+    17px;
 
   margin-top:
-    70px;
+    67px;
 
   font-size:
     clamp(
@@ -2298,8 +2879,9 @@ body.is-loaded .loader {
     italic;
 
   color:
-    #81765f;
+    #817760;
 }
+
 
 /* =========================================================
    WEDDING
@@ -2336,7 +2918,8 @@ body.is-loaded .loader {
     center;
 }
 
-.wedding-heading .section-index {
+.wedding-heading
+.section-index {
   position:
     absolute;
 
@@ -2347,12 +2930,13 @@ body.is-loaded .loader {
     0;
 }
 
-.wedding-heading .eyebrow {
+.wedding-heading
+.eyebrow {
   margin-bottom:
-    20px;
+    19px;
 
   color:
-    #717168;
+    #70736b;
 }
 
 .wedding-heading h2 {
@@ -2392,7 +2976,7 @@ body.is-loaded .loader {
     italic;
 
   color:
-    #66705e;
+    var(--green);
 }
 
 .wedding-photo {
@@ -2426,11 +3010,11 @@ body.is-loaded .loader {
 
   border-top:
     1px solid
-    var(--line-dark);
+    var(--line);
 
   border-bottom:
     1px solid
-    var(--line-dark);
+    var(--line);
 }
 
 .wedding-info article {
@@ -2438,16 +3022,17 @@ body.is-loaded .loader {
     relative;
 
   min-height:
-    360px;
+    350px;
 
   padding:
-    37px;
+    35px;
 }
 
-.wedding-info article + article {
+.wedding-info article
++ article {
   border-left:
     1px solid
-    var(--line-dark);
+    var(--line);
 }
 
 .wedding-info-number {
@@ -2455,30 +3040,30 @@ body.is-loaded .loader {
     absolute;
 
   top:
-    37px;
+    35px;
 
   right:
-    37px;
+    35px;
 
   font-size:
-    8px;
+    7px;
 
   letter-spacing:
     0.14em;
 
   color:
-    #6f7067;
+    #70736b;
 }
 
 .wedding-info article
 .eyebrow {
   color:
-    #77786e;
+    #757970;
 }
 
 .wedding-info h3 {
   margin:
-    88px 0 22px;
+    85px 0 20px;
 
   font-family:
     "Cormorant Garamond",
@@ -2499,16 +3084,18 @@ body.is-loaded .loader {
     -0.05em;
 }
 
-.wedding-info article > p:last-child {
+.wedding-info article
+> p:last-child {
+  color:
+    #60645b;
+
   font-size:
-    12px;
+    11px;
 
   line-height:
     1.8;
-
-  color:
-    #62645c;
 }
+
 
 /* =========================================================
    RSVP
@@ -2525,22 +3112,22 @@ body.is-loaded .loader {
     center;
 
   gap:
-    30px;
+    28px;
 
   width:
     100%;
 
   padding:
-    34px 0;
+    32px 0;
 
   border-bottom:
     1px solid
-    var(--line-dark);
+    var(--line);
 
   font-size:
     clamp(
       28px,
-      4.8vw,
+      4.7vw,
       72px
     );
 
@@ -2548,7 +3135,8 @@ body.is-loaded .loader {
     -0.055em;
 }
 
-.rsvp-button span:nth-child(2) {
+.rsvp-button
+span:nth-child(2) {
   font-family:
     "Cormorant Garamond",
     Georgia,
@@ -2561,13 +3149,15 @@ body.is-loaded .loader {
     italic;
 
   color:
-    #6b725f;
+    var(--green);
 }
 
-.rsvp-button span:last-child {
+.rsvp-button
+span:last-child {
   font-size:
     0.55em;
 }
+
 
 /* =========================================================
    FOOTER
@@ -2589,19 +3179,19 @@ body.is-loaded .loader {
   padding:
     7vw;
 
-  background:
-    #0d100d;
-
   color:
     var(--cream);
+
+  background:
+    #10120e;
 }
 
 .footer > p {
   margin-bottom:
-    45px;
+    43px;
 
   font-size:
-    8px;
+    7px;
 
   letter-spacing:
     0.2em;
@@ -2610,7 +3200,7 @@ body.is-loaded .loader {
     uppercase;
 
   opacity:
-    0.5;
+    0.48;
 }
 
 .footer-names {
@@ -2641,11 +3231,11 @@ body.is-loaded .loader {
   font-weight:
     500;
 
-  letter-spacing:
-    -0.09em;
-
   line-height:
     0.78;
+
+  letter-spacing:
+    -0.09em;
 }
 
 .footer-names em {
@@ -2668,7 +3258,7 @@ body.is-loaded .loader {
     italic;
 
   color:
-    #c8af85;
+    #c7af85;
 }
 
 .footer-bottom {
@@ -2679,17 +3269,17 @@ body.is-loaded .loader {
     space-between;
 
   margin-top:
-    75px;
+    70px;
 
   padding-top:
-    20px;
+    19px;
 
   border-top:
     1px solid
     var(--line-light);
 
   font-size:
-    7px;
+    6px;
 
   letter-spacing:
     0.16em;
@@ -2698,8 +3288,115 @@ body.is-loaded .loader {
     uppercase;
 
   opacity:
-    0.55;
+    0.52;
 }
+
+
+/* =========================================================
+   ANIMATIONS
+========================================================= */
+
+@keyframes introReveal {
+
+  from {
+    opacity:
+      0;
+
+    transform:
+      translateY(16px);
+  }
+
+  to {
+    opacity:
+      1;
+
+    transform:
+      translateY(0);
+  }
+
+}
+
+
+@keyframes memoryReveal {
+
+  from {
+    opacity:
+      0;
+
+    transform:
+      translateY(24px)
+      rotate(6deg);
+  }
+
+  to {
+    opacity:
+      1;
+
+    transform:
+      translateY(0)
+      rotate(2.5deg);
+  }
+
+}
+
+
+@keyframes introDotFloat {
+
+  0%,
+  100% {
+    transform:
+      translate3d(
+        0,
+        0,
+        0
+      );
+  }
+
+  50% {
+    transform:
+      translate3d(
+        7px,
+        -11px,
+        0
+      );
+  }
+
+}
+
+
+@keyframes introOrbFloat {
+
+  0%,
+  100% {
+    transform:
+      translateY(0)
+      rotate(0deg);
+  }
+
+  50% {
+    transform:
+      translateY(-15px)
+      rotate(5deg);
+  }
+
+}
+
+
+@keyframes introArrow {
+
+  0%,
+  100% {
+    transform:
+      translateY(0);
+  }
+
+  50% {
+    transform:
+      translateY(5px);
+  }
+
+}
+
 
 /* =========================================================
    MOBILE
@@ -2713,7 +3410,7 @@ body.is-loaded .loader {
       1fr auto;
 
     padding:
-      18px;
+      17px;
   }
 
   .topbar-center {
@@ -2723,97 +3420,229 @@ body.is-loaded .loader {
 
   .topbar-nav {
     gap:
-      14px;
+      13px;
 
     font-size:
-      7px;
+      6px;
   }
 
   .topbar-logo {
     font-size:
-      25px;
+      24px;
   }
 
-  /* HERO */
 
-  .hero {
+  /* intro */
+
+  .hero-intro {
     min-height:
       100svh;
   }
 
-  .hero-media img {
-    object-position:
-      51% center;
+  .intro-brand {
+    top:
+      73px;
   }
 
-  .hero-overline {
-    margin-bottom:
-      18px;
-
-    font-size:
-      7px;
-  }
-
-  .hero h1 {
-    font-size:
-      23vw;
-
-    line-height:
-      0.72;
-  }
-
-  .hero-subtitle {
-    margin-top:
-      28px;
-
+  .intro-brand-names {
     font-size:
       17px;
   }
 
-  .explore-button {
+  .intro-brand-divider {
+    height:
+      20px;
+
+    margin:
+      8px 0;
+  }
+
+  .intro-copy {
+    top:
+      46%;
+
     width:
-      92px;
+      88vw;
+
+    transform:
+      translate(-50%, -50%);
+  }
+
+  .intro-kicker {
+    margin-bottom:
+      17px;
+
+    font-size:
+      6px;
+  }
+
+  .intro-copy h1 {
+    font-size:
+      17.3vw;
+
+    line-height:
+      0.82;
+  }
+
+  .intro-line-script {
+    font-size:
+      1.08em;
+  }
+
+  .intro-text {
+    margin-top:
+      25px;
+
+    font-size:
+      15px;
+  }
+
+  .intro-explore {
+    margin-top:
+      26px;
+  }
+
+  .intro-explore-circle {
+    width:
+      84px;
 
     height:
-      92px;
-
-    margin-top:
-      29px;
+      84px;
   }
 
-  .explore-button-label {
-    font-size:
-      7px;
-  }
-
-  .explore-button-arrow {
-    bottom:
-      18px;
-  }
-
-  .hero-meta {
-    left:
-      18px;
-
-    bottom:
-      19px;
-
+  .intro-explore-label {
     font-size:
       6px;
   }
 
-  .hero-scroll {
+  .intro-explore-arrow {
+    bottom:
+      16px;
+
+    font-size:
+      11px;
+  }
+
+  .intro-orb--1 {
+    top:
+      14%;
+
     right:
-      18px;
+      -6%;
+
+    width:
+      110px;
+
+    height:
+      110px;
+  }
+
+  .intro-orb--2 {
+    bottom:
+      10%;
+
+    left:
+      -6%;
+
+    width:
+      75px;
+
+    height:
+      75px;
+  }
+
+  .intro-orb--3 {
+    top:
+      51%;
+
+    left:
+      8%;
+
+    width:
+      32px;
+
+    height:
+      32px;
+  }
+
+  .intro-orbit--1 {
+    top:
+      27%;
+
+    width:
+      93vw;
+
+    height:
+      93vw;
+  }
+
+  .intro-orbit--2 {
+    top:
+      34%;
+
+    width:
+      67vw;
+
+    height:
+      67vw;
+  }
+
+  .intro-memory {
+    right:
+      16px;
+
+    bottom:
+      49px;
+
+    width:
+      92px;
+  }
+
+  .intro-memory figcaption {
+    display:
+      none;
+  }
+
+  .intro-bottom {
+    left:
+      16px;
 
     bottom:
       19px;
 
-    font-size:
+    gap:
       6px;
+
+    max-width:
+      68vw;
+
+    font-size:
+      5px;
   }
 
-  /* JOURNEY */
+  .intro-bottom i {
+    width:
+      10px;
+  }
+
+  .intro-bottom span:last-child {
+    display:
+      none;
+  }
+
+  .intro-scroll {
+    right:
+      16px;
+
+    bottom:
+      18px;
+
+    font-size:
+      5px;
+  }
+
+
+  /* journey */
 
   .journey-intro {
     min-height:
@@ -2823,9 +3652,10 @@ body.is-loaded .loader {
       100px 7vw;
   }
 
-  .journey-intro .section-index {
+  .journey-intro
+  .section-index {
     top:
-      -45px;
+      -44px;
   }
 
   .journey-intro h2 {
@@ -2833,18 +3663,19 @@ body.is-loaded .loader {
       17vw;
 
     line-height:
-      0.93;
+      0.92;
   }
 
   .journey-lead {
     margin-top:
-      32px;
+      30px;
 
     font-size:
-      11px;
+      10px;
   }
 
-  /* GLOBE */
+
+  /* globe */
 
   .globe-section {
     height:
@@ -2853,28 +3684,28 @@ body.is-loaded .loader {
 
   .globe-title {
     font-size:
-      28vw;
+      27vw;
   }
 
   .globe-instruction {
     top:
-      85px;
+      82px;
 
     left:
-      18px;
-  }
-
-  .globe-instruction p {
-    font-size:
-      6px;
+      17px;
   }
 
   .globe-instruction-icon {
     width:
-      32px;
+      31px;
 
     height:
-      32px;
+      31px;
+  }
+
+  .globe-instruction p {
+    font-size:
+      5px;
   }
 
   .city-list {
@@ -2887,13 +3718,13 @@ body.is-loaded .loader {
       absolute;
 
     left:
-      18px;
+      17px;
 
     right:
-      18px;
+      17px;
 
     bottom:
-      64px;
+      62px;
 
     z-index:
       20;
@@ -2908,28 +3739,24 @@ body.is-loaded .loader {
       space-between;
 
     padding:
-      17px 0;
+      15px 0;
 
     border-top:
       1px solid
-      rgba(
-        255,
-        255,
-        255,
-        0.22
-      );
+      rgba(24, 26, 23, 0.16);
 
     border-bottom:
       1px solid
-      rgba(
-        255,
-        255,
-        255,
-        0.22
-      );
+      rgba(24, 26, 23, 0.16);
+
+    color:
+      var(--ink);
 
     font-size:
-      8px;
+      7px;
+
+    font-weight:
+      600;
 
     letter-spacing:
       0.14em;
@@ -2940,7 +3767,7 @@ body.is-loaded .loader {
 
   .mobile-city-button strong {
     font-size:
-      21px;
+      20px;
 
     font-weight:
       300;
@@ -2948,45 +3775,47 @@ body.is-loaded .loader {
 
   .globe-progress {
     bottom:
-      24px;
+      22px;
 
     grid-template-columns:
-      auto 70px auto;
+      auto 65px auto;
 
     gap:
-      10px;
+      9px;
 
     font-size:
-      6px;
+      5px;
   }
 
-  .globe-progress > div {
+  .globe-progress
+  > div {
     width:
-      70px;
+      65px;
   }
 
-  /* CARD */
+
+  /* memory */
 
   .memory-card {
     top:
       auto;
 
     bottom:
-      118px;
+      115px;
 
     left:
-      18px;
+      17px;
 
     grid-template-columns:
       1fr;
 
     width:
       calc(
-        100vw - 36px
+        100vw - 34px
       );
 
     max-height:
-      65svh;
+      67svh;
 
     overflow-y:
       auto;
@@ -2995,14 +3824,18 @@ body.is-loaded .loader {
       translateY(130%);
 
     transition:
-      transform 0.65s cubic-bezier(
+      transform
+      0.6s
+      cubic-bezier(
         0.22,
         1,
         0.36,
         1
       ),
-      opacity 0.4s ease,
-      visibility 0.4s ease;
+      opacity
+      0.35s ease,
+      visibility
+      0.35s ease;
   }
 
   .memory-card.is-open {
@@ -3012,33 +3845,34 @@ body.is-loaded .loader {
 
   .memory-photo {
     height:
-      32svh;
+      31svh;
   }
 
   .memory-content {
     min-height:
-      220px;
+      215px;
 
     padding:
-      20px;
+      19px;
   }
 
   .memory-number {
     margin-bottom:
-      20px;
+      18px;
   }
 
   .memory-content h3 {
     font-size:
-      42px;
+      40px;
   }
 
   .memory-text {
     font-size:
-      10px;
+      9px;
   }
 
-  /* MOMENTS */
+
+  /* moments */
 
   .moments {
     min-height:
@@ -3059,7 +3893,7 @@ body.is-loaded .loader {
       100%;
 
     margin-bottom:
-      11vh;
+      10vh;
   }
 
   .moments-heading h2 {
@@ -3075,7 +3909,7 @@ body.is-loaded .loader {
       column;
 
     gap:
-      70px;
+      65px;
 
     min-height:
       auto;
@@ -3085,16 +3919,7 @@ body.is-loaded .loader {
     position:
       relative;
 
-    top:
-      auto;
-
-    right:
-      auto;
-
-    bottom:
-      auto;
-
-    left:
+    inset:
       auto;
 
     width:
@@ -3109,12 +3934,12 @@ body.is-loaded .loader {
 
   .moment-large img {
     height:
-      60svh;
+      59svh;
   }
 
   .moment-small {
     width:
-      72%;
+      73%;
 
     align-self:
       flex-end;
@@ -3122,7 +3947,7 @@ body.is-loaded .loader {
 
   .moment-small img {
     height:
-      48svh;
+      46svh;
   }
 
   .moment-tall {
@@ -3132,15 +3957,11 @@ body.is-loaded .loader {
 
   .moment-tall img {
     height:
-      56svh;
+      55svh;
   }
 
-  .moment figcaption {
-    font-size:
-      6px;
-  }
 
-  /* FLORENCE */
+  /* Florence */
 
   .florence {
     height:
@@ -3164,21 +3985,22 @@ body.is-loaded .loader {
 
   .florence-date {
     margin-top:
-      32px;
+      31px;
 
     font-size:
-      8px;
+      7px;
   }
 
   .florence-coordinates {
     padding:
-      0 18px;
+      0 17px;
 
     font-size:
-      6px;
+      5px;
   }
 
-  /* ADVENTURE */
+
+  /* adventure */
 
   .new-adventure {
     padding:
@@ -3192,16 +4014,17 @@ body.is-loaded .loader {
 
   .new-adventure-date {
     gap:
-      10px;
+      9px;
 
     margin-top:
-      55px;
+      52px;
 
     font-size:
       9vw;
   }
 
-  /* WEDDING */
+
+  /* wedding */
 
   .wedding {
     padding:
@@ -3213,7 +4036,8 @@ body.is-loaded .loader {
       8vh;
   }
 
-  .wedding-heading .section-index {
+  .wedding-heading
+  .section-index {
     position:
       static;
 
@@ -3221,7 +4045,7 @@ body.is-loaded .loader {
       block;
 
     margin-bottom:
-      30px;
+      28px;
   }
 
   .wedding-heading h2 {
@@ -3234,7 +4058,7 @@ body.is-loaded .loader {
       100%;
 
     height:
-      62svh;
+      61svh;
 
     margin-bottom:
       8vh;
@@ -3247,24 +4071,25 @@ body.is-loaded .loader {
 
   .wedding-info article {
     min-height:
-      280px;
+      270px;
 
     padding:
-      26px 3px;
+      25px 3px;
   }
 
-  .wedding-info article + article {
-    border-left:
-      0;
-
+  .wedding-info article
+  + article {
     border-top:
       1px solid
-      var(--line-dark);
+      var(--line);
+
+    border-left:
+      0;
   }
 
   .wedding-info-number {
     top:
-      26px;
+      25px;
 
     right:
       3px;
@@ -3272,7 +4097,7 @@ body.is-loaded .loader {
 
   .wedding-info h3 {
     margin-top:
-      70px;
+      68px;
 
     font-size:
       17vw;
@@ -3283,21 +4108,23 @@ body.is-loaded .loader {
       1fr auto;
 
     gap:
-      12px;
+      10px;
 
     padding:
-      27px 0;
+      26px 0;
 
     font-size:
       10vw;
   }
 
-  .rsvp-button span:nth-child(2) {
+  .rsvp-button
+  span:nth-child(2) {
     display:
       none;
   }
 
-  /* FOOTER */
+
+  /* footer */
 
   .footer {
     min-height:
@@ -3334,20 +4161,22 @@ body.is-loaded .loader {
       25vw;
   }
 
-  .footer-names span:last-child {
+  .footer-names
+  span:last-child {
     align-self:
       flex-end;
   }
 
   .footer-bottom {
     margin-top:
-      55px;
+      52px;
 
     font-size:
-      6px;
+      5px;
   }
 
 }
+
 
 /* =========================================================
    REDUCED MOTION
