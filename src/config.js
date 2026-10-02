@@ -7,25 +7,14 @@
 
   'use strict'
 
-  /* =======================================================
-     TEXTS
-  ======================================================= */
-
   const translations = {
 
     sk: {
 
-      journeySub:
-        'A journey of us',
-
-      introLine1:
-        'A journey of us,',
-
-      introLine2:
-        'captured in every moment.',
-
-      explore:
-        'Explore',
+      journeySub: 'A journey of us',
+      introLine1: 'A journey of us,',
+      introLine2: 'captured in every moment.',
+      explore: 'Explore',
 
       spinLine1:
         'Roztočte glóbus a objavte naše spoločné chvíle.',
@@ -42,68 +31,34 @@
       weddingDate:
         '30. APRÍL 2027',
 
-      months:
-        'Mesiacov',
+      months: 'Mesiacov',
+      days: 'Dní',
+      hours: 'Hodín',
+      mins: 'Minút',
+      secs: 'Sekúnd',
 
-      days:
-        'Dní',
-
-      hours:
-        'Hodín',
-
-      mins:
-        'Minút',
-
-      secs:
-        'Sekúnd',
-
-      ceremony:
-        'Naša svadba',
-
-      at:
-        'OBRAD',
+      ceremony: 'Naša svadba',
+      at: 'OBRAD',
 
       address:
         'KOSTOL SV. JAKUBA<br>TRNAVA',
 
-      navIntro:
-        'INTRO',
-
-      navJourney:
-        'JOURNEY',
-
-      navWedding:
-        'WEDDING',
+      navIntro: 'INTRO',
+      navJourney: 'JOURNEY',
+      navWedding: 'WEDDING',
 
       selectCity:
-        'VYBERTE MESTO',
+        'SELECT A CITY TO START',
 
-      rsvpBtn:
-        'RSVP',
-
-      detail:
-        'DETAIL',
-
-      timeline:
-        'TIMELINE',
-
-      menu:
-        'MENU',
-
-      seat:
-        'SEAT',
-
-      faq:
-        'FAQ',
-
-      gallery:
-        'GALLERY',
-
-      scroll:
-        'SCROLL',
-
-      videoSkip:
-        'SKIP',
+      rsvpBtn: 'RSVP',
+      detail: 'DETAIL',
+      timeline: 'TIMELINE',
+      menu: 'MENU',
+      seat: 'SEAT',
+      faq: 'FAQ',
+      gallery: 'GALLERY',
+      scroll: 'SCROLL',
+      videoSkip: 'SKIP',
 
       ceremonyTitle:
         'Kostol sv. Jakuba',
@@ -153,11 +108,8 @@
       rsvpAttending:
         'Zúčastníte sa?',
 
-      rsvpYes:
-        'Áno',
-
-      rsvpNo:
-        'Nie',
+      rsvpYes: 'Áno',
+      rsvpNo: 'Nie',
 
       rsvpGuests:
         'Počet hostí',
@@ -190,143 +142,154 @@
 
   }
 
-  /* =======================================================
-     JOURNEY LOCATIONS
 
-     side / x / top použijeme neskôr rovnako ako
-     reference na rozmiestnenie labelov okolo glóbusu.
-  ======================================================= */
+  /* =========================================================
+     JOURNEY LOCATIONS
+  ========================================================= */
 
   const locations = [
 
-  {
-    key: 'london',
-    name: 'London',
-    subname: 'United Kingdom',
+    {
+      key: 'london',
+      name: 'London',
+      subname: 'United Kingdom',
 
-    lat: 51.5074,
-    lon: -0.1278,
+      lat: 51.5074,
+      lon: -0.1278,
 
-    side: 'left',
-    x: '7%',
-    top: '29%',
+      side: 'left',
+      x: '5%',
+      top: '27%',
 
-    type: 'image',
-    media: 'photos/02-west-ham.jpeg'
-  },
+      type: 'image',
+      media:
+        'photos/02-west-ham.jpeg'
+    },
 
-  {
-    key: 'madeira',
-    name: 'Madeira',
-    subname: 'Portugal',
+    {
+      key: 'madeira',
+      name: 'Madeira',
+      subname: 'Portugal',
 
-    lat: 32.7607,
-    lon: -16.9595,
+      lat: 32.7607,
+      lon: -16.9595,
 
-    side: 'left',
-    x: '4%',
-    top: '47%',
+      side: 'left',
+      x: '9%',
+      top: '43%',
 
-    type: 'image',
-    media: 'photos/03-madeira-waterfall.jpeg'
-  },
+      type: 'image',
+      media:
+        'photos/03-madeira-waterfall.jpeg'
+    },
 
-  {
-    key: 'sevilla',
-    name: 'Sevilla',
-    subname: 'Spain',
+    {
+      key: 'sevilla',
+      name: 'Sevilla',
+      subname: 'Spain',
 
-    lat: 37.3891,
-    lon: -5.9845,
+      lat: 37.3891,
+      lon: -5.9845,
 
-    side: 'left',
-    x: '8%',
-    top: '65%',
+      side: 'left',
+      x: '2%',
+      top: '60%',
 
-    type: 'image',
-    media: 'photos/03-madeira-waterfall.jpeg'
-  },
+      type: 'image',
 
-  {
-    key: 'firenze',
-    name: 'Firenze',
-    subname: '01 · 04 · 2026',
+      media:
+        'photos/03-madeira-waterfall.jpeg'
+    },
 
-    lat: 43.7696,
-    lon: 11.2558,
+    {
+      key: 'firenze',
+      name: 'Firenze',
+      subname: '01 · 04 · 2026',
 
-    side: 'right',
-    x: '8%',
-    top: '25%',
+      lat: 43.7696,
+      lon: 11.2558,
 
-    type: 'image',
-    media: 'photos/07-florence-engagement.jpeg',
+      side: 'right',
+      x: '4%',
+      top: '31%',
 
-    special: 'engagement'
-  },
+      type: 'image',
 
-  {
-    key: 'granada',
-    name: 'Granada',
-    subname: 'Spain',
+      media:
+        'photos/07-florence-engagement.jpeg',
 
-    lat: 37.1773,
-    lon: -3.5986,
+      special:
+        'engagement'
+    },
 
-    side: 'right',
-    x: '5%',
-    top: '43%',
+    {
+      key: 'granada',
+      name: 'Granada',
+      subname: 'Spain',
 
-    type: 'image',
-    media: 'photos/08-formal-outdoor.jpeg'
-  },
+      lat: 37.1773,
+      lon: -3.5986,
 
-  {
-    key: 'malaga',
-    name: 'Málaga',
-    subname: 'Spain',
+      side: 'right',
+      x: '10%',
+      top: '47%',
 
-    lat: 36.7213,
-    lon: -4.4214,
+      type: 'image',
 
-    side: 'right',
-    x: '9%',
-    top: '61%',
+      media:
+        'photos/08-formal-outdoor.jpeg'
+    },
 
-    type: 'image',
-    media: 'photos/01-historic-selfie.jpeg'
-  },
+    {
+      key: 'malaga',
+      name: 'Málaga',
+      subname: 'Spain',
 
-  {
-    key: 'tokyo',
-    name: 'Tokyo',
-    subname: 'Japan',
+      lat: 36.7213,
+      lon: -4.4214,
 
-    lat: 35.6762,
-    lon: 139.6503,
+      side: 'right',
+      x: '3%',
+      top: '63%',
 
-    side: 'right',
-    x: '13%',
-    top: '74%',
+      type: 'image',
 
-    type: 'instagram',
+      media:
+        'photos/01-historic-selfie.jpeg'
+    },
 
-    media:
-      'https://www.instagram.com/reel/DN_BgiWktOJ/embed/',
+    {
+      key: 'tokyo',
+      name: 'Tokyo',
+      subname: 'Japan',
 
-    external:
-      'https://www.instagram.com/reel/DN_BgiWktOJ/'
-  }
+      lat: 35.6762,
+      lon: 139.6503,
 
-]
+      side: 'right',
+      x: '12%',
+      top: '76%',
 
-  /* =======================================================
+      type: 'instagram',
+
+      media:
+        'https://www.instagram.com/reel/DN_BgiWktOJ/embed/',
+
+      external:
+        'https://www.instagram.com/reel/DN_BgiWktOJ/'
+    }
+
+  ]
+
+
+  /* =========================================================
      WEDDING
-  ======================================================= */
+  ========================================================= */
 
   const wedding = {
 
     couple: {
+
       first:
         'Simona',
 
@@ -335,6 +298,7 @@
 
       full:
         'Simona & Martin'
+
     },
 
     date:
@@ -387,72 +351,49 @@
 
   }
 
-  /* =======================================================
+
+  /* =========================================================
      TIMELINE
-  ======================================================= */
+  ========================================================= */
 
   const timeline = [
 
     {
-      time:
-        '14:00',
-
-      icon:
-        'groups',
-
-      label:
-        'Stretnutie hostí'
+      time: '14:00',
+      icon: 'groups',
+      label: 'Stretnutie hostí'
     },
 
     {
-      time:
-        '15:00',
-
-      icon:
-        'favorite',
-
-      label:
-        'Svadobný obrad'
+      time: '15:00',
+      icon: 'favorite',
+      label: 'Svadobný obrad'
     },
 
     {
-      time:
-        'Po obrade',
-
-      icon:
-        'directions_bus',
-
-      label:
-        'Presun do Šúroviec'
+      time: 'Po obrade',
+      icon: 'directions_bus',
+      label: 'Presun do Šúroviec'
     },
 
     {
-      time:
-        'Večer',
-
-      icon:
-        'restaurant',
-
-      label:
-        'Hostina'
+      time: 'Večer',
+      icon: 'restaurant',
+      label: 'Hostina'
     },
 
     {
-      time:
-        'Noc',
-
-      icon:
-        'celebration',
-
-      label:
-        'Oslava'
+      time: 'Noc',
+      icon: 'celebration',
+      label: 'Oslava'
     }
 
   ]
 
-  /* =======================================================
-     EXTERNAL SERVICES
-  ======================================================= */
+
+  /* =========================================================
+     SERVICES
+  ========================================================= */
 
   const services = {
 
@@ -464,13 +405,14 @@
 
   }
 
-  /* =======================================================
-     GLOBAL CONFIG
-  ======================================================= */
+
+  /* =========================================================
+     EXPORT
+  ========================================================= */
 
   global.WeddingApp =
-    global.WeddingApp ||
-    {}
+    global.WeddingApp || {}
+
 
   global.WeddingApp.config = {
 
@@ -500,5 +442,6 @@
       'https://unpkg.com/three@0.180.0'
 
   }
+
 
 })(window)
