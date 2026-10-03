@@ -57,3 +57,22 @@ body[data-fullscreen-video] #persistent-header,body[data-fullscreen-video] #bott
 #destination-video-highlight{text-decoration:none}
 #destination-video-highlight .instagram-caption{display:block;font:400 14px/1.5 'Cormorant Garamond',serif;letter-spacing:.02em;margin-bottom:9px}
 #destination-video-highlight .instagram-cta{text-decoration:underline;text-underline-offset:5px;text-decoration-color:#ffffff80}
+/* Persistent global utilities, beneath the existing story navigation. */
+:root{color:var(--ink);background:var(--paper)}
+html[data-theme="dark"]{--paper:#20221f;--ink:#ece9df;--line:#56594f;color-scheme:dark}
+body,#journey-scene,#final-transition-screen,#wedding-handoff,.city-label,.memory{transition:background-color .45s,color .45s,border-color .45s}
+#bottom-nav{bottom:calc(env(safe-area-inset-bottom) + 72px)}
+#journey-instruction{bottom:185px}
+#utility-controls{position:fixed;z-index:45;left:50%;bottom:calc(env(safe-area-inset-bottom) + 12px);transform:translateX(-50%);display:flex;gap:16px;align-items:center;color:var(--ink);transition:color .45s,opacity .3s}
+#utility-controls button{width:36px;height:40px;display:grid;place-items:center;opacity:.62;padding:8px;font-size:10px;letter-spacing:.08em}
+#utility-controls button:hover,#utility-controls button:focus-visible{opacity:1}
+#utility-controls svg{width:19px;height:19px;stroke-width:1.1}
+#utility-sound[aria-pressed="false"] .sound-on,#utility-sound[aria-pressed="true"] .sound-off,#utility-mood[aria-pressed="false"] .sun,#utility-mood[aria-pressed="true"] .moon{display:none}
+body[data-state="intro"] #utility-controls{color:#fff}
+body[data-state="loading"] #utility-controls,body[data-fullscreen-video] #utility-controls{visibility:hidden;pointer-events:none}
+#utility-toast{position:fixed;z-index:90;left:50%;bottom:calc(env(safe-area-inset-bottom) + 124px);transform:translateX(-50%);max-width:calc(100vw - 40px);width:max-content;padding:12px 18px;background:var(--paper);color:var(--ink);border:1px solid var(--line);font:12px/1.5 'DM Sans',sans-serif;text-align:center}
+html[data-theme="dark"] .city-connector{stroke:#c1c4b8}
+html[data-theme="dark"] .journey-modal-media{background:#292c26}
+html[data-theme="dark"] .city-label.selected{border-color:#aeb3a2}
+@media(max-width:767px){#journey-instruction{bottom:164px}.memory{bottom:155px}.intro-caption{bottom:165px}}
+@media(prefers-reduced-motion:reduce){body,#journey-scene,#final-transition-screen,#wedding-handoff,.city-label,.memory,#utility-controls{transition:none}}

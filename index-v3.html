@@ -1,11 +1,11 @@
 <!doctype html>
 <html lang="sk">
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#f5f4f0"><meta name="description" content="Simona & Martin — A journey of us — 30. 04. 2027">
+<meta charset="UTF-8"><script>try{document.documentElement.dataset.theme=localStorage.getItem("sm-theme")==="dark"?"dark":"light";document.documentElement.lang=localStorage.getItem("sm-language")==="en"?"en":"sk"}catch{}</script><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#f5f4f0"><meta name="description" content="Simona & Martin — A journey of us — 30. 04. 2027">
 <title>Simona & Martin — A journey of us</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Allura&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-<style>body{margin:0;background:#f5f4f0}#interactive-preloader{position:fixed;inset:0;z-index:100;background:#f5f4f0;display:grid;place-content:center}[hidden]{display:none!important}</style>
+<style>html{--paper:#f5f4f0;--ink:#292a28}html[data-theme="dark"]{--paper:#20221f;--ink:#ece9df}body{margin:0;background:var(--paper);color:var(--ink)}#interactive-preloader{position:fixed;inset:0;z-index:100;background:var(--paper);display:grid;place-content:center}[hidden]{display:none!important}</style>
 </head>
 <body class="loading" data-state="loading">
 <div id="interactive-preloader" aria-label="Načítavanie"><span class="preloader-monogram">S & M</span><div id="loading-ring"><span id="preloader-percentage" role="status">0%</span></div><button id="pl-skip-btn">Preskočiť</button></div>
@@ -39,6 +39,12 @@
 <p id="destination-video-status" role="status"></p><button id="destination-video-retry" hidden>Prehrať video</button>
 </section>
 <nav id="bottom-nav" aria-label="Navigácia príbehu" inert><div class="nav-labels"><button id="nav-intro" class="nav-item" aria-current="step">INTRO</button><button id="nav-journey" class="nav-item">JOURNEY <span id="journey-count"></span></button><button id="nav-wedding" class="nav-item">WEDDING</button></div><div class="nav-progress" aria-hidden="true"><span id="nav-fill"></span><i class="nav-dot active"></i><i class="nav-dot"></i><i class="nav-dot"></i></div></nav>
+<div id="utility-controls" role="group" aria-label="Globálne ovládanie">
+<button id="utility-sound" aria-label="Zapnúť hudbu" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4Z"/><path class="sound-on" d="M15 8q5 4 0 8m3-11q8 7 0 14"/><path class="sound-off" d="m16 9 6 6m0-6-6 6"/></svg></button>
+<button id="utility-gallery" aria-label="Svadobné fotografie"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h16v16H5zM2 7v15h15M7 15l4-5 4 4 3-3 2 4"/><circle cx="16" cy="7" r="1"/></svg></button>
+<button id="utility-mood" aria-label="Prepnúť na tmavú náladu" aria-pressed="false"><svg class="moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 15A9 9 0 0 1 9 4a9 9 0 1 0 11 11Z"/></svg><svg class="sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 1v3m0 16v3M1 12h3m16 0h3M4 4l2 2m12 12 2 2M4 20l2-2M18 6l2-2"/></svg></button>
+<button id="utility-language" aria-label="Switch to English">SK</button>
+</div><p id="utility-toast" role="status" hidden></p>
 <p id="app-status" class="sr-only" role="status" aria-live="polite"></p>
 <noscript><div class="no-script">Simona & Martin<br>Na zobrazenie Journey zapnite JavaScript.<br><a href="https://samsvadba.github.io/svadba/">Prejsť na svadobný web</a></div></noscript>
 <script type="module" src="./main-v3.js"></script>

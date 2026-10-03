@@ -23,7 +23,7 @@ const connector = $('memory-connector');
 const view = { width: 0, height: 0 };
 const journeyMotion = { focus: 0, spin: 0 };
 let globeFlight, lastFrame = 0, idleSince = 0, dragging = false, layoutDirty = true;
-let overviewMaterial, wireMaterial, detailPromise, detailReady = 0;
+let globeMaterial, overviewMaterial, wireMaterial, detailPromise, detailReady = 0;
 const detailLayers = [];
 const countryByCity = { granada:'ESP', malaga:'ESP', sevilla:'ESP', trnava:'SVK', london:'GBR', liverpool:'GBR', madeira:'PRT', tokyo:'JPN', firenze:'ITA', sardinia:'ITA', seoul:'KOR', beijing:'CHN' };
 const layout = { minY:100, maxY:500, margin:20, modal:null };
@@ -47,22 +47,23 @@ function resetFullscreenVideo() {
   }
   fullscreenVideo.active=false;fullscreenVideo.closing=false;
   delete document.body.dataset.fullscreenVideo;
+  $('utility-controls').inert=false;syncMusic();
 }
 
 function prepareFullscreenVideo(loc) {
   destinationVideo.muted=true;destinationVideo.defaultMuted=true;
   destinationVideo.src=loc.fullscreenVideo;destinationVideo.load();
   $('destination-video-title').textContent=loc.name;
-  $('destination-video-country').textContent=loc.subname;
+  $('destination-video-country').textContent=countryText(loc);
   const highlight=$('destination-video-highlight');
   highlight.hidden=!loc.instagramHighlight;
   const caption=document.createElement('span'),cta=document.createElement('span');
-  caption.className='instagram-caption';caption.textContent=loc.instagramLabel||'Viac z našej cesty';
-  cta.className='instagram-cta';cta.textContent='POZRIEŤ NA INSTAGRAME ↗';
+  caption.className='instagram-caption';caption.textContent=localized(loc.instagramLabel)||t('more');
+  cta.className='instagram-cta';cta.textContent=t('instagram');
   highlight.replaceChildren(caption,cta);
   if(loc.instagramHighlight)highlight.href=loc.instagramHighlight;
   else highlight.removeAttribute('href');
-  $('destination-video-status').textContent='Načítavam spomienku…';
+  $('destination-video-status').textContent=t('videoLoading');
   $('destination-video-retry').hidden=true;
   gsap.set(destinationVideo,{opacity:0,scale:reducedMotion.matches?1:1.035});
 }
@@ -71,13 +72,14 @@ function playFullscreenVideo() {
   const request=revision;
   destinationVideo.play()?.catch(()=>{
     if(request!==revision||!fullscreenVideo.active||fullscreenVideo.closing)return;
-    $('destination-video-status').textContent='Ťuknutím spustíte video.';
+    $('destination-video-status').textContent=t('videoTap');
     $('destination-video-retry').hidden=false;
   });
 }
 
 function openFullscreenVideo() {
   fullscreenVideo.active=true;
+  music.pause();$('utility-controls').inert=true;
   document.body.dataset.fullscreenVideo='true';
   videoScene.inert=false;videoScene.setAttribute('aria-hidden','false');
   $('app').inert=true;$('persistent-header').inert=true;$('bottom-nav').inert=true;
@@ -102,7 +104,7 @@ destinationVideo.addEventListener('playing',()=>{
 });
 destinationVideo.addEventListener('error',()=>{
   if(!destinationVideo.hasAttribute('src'))return;
-  $('destination-video-status').textContent='Video sa nepodarilo načítať.';
+  $('destination-video-status').textContent=t('videoError');
   $('destination-video-retry').hidden=false;
 });
 $('destination-video-close').onclick=closeFullscreenVideo;
@@ -150,7 +152,7 @@ function unloadMedia() {
   $('instagram-link').hidden = true;
   $('media-error').hidden = true;
   $('media-error').classList.remove('empty-memory');
-  $('media-error').textContent = 'Fotografiu sa nepodarilo načítať.';
+  $('media-error').textContent = t('imageError');
   $('modal').inert = true;
   $('modal').setAttribute('aria-hidden', 'true');
   gsap.set($('modal'), { autoAlpha: 0 });
@@ -230,7 +232,7 @@ async function playJourneyTransition() {
   setState('transition');
   setActiveNav('journey');
   showScreen('transition-screen', false);
-  announce('Pripravujeme glóbus našich ciest.');
+  announce(t('prepare'));
   await ensureGlobeScene();
   if (request !== revision) return;
   currentIndex = -1;
@@ -252,7 +254,7 @@ async function playJourneyTransition() {
       $('transition-screen').setAttribute('aria-hidden', 'true');
       showScreen('journey-scene');
       setState('journey');
-      announce('Vyberte mesto alebo otočte glóbus.');
+      announce(t('select'));
     })
     .to([$ ('label-layer'), $('city-connectors'), $('journey-instruction')], { autoAlpha: 1, duration: duration(.7) });
 }
@@ -263,7 +265,7 @@ function playWeddingTransition() {
   setState('final-transition');
   setActiveNav('wedding');
   showScreen('final-transition-screen', false);
-  announce('And now, Our new adventure begins.');
+  announce(t('final1')+' '+t('final2'));
   const tl = gsap.timeline();
   activeSectionTimeline = tl;
   animateTransitionLines(tl, $('final-transition-screen'), .75);
@@ -273,7 +275,7 @@ function playWeddingTransition() {
       setState('handoff');
       showScreen('wedding-handoff');
       gsap.set($('wedding-handoff'), { opacity: 0 });
-      announce('Pokračujeme na svadobný web.');
+      announce(t('redirect'));
     })
     .to($('wedding-handoff'), { opacity: 1, duration: duration(.7) })
     .call(() => { window.location.assign(wedding.url); }, [], '+=1.6');
@@ -383,7 +385,7 @@ async function ensureGlobeScene() {
       $('three-canvas').tabIndex=0;
       globeGroup = new THREE.Group();
       scene.add(globeGroup);
-      globeGroup.add(new THREE.Mesh(new THREE.SphereGeometry(GLOBE_RADIUS, 128, 96), new THREE.MeshBasicMaterial({color: 0xf5f4f0})));
+      globeGroup.add(new THREE.Mesh(new THREE.SphereGeometry(GLOBE_RADIUS, 128, 96), (globeMaterial=new THREE.MeshBasicMaterial({color: 0xf5f4f0}))));
       wireMaterial=new THREE.LineBasicMaterial({color:0x8e918c,transparent:true,opacity:.08,depthWrite:false});
       const netSource=new THREE.IcosahedronGeometry(GLOBE_RADIUS,3);
       const netEdges=new THREE.WireframeGeometry(netSource);
@@ -543,6 +545,7 @@ function animate(time) {
   if(detail>0&&!detailPromise)loadGeographicDetail();
   if(detailLayers.length)detailReady+=(1-detailReady)*(1-Math.exp(-dt*3));
   const mix=detail*detailReady;
+  applyGlobeTheme();
   overviewMaterial.opacity=.26*(1-mix*.86);
   wireMaterial.opacity=.08*(1-detail*.94);
   const selectedCountry=currentIndex>=0?countryByCity[locations[currentIndex].key]:null;
@@ -550,7 +553,8 @@ function animate(time) {
     const target=layer.iso===selectedCountry?journeyMotion.focus:0;
     layer.emphasis+=(target-layer.emphasis)*(1-Math.exp(-dt*5));
     // The existing vector contour becomes dark; neighbors remain light, without fills.
-    layer.material.color.setRGB(.392-.27*layer.emphasis,.408-.28*layer.emphasis,.373-.26*layer.emphasis);
+    const night=mood.value,e=layer.emphasis;
+    layer.material.color.setRGB((.392-.27*e)*(1-night)+(.69+.23*e)*night,(.408-.28*e)*(1-night)+(.70+.20*e)*night,(.373-.26*e)*(1-night)+(.65+.22*e)*night);
     layer.material.opacity=detailReady*(detail*.19+layer.emphasis*.76);
     layer.line.visible=layer.material.opacity>.002;
   }
@@ -678,7 +682,7 @@ function flyToAndShow(index) {
   gsap.set($('journey-instruction'), { autoAlpha: 0 });
   markerData.forEach((item, i) => item.element.classList.toggle('selected', i === index));
   $('modal-city').textContent = loc.name;
-  $('modal-location').textContent = loc.special === 'engagement' ? `Zásnuby · ${loc.subname}` : (loc.description || loc.subname);
+  $('modal-location').textContent = memoryLocation(loc);
   $('memory-number').textContent = `${String(index + 1).padStart(2,'0')} / ${String(locations.length).padStart(2,'0')}`;
   const targetFraming = mobile() ? {x:0, y:.29} : {x:.22, y:0};
   gsap.to(framing, {...targetFraming, duration:duration(2.6), ease:'power2.inOut'});
@@ -686,7 +690,7 @@ function flyToAndShow(index) {
     if (revision !== request) return;
     if(loc.fullscreenVideo){
       visited.add(index);markerData[index].element.classList.add('visited');setActiveNav('journey');
-      openFullscreenVideo();announce(`${loc.name}, ${loc.subname}. Video spomienka.`);return;
+      openFullscreenVideo();announce(`${loc.name}, ${countryText(loc)}. ${t('videoMemory')}`);return;
     }
     if (loc.type === 'instagram') {
       $('modal-instagram').src = loc.media;
@@ -707,13 +711,13 @@ function flyToAndShow(index) {
     visited.add(index);
     markerData[index].element.classList.add('visited');
     setActiveNav('journey');
-    $('video-skip-btn').innerHTML = visited.size === locations.length ? 'Naša svadba <span aria-hidden="true">↗</span>' : 'Ďalšia <span aria-hidden="true">↗</span>';
+    $('video-skip-btn').innerHTML = t(visited.size === locations.length?'wedding':'next')+' <span aria-hidden="true">↗</span>';
     $('modal').setAttribute('aria-hidden','false');
     $('modal').inert = false;
     layoutDirty=true;
     gsap.to($('modal'), {autoAlpha:1,duration:duration(.6)});
     $('modal-city').focus({preventScroll:true});
-    announce(`${loc.name}, ${loc.subname}. Spomienka ${index + 1} zo ${locations.length}.`);
+    announce(`${loc.name}, ${countryText(loc)}. ${t('memory')} ${index + 1} ${t('of')} ${locations.length}.`);
   });
 }
 
@@ -746,7 +750,83 @@ function nextMemory() {
   playWeddingTransition();
 }
 
+// Independent, persistent utility preferences; audio is never loaded without a source.
+function readPreference(key,fallback){try{return localStorage.getItem(key)||fallback;}catch{return fallback;}}
+function savePreference(key,value){try{localStorage.setItem(key,value);}catch{}}
+const preferences={sound:readPreference('sm-sound','off')==='on',theme:readPreference('sm-theme','light')==='dark'?'dark':'light',language:readPreference('sm-language','sk')==='en'?'en':'sk'};
+const mood={value:preferences.theme==='dark'?1:0};
+const music=new Audio();music.loop=true;music.preload='none';
+let musicEligible=false,musicFailed=false,toastTimer;
+music.addEventListener('error',()=>{musicFailed=true;music.pause();});
+const t=key=>config.ui[preferences.language][key]||key;
+const localized=value=>typeof value==='object'?value?.[preferences.language]||value?.sk:value;
+const countryText=loc=>preferences.language==='en'?(config.countryEnglish[loc.key]||loc.subname):loc.subname;
+const memoryLocation=loc=>loc.special==='engagement'?`${t('engagement')} · ${loc.subname}`:preferences.language==='en'?(loc.descriptionEn||countryText(loc)):(loc.description||loc.subname);
+function syncMusic(){
+  if(!musicEligible||!preferences.sound||fullscreenVideo.active||document.hidden||musicFailed||!config.audio.backgroundMusic){music.pause();return;}
+  if(!music.getAttribute('src'))music.src=/^(https?:|\/)/.test(config.audio.backgroundMusic)?config.audio.backgroundMusic:asset(config.audio.backgroundMusic);
+  if(music.paused)music.play().catch(()=>{});
+}
+function toast(key){clearTimeout(toastTimer);$('utility-toast').dataset.key=key;$('utility-toast').textContent=t(key);$('utility-toast').hidden=false;toastTimer=setTimeout(()=>{$('utility-toast').hidden=true;},3200);}
+function applyGlobeTheme(){
+  if(!globeMaterial)return;
+  const n=mood.value;
+  globeMaterial.color.setRGB(.913*(1-n)+.014*n,.905*(1-n)+.016*n,.871*(1-n)+.014*n);
+  overviewMaterial.color.setRGB(.127*(1-n)+.68*n,.138*(1-n)+.70*n,.114*(1-n)+.64*n);
+  wireMaterial.color.setRGB(.27*(1-n)+.65*n,.28*(1-n)+.67*n,.26*(1-n)+.61*n);
+  for(const item of markerData)item.mesh?.material.color.setRGB(.019*(1-n)+.84*n,.02*(1-n)+.81*n,.018*(1-n)+.72*n);
+}
+function applyMood(animate=true){
+  document.documentElement.dataset.theme=preferences.theme;
+  $('utility-mood').setAttribute('aria-pressed',String(preferences.theme==='dark'));
+  $('utility-mood').setAttribute('aria-label',t(preferences.theme==='dark'?'light':'dark'));
+  gsap.to(mood,{value:preferences.theme==='dark'?1:0,duration:animate?duration(.45):0,onUpdate:applyGlobeTheme});
+}
+function applyLanguage(){
+  document.documentElement.lang=preferences.language;
+  const text=(selector,key)=>document.querySelectorAll(selector).forEach(el=>{el.textContent=t(key);});
+  const attr=(id,key)=>$(id).setAttribute('aria-label',t(key));
+  text('#pl-skip-btn','skip');attr('interactive-preloader','loading');
+  text('#intro-copy .sub-line:first-child','intro1');text('#intro-copy .sub-line:last-child','intro2');
+  $('next-btn').firstChild.textContent=t('explore')+' ';
+  document.querySelector('#journey-instruction p').firstChild.textContent=t('journey1');text('#journey-instruction p span','journey2');
+  text('#transition-screen .trans-line:first-child','journey1');text('#transition-screen .trans-line:last-child','journey2');
+  text('#final-transition-screen .trans-line:first-child','final1');text('#final-transition-screen .trans-line:last-child','final2');
+  text('#globe-fallback','fallback');attr('three-canvas','canvas');attr('header-home','home');attr('bottom-nav','navigation');attr('label-layer','cities');
+  attr('destination-video-close','back');attr('video-stop-btn','close');text('#destination-video-retry','play');
+  $('video-skip-btn').innerHTML=t(visited.size===locations.length?'wedding':'next')+' <span aria-hidden="true">↗</span>';
+  document.querySelector('#wedding-handoff .outline-button').firstChild.textContent=t('handoff')+' ';
+  if(!$('media-error').classList.contains('empty-memory'))text('#media-error','imageError');
+  for(const item of markerData){const loc=locations[item.index];item.element.setAttribute('aria-label',loc.name+' — '+countryText(loc));item.element.querySelector('.city-subname').textContent=countryText(loc);}
+  if(currentIndex>=0){
+    const loc=locations[currentIndex];$('modal-location').textContent=memoryLocation(loc);
+    $('destination-video-country').textContent=countryText(loc);
+    const caption=$('destination-video-highlight').querySelector('.instagram-caption');if(caption)caption.textContent=localized(loc.instagramLabel)||t('more');
+    text('#destination-video-highlight .instagram-cta','instagram');
+  }
+  const status=$('destination-video-status');
+  for(const key of ['videoLoading','videoTap','videoError'])if(Object.values(config.ui).some(d=>d[key]===status.textContent)){status.textContent=t(key);break;}
+  $('utility-language').textContent=preferences.language.toUpperCase();attr('utility-language','language');attr('utility-gallery','photos');attr('utility-controls','controls');
+  $('utility-sound').setAttribute('aria-pressed',String(preferences.sound));attr('utility-sound',preferences.sound?'soundOn':'soundOff');attr('utility-mood',preferences.theme==='dark'?'light':'dark');
+  if(!$('utility-toast').hidden)$('utility-toast').textContent=t($('utility-toast').dataset.key);
+  $('journey-scene').setAttribute('aria-label','Journey — '+t('journey1'));
+  $('transition-screen').setAttribute('aria-label',t('prepare'));
+  $('final-transition-screen').setAttribute('aria-label',t('final2'));
+  $('wedding-handoff').setAttribute('aria-label',t('handoff'));
+  $('instagram-link').textContent=t('instagram');
+  if(state==='journey')announce(t('select'));
+  layoutDirty=true;
+}
+$('utility-sound').onclick=()=>{preferences.sound=!preferences.sound;musicEligible=true;savePreference('sm-sound',preferences.sound?'on':'off');applyLanguage();syncMusic();if(!config.audio.backgroundMusic)toast('noMusic');};
+$('utility-gallery').onclick=()=>{if(config.gallery.url)window.open(config.gallery.url,'_blank','noopener,noreferrer');else toast('gallery');};
+$('utility-mood').onclick=()=>{preferences.theme=preferences.theme==='light'?'dark':'light';savePreference('sm-theme',preferences.theme);applyMood();};
+$('utility-language').onclick=()=>{preferences.language=preferences.language==='sk'?'en':'sk';savePreference('sm-language',preferences.language);applyLanguage();};
+document.addEventListener('click',event=>{if(event.target.closest('#next-btn,#nav-journey')){musicEligible=true;syncMusic();}},true);
+document.addEventListener('visibilitychange',syncMusic);
+
 createLabels();
+applyLanguage();
+applyMood(false);
 $('next-btn').onclick = $('nav-journey').onclick = playJourneyTransition;
 $('header-home').onclick = $('nav-intro').onclick = playIntroTextAnimations;
 $('nav-wedding').onclick = playWeddingTransition;
