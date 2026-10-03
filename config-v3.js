@@ -79,6 +79,7 @@ const config = {
     },
     {
       "key": "tokyo",
+      "instagramLabel": "Viac z našej cesty v Tokiu",
       "instagramHighlight": "https://www.instagram.com/s/aGlnaGxpZ2h0OjE4MDYzMzQwNDUxMzQ3Mzk2?story_media_id=3706699429817129931&stkn=aWN5Y2YzeHF2eTB3",
       "fullscreenVideo": "https://res.cloudinary.com/kxksv8hk/video/upload/w_1080,q_auto,f_auto/IMG_7011",
       "name": "Tokyo",

@@ -56,6 +56,10 @@ function prepareFullscreenVideo(loc) {
   $('destination-video-country').textContent=loc.subname;
   const highlight=$('destination-video-highlight');
   highlight.hidden=!loc.instagramHighlight;
+  const caption=document.createElement('span'),cta=document.createElement('span');
+  caption.className='instagram-caption';caption.textContent=loc.instagramLabel||'Viac z našej cesty';
+  cta.className='instagram-cta';cta.textContent='POZRIEŤ NA INSTAGRAME ↗';
+  highlight.replaceChildren(caption,cta);
   if(loc.instagramHighlight)highlight.href=loc.instagramHighlight;
   else highlight.removeAttribute('href');
   $('destination-video-status').textContent='Načítavam spomienku…';
@@ -363,7 +367,12 @@ async function ensureGlobeScene() {
       controls = new orbit.OrbitControls(camera, renderer.domElement);
       controls.enableDamping = true;
       controls.enablePan = false;
-      controls.enableZoom = false;
+      controls.enableZoom = true;
+      controls.zoomSpeed = .7;
+      controls.minDistance = GLOBE_RADIUS * 1.25;
+      controls.maxDistance = overviewDistance() * 1.3;
+      controls.touches.ONE = THREE.TOUCH.ROTATE;
+      controls.touches.TWO = THREE.TOUCH.DOLLY_ROTATE;
       controls.autoRotateSpeed = 0;
       controls.dampingFactor = .075;
       controls.rotateSpeed = mobile() ? .5 : .65;
@@ -458,7 +467,7 @@ function loadGeographicDetail() {
       const material=new THREE.LineBasicMaterial({color:0x64685f,transparent:true,opacity:0,depthWrite:false});
       const line=new THREE.LineSegments(boundaryGeometry(feature.rings),material);
       line.visible=false; globeGroup.add(line);
-      detailLayers.push({iso:feature.iso,line,material});
+      detailLayers.push({iso:feature.iso,line,material,emphasis:0});
     }
   }).catch(()=>{ /* Overview geometry remains available if optional detail fails. */ });
   return detailPromise;
@@ -531,13 +540,18 @@ function animate(time) {
   }
   camera.updateMatrixWorld();globeGroup.updateMatrixWorld(true);
   const detail=smoothstep(0,1,(36-camera.position.length())/18);
+  if(detail>0&&!detailPromise)loadGeographicDetail();
   if(detailLayers.length)detailReady+=(1-detailReady)*(1-Math.exp(-dt*3));
   const mix=detail*detailReady;
   overviewMaterial.opacity=.26*(1-mix*.86);
   wireMaterial.opacity=.08*(1-detail*.94);
   const selectedCountry=currentIndex>=0?countryByCity[locations[currentIndex].key]:null;
   for(const layer of detailLayers){
-    layer.material.opacity=mix*(layer.iso===selectedCountry?.52:.19);
+    const target=layer.iso===selectedCountry?journeyMotion.focus:0;
+    layer.emphasis+=(target-layer.emphasis)*(1-Math.exp(-dt*5));
+    // The existing vector contour becomes dark; neighbors remain light, without fills.
+    layer.material.color.setRGB(.392-.27*layer.emphasis,.408-.28*layer.emphasis,.373-.26*layer.emphasis);
+    layer.material.opacity=detailReady*(detail*.19+layer.emphasis*.76);
     layer.line.visible=layer.material.opacity>.002;
   }
   updateGeographicLabels(dt);
@@ -739,7 +753,7 @@ $('nav-wedding').onclick = playWeddingTransition;
 $('video-stop-btn').onclick = closeModal;
 $('video-skip-btn').onclick = nextMemory;
 document.addEventListener('keydown', event => { if (event.key === 'Escape') closeModal(); });
-$('three-canvas').addEventListener('pointerdown', event => { pointerDown = {x:event.clientX,y:event.clientY}; });
+$('three-canvas').addEventListener('pointerdown', event => { pointerDown = event.isPrimary ? {x:event.clientX,y:event.clientY} : null; });
 $('three-canvas').addEventListener('pointerup', event => {
   if (state !== 'journey' || cameraMoving || !camera || !pointerDown || Math.hypot(event.clientX-pointerDown.x,event.clientY-pointerDown.y)>6) return;
   let closest = -1, distance = 15;
@@ -755,6 +769,7 @@ $('three-canvas').addEventListener('pointerup', event => {
 window.addEventListener('resize', () => {
   layoutDirty=true;
   if (!camera) {showFallbackLabels();return;}
+  controls.maxDistance=overviewDistance()*1.3;
   if (state === 'memory') {
     gsap.killTweensOf(framing);
     framing.x = mobile() ? 0 : .22; framing.y = mobile() ? .29 : 0;
