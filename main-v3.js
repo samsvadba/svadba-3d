@@ -54,6 +54,10 @@ function prepareFullscreenVideo(loc) {
   destinationVideo.src=loc.fullscreenVideo;destinationVideo.load();
   $('destination-video-title').textContent=loc.name;
   $('destination-video-country').textContent=loc.subname;
+  const highlight=$('destination-video-highlight');
+  highlight.hidden=!loc.instagramHighlight;
+  if(loc.instagramHighlight)highlight.href=loc.instagramHighlight;
+  else highlight.removeAttribute('href');
   $('destination-video-status').textContent='Načítavam spomienku…';
   $('destination-video-retry').hidden=true;
   gsap.set(destinationVideo,{opacity:0,scale:reducedMotion.matches?1:1.035});
@@ -79,7 +83,7 @@ function openFullscreenVideo() {
 }
 
 function closeFullscreenVideo() {
-  if(fullscreenVideo.closing)return;
+  if(!fullscreenVideo.active||fullscreenVideo.closing)return;
   fullscreenVideo.closing=true;
   fullscreenVideo.timeline?.kill();
   destinationVideo.pause();
@@ -98,13 +102,14 @@ destinationVideo.addEventListener('error',()=>{
   $('destination-video-retry').hidden=false;
 });
 $('destination-video-close').onclick=closeFullscreenVideo;
+destinationVideo.addEventListener('ended',closeFullscreenVideo);
 $('destination-video-retry').onclick=()=>{destinationVideo.load();playFullscreenVideo();};
 videoScene.addEventListener('keydown',event=>{
   if(event.key!=='Tab')return;
-  const close=$('destination-video-close'),retry=$('destination-video-retry');
-  if(retry.hidden){event.preventDefault();close.focus();}
-  else if(event.shiftKey&&document.activeElement===close){event.preventDefault();retry.focus();}
-  else if(!event.shiftKey&&document.activeElement===retry){event.preventDefault();close.focus();}
+  const focusable=[$('destination-video-highlight'),$('destination-video-close'),$('destination-video-retry')].filter(el=>!el.hidden);
+  const first=focusable[0],last=focusable[focusable.length-1];
+  if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus();}
+  else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}
 });
 
 function setState(next) {
@@ -153,6 +158,7 @@ function killActiveSectionTransition() {
   activeSectionTimeline?.kill();
   activeSectionTimeline = null;
   gsap.killTweensOf($('modal'));
+  gsap.killTweensOf([$ ('label-layer'), $('city-connectors'), $('journey-instruction')]);
   gsap.killTweensOf(framing);
   globeFlight?.kill();
   gsap.killTweensOf(journeyMotion);
@@ -215,6 +221,7 @@ function animateTransitionLines(tl, screen, hold = .8) {
 
 async function playJourneyTransition() {
   const request = killActiveSectionTransition();
+  gsap.set([$ ('label-layer'), $('city-connectors')],{autoAlpha:0});
   hideAllScreensImmediate();
   setState('transition');
   setActiveNav('journey');
@@ -226,7 +233,7 @@ async function playJourneyTransition() {
   framing.x = 0; framing.y = .065;
   journeyMotion.focus = 0; layoutDirty = true;
   showScreen('journey-scene', false);
-  gsap.set([$ ('label-layer'), $('journey-instruction')], { autoAlpha: 0 });
+  gsap.set([$ ('label-layer'), $('city-connectors'), $('journey-instruction')], { autoAlpha: 0 });
   if (camera) {
     const start = latLonToVec3(30, 15, overviewDistance() * 1.6);
     camera.position.copy(start);
@@ -243,7 +250,7 @@ async function playJourneyTransition() {
       setState('journey');
       announce('Vyberte mesto alebo otočte glóbus.');
     })
-    .to([$ ('label-layer'), $('journey-instruction')], { autoAlpha: 1, duration: duration(.7) });
+    .to([$ ('label-layer'), $('city-connectors'), $('journey-instruction')], { autoAlpha: 1, duration: duration(.7) });
 }
 
 function playWeddingTransition() {
@@ -334,7 +341,7 @@ function createLabels() {
     $('label-layer').append(label);
     const line=document.createElementNS('http://www.w3.org/2000/svg','line');
     line.classList.add('city-connector'); line.dataset.city=loc.key;
-    $('svg-canvas').insertBefore(line,connector);
+    $('city-connectors').append(line);
     markerData.push({ element:label, mesh:null, line, index, side:loc.side,
       x:0,y:0,targetX:0,targetY:0,px:0,py:0,alpha:0,width:100,height:34,
       initialized:false,facing:0,visible:false });
@@ -700,16 +707,20 @@ function closeModal() {
   if (state !== 'memory') return;
   if(fullscreenVideo.active){closeFullscreenVideo();return;}
   const previous = currentIndex;
-  killActiveSectionTransition();
+  const request=killActiveSectionTransition();
   setState('journey');
   currentIndex = -1;
   gsap.to(framing, {x:0,y:.065,duration:duration(.8)});
   const loc = locations[previous];
   gsap.to(journeyMotion,{focus:0,duration:duration(1.8),ease:'power2.inOut'});
-  flyCamera(loc.lat,loc.lon,overviewDistance(),1.8);
-  gsap.set($('label-layer'), {autoAlpha:1});
-  gsap.to($('journey-instruction'), {autoAlpha:1,duration:duration(.5)});
-  markerData[previous].element.focus({preventScroll:true});
+  const overviewUI=[$('label-layer'),$('city-connectors'),$('journey-instruction')];
+  gsap.set(overviewUI,{autoAlpha:0});
+  flyCamera(loc.lat,loc.lon,overviewDistance(),1.8,()=>{
+    if(request!==revision)return;
+    gsap.to(overviewUI,{autoAlpha:1,duration:duration(.7),onComplete:()=>{
+      if(request===revision)markerData[previous].element.focus({preventScroll:true});
+    }});
+  });
 }
 
 function nextMemory() {

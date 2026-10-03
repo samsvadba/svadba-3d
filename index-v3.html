@@ -19,7 +19,7 @@
 </section>
 <section id="journey-scene" class="screen" aria-label="Journey — naše spoločné cesty" aria-hidden="true" inert>
 <canvas id="three-canvas" aria-label="Glóbus: potiahnutím ho otočíte; mesto môžete vybrať aj tlačidlom"></canvas>
-<svg id="svg-canvas" aria-hidden="true"><line id="memory-connector"/></svg><div id="label-layer" aria-label="Mestá"></div>
+<svg id="svg-canvas" aria-hidden="true"><g id="city-connectors" style="opacity:0;visibility:hidden"></g><line id="memory-connector"/></svg><div id="label-layer" aria-label="Mestá"></div>
 <div id="journey-instruction"><svg viewBox="0 0 40 24" aria-hidden="true"><path d="M8 12h24M13 7l-5 5 5 5m14-10 5 5-5 5"/></svg><p>Roztočte glóbus a objavte naše spoločné chvíle.<br><span>Vyberte mesto a začnite.</span></p></div>
 <p id="globe-fallback" hidden>Glóbus sa nepodarilo zobraziť. Spomienky otvoríte výberom mesta.</p>
 <section id="modal" class="memory" aria-labelledby="modal-city" aria-hidden="true" inert>
@@ -32,9 +32,9 @@
 <section id="wedding-handoff" class="screen" aria-label="Pokračovanie na svadobnú stránku" aria-hidden="true" inert><p class="eyebrow">30 · 04 · 2027</p><h2>Simona <em>&</em> Martin</h2><p class="handoff-mark">S & M</p><a href="https://samsvadba.github.io/svadba/" class="outline-button">Pokračovať na svadobný web <span aria-hidden="true">↗</span></a></section>
 </main>
 <section id="destination-video-scene" role="dialog" aria-modal="true" aria-labelledby="destination-video-title" aria-hidden="true" inert>
-<video id="destination-video" autoplay muted loop playsinline preload="metadata"></video>
+<video id="destination-video" autoplay muted playsinline preload="metadata"></video>
 <div class="destination-video-shade" aria-hidden="true"></div>
-<div class="destination-video-caption"><h2 id="destination-video-title"></h2><p id="destination-video-country"></p></div>
+<div class="destination-video-caption"><h2 id="destination-video-title"></h2><p id="destination-video-country"></p><a id="destination-video-highlight" target="_blank" rel="noopener noreferrer" hidden>INSTAGRAM HIGHLIGHT ↗</a></div>
 <button id="destination-video-close" class="icon-button" aria-label="Späť na Journey"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
 <p id="destination-video-status" role="status"></p><button id="destination-video-retry" hidden>Prehrať video</button>
 </section>

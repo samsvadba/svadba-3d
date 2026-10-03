@@ -53,3 +53,4 @@ body[data-state="memory"] #label-layer .city-label{visibility:visible}
 #destination-video-status,#destination-video-retry{position:absolute;left:50%;top:45%;transform:translate(-50%,-50%);text-align:center;font:12px 'DM Sans',sans-serif;color:var(--ink)}
 #destination-video-retry{top:53%;padding:12px 18px;background:var(--paper);border:1px solid var(--line)}
 body[data-fullscreen-video] #persistent-header,body[data-fullscreen-video] #bottom-nav{visibility:hidden}
+#destination-video-highlight{display:inline-block;margin-top:22px;padding:8px 0;color:white;font:400 9px/1.5 'DM Sans',sans-serif;letter-spacing:.14em;text-decoration:underline;text-underline-offset:5px;text-decoration-color:#ffffff80}
