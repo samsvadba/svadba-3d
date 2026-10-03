@@ -196,7 +196,7 @@ function latLonToVec3(lat, lon, radius) {
   return new THREE.Vector3(-radius * Math.sin(phi) * Math.cos(theta), radius * Math.cos(phi), radius * Math.sin(phi) * Math.sin(theta));
 }
 
-function overviewDistance() { return Math.max(60, 58 / (innerWidth / innerHeight)); }
+function overviewDistance() { return Math.max(60, 51 / (innerWidth / innerHeight)); }
 function memoryDistance() { return mobile() ? 18 : 15.8; }
 
 function flyCamera(lat, lon, distance, seconds, onComplete) {
@@ -291,8 +291,22 @@ async function ensureGlobeScene() {
       globeGroup = new THREE.Group();
       scene.add(globeGroup);
       globeGroup.add(new THREE.Mesh(new THREE.SphereGeometry(GLOBE_RADIUS, 128, 96), new THREE.MeshBasicMaterial({color: 0xf5f4f0})));
-      wireMaterial=new THREE.MeshBasicMaterial({color:0x8e918c,wireframe:true,transparent:true,opacity:.08,depthWrite:false});
-      globeGroup.add(new THREE.Mesh(new THREE.SphereGeometry(GLOBE_RADIUS+.025,36,24),wireMaterial));
+      wireMaterial=new THREE.LineBasicMaterial({color:0x8e918c,transparent:true,opacity:.08,depthWrite:false});
+      const netSource=new THREE.IcosahedronGeometry(GLOBE_RADIUS,3);
+      const netEdges=new THREE.WireframeGeometry(netSource);
+      const netPositions=netEdges.attributes.position, netPoints=[];
+      const netA=new THREE.Vector3(),netB=new THREE.Vector3(),netPoint=new THREE.Vector3();
+      for(let edge=0;edge<netPositions.count;edge+=2){
+        netA.fromBufferAttribute(netPositions,edge);netB.fromBufferAttribute(netPositions,edge+1);
+        for(let segment=0;segment<8;segment++)for(const t of [segment/8,(segment+1)/8]){
+          netPoint.copy(netA).lerp(netB,t).normalize().multiplyScalar(GLOBE_RADIUS+.04);
+          netPoints.push(netPoint.x,netPoint.y,netPoint.z);
+        }
+      }
+      const netGeometry=new THREE.BufferGeometry();
+      netGeometry.setAttribute('position',new THREE.Float32BufferAttribute(netPoints,3));
+      globeGroup.add(new THREE.LineSegments(netGeometry,wireMaterial));
+      netEdges.dispose();netSource.dispose();
       const pointGeometry = new THREE.SphereGeometry(.13, 12, 10);
       const pointMaterial = new THREE.MeshBasicMaterial({color: 0x252724,transparent:true,depthWrite:false});
       locations.forEach((loc, index) => {
@@ -424,8 +438,9 @@ function animate(time) {
   if(layoutDirty)measureJourneyLayout();
   applyFraming();
   if(!cameraMoving){
-    const canSpin=state==='journey'&&!dragging&&hoveredIndex<0&&!reducedMotion.matches&&performance.now()>idleSince;
-    journeyMotion.spin+=( (canSpin?.36:0)-journeyMotion.spin)*(1-Math.exp(-dt*2.2));
+    // Touch focus survives closing a memory on Safari; it must not freeze idle rotation.
+    const canSpin=state==='journey'&&!dragging&&!reducedMotion.matches&&performance.now()>idleSince;
+    journeyMotion.spin+=( (canSpin?.65:0)-journeyMotion.spin)*(1-Math.exp(-dt*2.2));
     controls.autoRotate=canSpin || journeyMotion.spin>.001;
     controls.autoRotateSpeed=journeyMotion.spin;
     controls.update(dt);
@@ -503,6 +518,19 @@ function updateGeographicLabels(dt) {
     }
   }
   for(const items of Object.values(sides)){
+    if(state==='journey' && journeyMotion.focus<.1){
+      items.sort((a,b)=>a.py-b.py || a.index-b.index);
+      const spread=Math.min(layout.maxY-layout.minY,mobile()?view.height*.58:view.height*.52);
+      const middle=(layout.minY+layout.maxY)/2;
+      items.forEach((item,rank)=>{
+        // Open, staggered composition; order and continuous motion still come from projection.
+        const slot=middle+(items.length===1?0:(rank/(items.length-1)-.5)*spread);
+        item.targetY=clamp(slot*.8+item.targetY*.2,layout.minY,layout.maxY-item.height);
+        const inset=[0,24,8,40][rank%4]*(mobile()?1:1.5);
+        item.targetX+=item.side==='left'?inset:-inset;
+        item.targetX=clamp(item.targetX,layout.margin,view.width-layout.margin-item.width);
+      });
+    }
     separateLabels(items,'targetY',layout.minY,layout.maxY);
     for(const item of items){
       if(!item.initialized){item.x=item.targetX;item.y=item.targetY;item.initialized=true;}
