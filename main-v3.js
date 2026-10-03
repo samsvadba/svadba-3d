@@ -30,6 +30,82 @@ const layout = { minY:100, maxY:500, margin:20, modal:null };
 let worldPoint, projectedPoint, surfaceNormal, cameraDirection, centerPoint;
 const clamp = (n,a,b) => Math.max(a,Math.min(b,n));
 const smoothstep = (a,b,n) => {const t=clamp((n-a)/(b-a),0,1);return t*t*(3-2*t);};
+const fullscreenVideo = { active:false, closing:false, timeline:null };
+const videoScene=$('destination-video-scene'), destinationVideo=$('destination-video');
+
+function resetFullscreenVideo() {
+  fullscreenVideo.timeline?.kill();
+  gsap.killTweensOf(destinationVideo);
+  destinationVideo.pause();
+  if(destinationVideo.hasAttribute('src')){
+    destinationVideo.removeAttribute('src');destinationVideo.load();
+  }
+  videoScene.inert=true;videoScene.setAttribute('aria-hidden','true');
+  gsap.set(videoScene,{autoAlpha:0});
+  if(fullscreenVideo.active){
+    $('app').inert=false;$('persistent-header').inert=false;$('bottom-nav').inert=false;
+  }
+  fullscreenVideo.active=false;fullscreenVideo.closing=false;
+  delete document.body.dataset.fullscreenVideo;
+}
+
+function prepareFullscreenVideo(loc) {
+  destinationVideo.muted=true;destinationVideo.defaultMuted=true;
+  destinationVideo.src=loc.fullscreenVideo;destinationVideo.load();
+  $('destination-video-title').textContent=loc.name;
+  $('destination-video-country').textContent=loc.subname;
+  $('destination-video-status').textContent='Načítavam spomienku…';
+  $('destination-video-retry').hidden=true;
+  gsap.set(destinationVideo,{opacity:0,scale:reducedMotion.matches?1:1.035});
+}
+
+function playFullscreenVideo() {
+  const request=revision;
+  destinationVideo.play()?.catch(()=>{
+    if(request!==revision||!fullscreenVideo.active||fullscreenVideo.closing)return;
+    $('destination-video-status').textContent='Ťuknutím spustíte video.';
+    $('destination-video-retry').hidden=false;
+  });
+}
+
+function openFullscreenVideo() {
+  fullscreenVideo.active=true;
+  document.body.dataset.fullscreenVideo='true';
+  videoScene.inert=false;videoScene.setAttribute('aria-hidden','false');
+  $('app').inert=true;$('persistent-header').inert=true;$('bottom-nav').inert=true;
+  fullscreenVideo.timeline=gsap.to(videoScene,{autoAlpha:1,duration:duration(.85),ease:'power2.inOut'});
+  $('destination-video-close').focus({preventScroll:true});
+  playFullscreenVideo();
+}
+
+function closeFullscreenVideo() {
+  if(fullscreenVideo.closing)return;
+  fullscreenVideo.closing=true;
+  fullscreenVideo.timeline?.kill();
+  destinationVideo.pause();
+  fullscreenVideo.timeline=gsap.to(videoScene,{autoAlpha:0,duration:duration(.6),ease:'power2.inOut',onComplete:()=>{
+    resetFullscreenVideo();closeModal();
+  }});
+}
+destinationVideo.addEventListener('playing',()=>{
+  if(!fullscreenVideo.active||fullscreenVideo.closing){destinationVideo.pause();return;}
+  $('destination-video-status').textContent='';$('destination-video-retry').hidden=true;
+  gsap.to(destinationVideo,{opacity:1,scale:1,duration:duration(1.1),ease:'power2.out'});
+});
+destinationVideo.addEventListener('error',()=>{
+  if(!destinationVideo.hasAttribute('src'))return;
+  $('destination-video-status').textContent='Video sa nepodarilo načítať.';
+  $('destination-video-retry').hidden=false;
+});
+$('destination-video-close').onclick=closeFullscreenVideo;
+$('destination-video-retry').onclick=()=>{destinationVideo.load();playFullscreenVideo();};
+videoScene.addEventListener('keydown',event=>{
+  if(event.key!=='Tab')return;
+  const close=$('destination-video-close'),retry=$('destination-video-retry');
+  if(retry.hidden){event.preventDefault();close.focus();}
+  else if(event.shiftKey&&document.activeElement===close){event.preventDefault();retry.focus();}
+  else if(!event.shiftKey&&document.activeElement===retry){event.preventDefault();close.focus();}
+});
 
 function setState(next) {
   state = next;
@@ -58,6 +134,7 @@ function hideAllScreensImmediate() {
 }
 
 function unloadMedia() {
+  resetFullscreenVideo();
   $('modal-instagram').removeAttribute('src');
   $('modal-instagram').hidden = true;
   $('modal-image').hidden = true;
@@ -576,6 +653,7 @@ function flyToAndShow(index) {
   loadGeographicDetail();
   setActiveNav('journey');
   const loc = locations[index];
+  if(loc.fullscreenVideo)prepareFullscreenVideo(loc);
   gsap.set($('journey-instruction'), { autoAlpha: 0 });
   markerData.forEach((item, i) => item.element.classList.toggle('selected', i === index));
   $('modal-city').textContent = loc.name;
@@ -585,6 +663,10 @@ function flyToAndShow(index) {
   gsap.to(framing, {...targetFraming, duration:duration(2.6), ease:'power2.inOut'});
   flyCamera(loc.lat, loc.lon, memoryDistance(), 1.3, () => {
     if (revision !== request) return;
+    if(loc.fullscreenVideo){
+      visited.add(index);markerData[index].element.classList.add('visited');setActiveNav('journey');
+      openFullscreenVideo();announce(`${loc.name}, ${loc.subname}. Video spomienka.`);return;
+    }
     if (loc.type === 'instagram') {
       $('modal-instagram').src = loc.media;
       $('modal-instagram').hidden = false;
@@ -616,6 +698,7 @@ function flyToAndShow(index) {
 
 function closeModal() {
   if (state !== 'memory') return;
+  if(fullscreenVideo.active){closeFullscreenVideo();return;}
   const previous = currentIndex;
   killActiveSectionTransition();
   setState('journey');

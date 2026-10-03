@@ -79,6 +79,7 @@ const config = {
     },
     {
       "key": "tokyo",
+      "fullscreenVideo": "https://res.cloudinary.com/kxksv8hk/video/upload/w_1080,q_auto,f_auto/IMG_7011",
       "name": "Tokyo",
       "subname": "Japan",
       "lat": 35.6762,

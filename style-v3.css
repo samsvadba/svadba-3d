@@ -41,3 +41,15 @@ body[data-state="memory"] #label-layer .city-label{visibility:visible}
 #label-layer .city-label:before{content:'';position:absolute;inset:-10px 0}
 #label-layer .city-label.visited .city-name:before{content:none}
 @media(max-width:767px){#label-layer .city-label{min-height:23px;min-width:72px;max-width:145px;padding:3px 12px}#label-layer .city-label .city-name{font-size:10px;letter-spacing:.1em}}
+/* Optional destination video: one lazy-loaded fullscreen scene, currently Tokyo only. */
+#destination-video-scene{position:fixed;inset:0;z-index:80;width:100vw;height:100dvh;overflow:hidden;background:var(--paper);opacity:0;visibility:hidden;color:white}
+#destination-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center}
+.destination-video-shade{position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,rgba(0,0,0,.15),transparent 22%,transparent 65%,rgba(0,0,0,.32))}
+.destination-video-caption{position:absolute;left:max(7vw,24px);bottom:max(8dvh,calc(env(safe-area-inset-bottom) + 24px));text-shadow:0 1px 14px #0004}
+.destination-video-caption h2{font:400 clamp(42px,6vw,76px)/1 'Cormorant Garamond',serif;letter-spacing:.08em;text-transform:uppercase;margin:0 0 12px}
+.destination-video-caption p{font:400 11px 'DM Sans',sans-serif;letter-spacing:.18em;margin:0}
+#destination-video-close{position:absolute;right:max(5vw,20px);top:max(24px,calc(env(safe-area-inset-top) + 12px));width:48px;height:48px;color:white;filter:drop-shadow(0 1px 4px #0007)}
+#destination-video-close svg{stroke:currentColor}
+#destination-video-status,#destination-video-retry{position:absolute;left:50%;top:45%;transform:translate(-50%,-50%);text-align:center;font:12px 'DM Sans',sans-serif;color:var(--ink)}
+#destination-video-retry{top:53%;padding:12px 18px;background:var(--paper);border:1px solid var(--line)}
+body[data-fullscreen-video] #persistent-header,body[data-fullscreen-video] #bottom-nav{visibility:hidden}

@@ -31,6 +31,13 @@
 <section id="final-transition-screen" class="screen transition-screen" aria-label="Naše nové dobrodružstvo" aria-hidden="true" inert><div class="transition-text"><p class="trans-line">And now,</p><p class="trans-line">Our new adventure begins.</p></div></section>
 <section id="wedding-handoff" class="screen" aria-label="Pokračovanie na svadobnú stránku" aria-hidden="true" inert><p class="eyebrow">30 · 04 · 2027</p><h2>Simona <em>&</em> Martin</h2><p class="handoff-mark">S & M</p><a href="https://samsvadba.github.io/svadba/" class="outline-button">Pokračovať na svadobný web <span aria-hidden="true">↗</span></a></section>
 </main>
+<section id="destination-video-scene" role="dialog" aria-modal="true" aria-labelledby="destination-video-title" aria-hidden="true" inert>
+<video id="destination-video" autoplay muted loop playsinline preload="metadata"></video>
+<div class="destination-video-shade" aria-hidden="true"></div>
+<div class="destination-video-caption"><h2 id="destination-video-title"></h2><p id="destination-video-country"></p></div>
+<button id="destination-video-close" class="icon-button" aria-label="Späť na Journey"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
+<p id="destination-video-status" role="status"></p><button id="destination-video-retry" hidden>Prehrať video</button>
+</section>
 <nav id="bottom-nav" aria-label="Navigácia príbehu" inert><div class="nav-labels"><button id="nav-intro" class="nav-item" aria-current="step">INTRO</button><button id="nav-journey" class="nav-item">JOURNEY <span id="journey-count"></span></button><button id="nav-wedding" class="nav-item">WEDDING</button></div><div class="nav-progress" aria-hidden="true"><span id="nav-fill"></span><i class="nav-dot active"></i><i class="nav-dot"></i><i class="nav-dot"></i></div></nav>
 <p id="app-status" class="sr-only" role="status" aria-live="polite"></p>
 <noscript><div class="no-script">Simona & Martin<br>Na zobrazenie Journey zapnite JavaScript.<br><a href="https://samsvadba.github.io/svadba/">Prejsť na svadobný web</a></div></noscript>
