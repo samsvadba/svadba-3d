@@ -463,7 +463,10 @@ const config = {
       "moreFromTrip": "Pozrieť viac z tejto cesty",
       "nextJourney": "ĎALŠIA CESTA",
       "previousJourney": "PREDCHÁDZAJÚCA CESTA",
-      "comingSoon": "Spomienky doplníme čoskoro."
+      "comingSoon": "Spomienky doplníme čoskoro.",
+      "storyPlay": "PREHRAŤ NÁŠ PRÍBEH",
+      "storyContinue": "POKRAČOVAŤ V PRÍBEHU",
+      "storyExplore": "OBJAVOVAŤ GLÓBUS"
     },
     "en": {
       "story": "A JOURNEY OF US",
@@ -516,7 +519,10 @@ const config = {
       "moreFromTrip": "See more from this trip",
       "nextJourney": "NEXT JOURNEY",
       "previousJourney": "PREVIOUS JOURNEY",
-      "comingSoon": "Memories coming soon."
+      "comingSoon": "Memories coming soon.",
+      "storyPlay": "PLAY OUR STORY",
+      "storyContinue": "CONTINUE OUR STORY",
+      "storyExplore": "EXPLORE THE GLOBE"
     }
   },
   "countryEnglish": {

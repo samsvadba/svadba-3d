@@ -16,6 +16,7 @@ const asset = (path) => `${base}${path}`;
 const screens = ['intro-overlay', 'journey-scene', 'transition-screen', 'final-transition-screen', 'wedding-handoff'];
 let state = 'loading', revision = 0, activeSectionTimeline, currentIndex = -1;
 let destinationReady=false, lastDestinationIndex=-1;
+let storyActive=false, storyIndex=0, storyStarted=false, storyTimer, queuedDestination=null;
 let globeInitPromise, THREE, scene, camera, renderer, controls, globeGroup;
 let cameraMoving = false, hoveredIndex = -1, pointerDown;
 const visited = new Set(), markerData = [];
@@ -106,8 +107,8 @@ destinationVideo.addEventListener('error',()=>{
   $('destination-video-status').textContent=t('videoError');
   $('destination-video-retry').hidden=false;
 });
-$('destination-video-close').onclick=closeFullscreenVideo;
-destinationVideo.addEventListener('ended',closeFullscreenVideo);
+$('destination-video-close').onclick=()=>{pauseStory();closeFullscreenVideo();};
+destinationVideo.addEventListener('ended',()=>storyActive?nextMemory():closeFullscreenVideo());
 $('destination-video-retry').onclick=()=>{destinationVideo.load();playFullscreenVideo();};
 videoScene.addEventListener('keydown',event=>{
   if(event.key!=='Tab')return;
@@ -119,6 +120,8 @@ videoScene.addEventListener('keydown',event=>{
 
 function setState(next) {
   state = next;
+  if(next==='intro'||next==='wedding'){pauseStory();}
+  syncStoryUI();
   document.body.dataset.state = next;
   if (controls) {
     controls.enabled = next === 'journey' && !cameraMoving;
@@ -159,6 +162,7 @@ function unloadMedia() {
 }
 
 function killActiveSectionTransition() {
+  clearTimeout(storyTimer);
   revision++;destinationReady=false;updateDestinationNavigation();
   activeSectionTimeline?.kill();
   activeSectionTimeline = null;
@@ -289,7 +293,7 @@ function latLonToVec3(lat, lon, radius) {
 function overviewDistance() { return Math.max(60, 51 / (innerWidth / innerHeight)); }
 function memoryDistance() { return mobile() ? 18 : 15.8; }
 
-function flyCamera(lat, lon, distance, seconds, onComplete) {
+function flyCamera(lat, lon, distance, seconds, onComplete, travel=false) {
   if (!camera) { onComplete?.(); return; }
   globeFlight?.kill();
   gsap.killTweensOf(camera.position);
@@ -324,7 +328,15 @@ function flyCamera(lat, lon, distance, seconds, onComplete) {
     flight.turn=1; flight.radius=distance; update(); complete(); return;
   }
   globeFlight=gsap.timeline({onUpdate:update,onComplete:complete});
-  if(state==='memory') {
+  if(travel){
+    const startRadius=flight.radius, peak=Math.max(overviewDistance()*.78,startRadius,distance);
+    const path={t:0};
+    globeFlight.to(path,{t:1,duration:3.2,ease:'sine.inOut',onUpdate:()=>{
+      flight.turn=path.t;
+      flight.radius=THREE.MathUtils.lerp(startRadius,distance,path.t)+(peak-Math.max(startRadius,distance))*Math.sin(Math.PI*path.t);
+      journeyMotion.focus=Math.pow(Math.abs(2*path.t-1),2);
+    }});
+  }else if(state==='memory') {
     // Orient on the sphere, then descend radially: never cut through the Earth.
     globeFlight.to(flight,{turn:1,radius:Math.max(flight.radius,30),duration:.95,ease:'power2.inOut'})
       .to(flight,{radius:distance,duration:1.65,ease:'power3.inOut'});
@@ -670,12 +682,14 @@ function updateConnector() {
 }
 
 
-function flyToAndShow(index) {
+function flyToAndShow(index, travel=false) {
   if (state!=='journey'||cameraMoving||!locations[index])return;
   const request = killActiveSectionTransition();
   currentIndex = index;lastDestinationIndex=index;
+  if(storyActive)storyIndex=index;
   setState('memory');
-  gsap.to(journeyMotion,{focus:1,duration:duration(1.7),ease:'power2.inOut'});
+  if(!travel)gsap.to(journeyMotion,{focus:1,duration:duration(1.7),ease:'power2.inOut'});
+  if(travel)gsap.set([$ ('label-layer'),$('city-connectors')],{autoAlpha:0});
   loadGeographicDetail();
   setActiveNav('journey');
   const loc = locations[index];
@@ -689,6 +703,7 @@ function flyToAndShow(index) {
   gsap.to(framing, {...targetFraming, duration:duration(2.6), ease:'power2.inOut'});
   flyCamera(loc.lat, loc.lon, memoryDistance(), 1.3, () => {
     if (revision !== request) return;
+    journeyMotion.focus=1;
     if(loc.fullscreenVideo){
       visited.add(index);markerData[index].element.classList.add('visited');setActiveNav('journey');
       prepareFullscreenVideo(loc);destinationReady=true;updateDestinationNavigation();
@@ -721,7 +736,8 @@ function flyToAndShow(index) {
     gsap.to($('modal'), {autoAlpha:1,duration:duration(.6)});
     $('modal-city').focus({preventScroll:true});
     announce(`${cityName(loc)}, ${countryText(loc)}. ${t('memory')} ${index + 1} ${t('of')} ${locations.length}.`);
-  });
+    if(storyActive)storyTimer=setTimeout(()=>{if(storyActive&&revision===request)nextMemory();},6000);
+  },travel);
 }
 
 function closeModal(afterOverview=null) {
@@ -736,6 +752,13 @@ function closeModal(afterOverview=null) {
 }
 
 function returnToOverview(afterOverview) {
+  if(queuedDestination!==null){
+    const target=queuedDestination;queuedDestination=null;
+    killActiveSectionTransition();setState('journey');
+    if(target===locations.length){storyActive=false;storyStarted=false;playWeddingTransition();}
+    else flyToAndShow(target,true);
+    return;
+  }
   const previous=currentIndex;
   if(previous<0)return;
   const request=killActiveSectionTransition();
@@ -783,9 +806,48 @@ function navigateDestination(offset=1) {
   const target=currentIndex+offset;
   if(target<0||target>locations.length)return;
   destinationReady=false;updateDestinationNavigation();
-  closeModal(()=>target===locations.length?playWeddingTransition():flyToAndShow(target));
+  clearTimeout(storyTimer);queuedDestination=target;
+  closeModal(()=>{});
 }
 function nextMemory(){navigateDestination(1);}
+
+
+function syncStoryUI(){
+  const bar=$('journey-modes');if(!bar)return;
+  bar.hidden=state!=='journey';
+  $('story-play').textContent=t(storyStarted?'storyContinue':'storyPlay')+' ▶';
+  $('story-explore').textContent=t('storyExplore');
+  $('story-explore').setAttribute('aria-pressed',String(!storyActive));
+}
+function pauseStory(){
+  storyActive=false;clearTimeout(storyTimer);queuedDestination=null;syncStoryUI();
+}
+function startStory(){
+  if(state!=='journey'||cameraMoving)return;
+  storyActive=true;storyStarted=true;syncStoryUI();
+  flyToAndShow(storyIndex);
+}
+function interruptStoryGesture(){
+  if(!storyActive||fullscreenVideo.active)return;
+  pauseStory();killActiveSectionTransition();currentIndex=-1;setState('journey');
+  gsap.to(framing,{x:0,y:.065,duration:duration(.4)});
+  gsap.to(journeyMotion,{focus:0,duration:duration(.4)});
+  gsap.to([$ ('label-layer'),$('city-connectors'),$('journey-instruction')],{autoAlpha:1,duration:duration(.4)});
+}
+$('story-play').onclick=startStory;
+$('story-explore').onclick=()=>{pauseStory();$('three-canvas').focus({preventScroll:true});};
+let storyPointer=null;
+$('three-canvas').addEventListener('pointerdown',event=>{
+  if(!storyActive)return;
+  if(storyPointer){interruptStoryGesture();return;}
+  storyPointer={x:event.clientX,y:event.clientY};
+  if(controls)controls.enabled=true;
+},true);
+$('three-canvas').addEventListener('pointermove',event=>{
+  if(storyPointer&&Math.hypot(event.clientX-storyPointer.x,event.clientY-storyPointer.y)>6)interruptStoryGesture();
+},true);
+for(const type of ['pointerup','pointercancel'])$('three-canvas').addEventListener(type,()=>{storyPointer=null;if(cameraMoving&&controls)controls.enabled=false;},true);
+$('three-canvas').addEventListener('wheel',interruptStoryGesture,{capture:true,passive:true});
 
 // Independent, persistent utility preferences; audio is never loaded without a source.
 function readPreference(key,fallback){try{return localStorage.getItem(key)||fallback;}catch{return fallback;}}
@@ -840,7 +902,7 @@ function applyLanguage(){
   text('#final-transition-screen .trans-line:first-child','final1');text('#final-transition-screen .trans-line:last-child','final2');
   text('#globe-fallback','fallback');attr('three-canvas','canvas');attr('header-home','home');attr('bottom-nav','navigation');attr('label-layer','cities');
   attr('destination-video-close','back');attr('video-stop-btn','close');text('#destination-video-retry','play');
-  updateDestinationNavigation();
+  updateDestinationNavigation();syncStoryUI();
   document.querySelector('#wedding-handoff .outline-button').firstChild.textContent=t('handoff')+' ';
   if(!$('media-error').classList.contains('empty-memory'))text('#media-error','imageError');
   for(const item of markerData){const loc=locations[item.index];item.element.setAttribute('aria-label',cityName(loc)+' — '+countryText(loc));item.element.querySelector('.city-subname').textContent=countryText(loc);item.element.querySelector('.city-name').textContent=cityName(loc);}
@@ -876,13 +938,13 @@ document.addEventListener('visibilitychange',syncMusic);
 createLabels();
 applyLanguage();
 applyMood(false);
-$('next-btn').onclick = $('nav-journey').onclick = playJourneyTransition;
-$('header-home').onclick = $('nav-intro').onclick = playIntroTextAnimations;
-$('nav-wedding').onclick = playWeddingTransition;
-$('video-stop-btn').onclick = closeModal;
+$('next-btn').onclick = $('nav-journey').onclick = ()=>{pauseStory();playJourneyTransition();};
+$('header-home').onclick = $('nav-intro').onclick = ()=>{pauseStory();playIntroTextAnimations();};
+$('nav-wedding').onclick = ()=>{pauseStory();playWeddingTransition();};
+$('video-stop-btn').onclick = ()=>{pauseStory();closeModal();};
 $('video-skip-btn').onclick = nextMemory;
 $('destination-video-next').onclick = nextMemory;
-document.addEventListener('keydown', event => { if (event.key === 'Escape') closeModal(); });
+document.addEventListener('keydown', event => { if (event.key === 'Escape'){pauseStory();closeModal();} });
 $('three-canvas').addEventListener('pointerdown', event => { pointerDown = event.isPrimary ? {x:event.clientX,y:event.clientY} : null; });
 $('three-canvas').addEventListener('pointerup', event => {
   if (state !== 'journey' || cameraMoving || !camera || !pointerDown || Math.hypot(event.clientX-pointerDown.x,event.clientY-pointerDown.y)>6) return;

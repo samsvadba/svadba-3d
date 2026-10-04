@@ -106,3 +106,16 @@ html[data-theme="dark"] .city-label.selected{border-color:#aeb3a2}
 /* Reserve room for the new story link above the persistent chapter navigation. */
 .journey-modal-media{height:min(34dvh,340px)}
 @media(max-width:767px){.journey-modal-media{height:32dvh;max-height:290px}}
+
+/* Editorial Journey modes share the instruction area above global navigation. */
+#journey-modes{position:absolute;z-index:5;left:50%;transform:translateX(-50%);bottom:calc(158px + env(safe-area-inset-bottom));display:flex;flex-direction:column;align-items:center;gap:2px;width:max-content;max-width:92%;text-align:center}
+#journey-modes[hidden]{display:none}
+#journey-modes button{min-height:40px;padding:8px 12px;background:none;color:var(--ink);font:400 11px/1.5 'DM Sans',sans-serif;letter-spacing:.16em}
+#journey-modes #story-explore{font-size:8px;letter-spacing:.14em;opacity:.55;min-height:32px}
+#journey-modes button:hover{opacity:.65}
+#journey-modes button:focus-visible{outline:1px solid currentColor;outline-offset:3px}
+#journey-instruction{bottom:calc(250px + env(safe-area-inset-bottom))}
+#journey-instruction svg,#journey-instruction p span{display:none}
+#journey-instruction p{font-size:16px}
+@media(max-width:767px){#journey-modes{bottom:calc(150px + env(safe-area-inset-bottom))}#journey-instruction{bottom:calc(236px + env(safe-area-inset-bottom))}#journey-instruction p{font-size:14px}}
+@media(max-height:550px){#journey-modes{left:auto;right:24px;transform:none;bottom:145px}#journey-instruction{display:none}}
