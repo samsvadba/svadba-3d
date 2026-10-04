@@ -199,34 +199,39 @@ function setActiveNav(section) {
 function announce(text) { $('app-status').textContent = text; }
 
 function playIntroTextAnimations() {
-  killActiveSectionTransition();
+  const request=killActiveSectionTransition();
   hideAllScreensImmediate();
-  setState('intro');
-  setActiveNav('intro');
-  showScreen('intro-overlay');
-  currentIndex = -1;
-  if (intro.video) {
-    const video = $('intro-video-bg');
+  setState('intro');setActiveNav('intro');showScreen('intro-overlay');currentIndex=-1;
+  gsap.set('.title-layout',{autoAlpha:0});
+  const tl=gsap.timeline({paused:true});activeSectionTimeline=tl;
+  if(!reducedMotion.matches){
+    document.querySelectorAll('.sub-line').forEach(line=>{
+      tl.to(line,{opacity:1,duration:.6}).to(line,{opacity:0,duration:.5,delay:.55});
+    });
+  }
+  tl.to('.title-layout',{autoAlpha:1,duration:duration(1.2)});
+  let started=false;
+  const startText=()=>{
+    if(started||request!==revision||state!=='intro')return;
+    started=true;tl.play();announce(t('introStatus'));
+  };
+  if(intro.video){
+    const video=$('intro-video-bg');
     gsap.killTweensOf(video);gsap.set(video,{opacity:0});video.hidden=true;
-    video.src = /^https?:\/\//.test(intro.video) ? intro.video : asset(intro.video);
-    video.onplaying = () => {
-      if(state!=='intro')return;
+    video.onplaying=()=>{
+      if(request!==revision||state!=='intro')return;
       video.hidden=false;
       gsap.to(video,{opacity:1,duration:duration(.8),ease:'power2.out'});
+      startText();
     };
-    video.onerror = () => { video.hidden = true; };
-    video.play().catch(() => { video.hidden = true; });
-  }
-  const tl = gsap.timeline();
-  activeSectionTimeline = tl;
-  gsap.set('.title-layout', { autoAlpha: reducedMotion.matches ? 1 : 0 });
-  if (!reducedMotion.matches) {
-    document.querySelectorAll('.sub-line').forEach(line => {
-      tl.to(line, { opacity: 1, duration: .6 }).to(line, { opacity: 0, duration: .5, delay: .55 });
-    });
-    tl.to('.title-layout', { autoAlpha: 1, duration: 1.2 });
-  }
-  announce(t('introStatus'));
+    const fallback=()=>{
+      if(request!==revision||state!=='intro')return;
+      video.hidden=true;tl.progress(1);started=true;
+    };
+    video.onerror=fallback;
+    video.src=/^https?:\/\//.test(intro.video)?intro.video:asset(intro.video);
+    video.play().catch(fallback);
+  }else startText();
 }
 
 // Keep the reference's line-by-line transition choreography.
