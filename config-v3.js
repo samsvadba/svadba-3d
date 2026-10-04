@@ -458,7 +458,8 @@ const config = {
       "storyContinue": "Pokračovať v príbehu",
       "storyExplore": "OBJAVOVAŤ GLÓBUS",
       "storyPause": "Pozastaviť príbeh",
-      "storyHint": "Príbeh sa spustí automaticky. Ťuknutím prejdete na objavovanie."
+      "storyHint": "Príbeh sa spustí automaticky. Ťuknutím prejdete na objavovanie.",
+      "journeyEntry": "Naše spoločné cesty."
     },
     "en": {
       "story": "A JOURNEY OF US",
@@ -516,7 +517,8 @@ const config = {
       "storyContinue": "Continue our story",
       "storyExplore": "EXPLORE THE GLOBE",
       "storyPause": "Pause our story",
-      "storyHint": "Our story starts automatically. Tap to explore on your own."
+      "storyHint": "Our story starts automatically. Tap to explore on your own.",
+      "journeyEntry": "Our journeys together."
     }
   },
   "countryEnglish": {

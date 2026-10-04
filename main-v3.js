@@ -266,7 +266,7 @@ async function playJourneyTransition() {
   }
   const tl = gsap.timeline();
   activeSectionTimeline = tl;
-  $('transition-screen').querySelectorAll('.trans-line').forEach(line=>{
+  $('transition-screen').querySelectorAll('.trans-line:first-child').forEach(line=>{
     tl.to(line,{opacity:1,duration:duration(.3)}).to(line,{opacity:0,duration:duration(.25),delay:.3});
   });
   tl.to($('transition-screen'), { autoAlpha: 0, duration: duration(.4) })
@@ -276,7 +276,11 @@ async function playJourneyTransition() {
       setState('journey');entranceActive=true;
       flyCamera(30,15,overviewDistance(),2.6,()=>{
         entranceActive=false;
-        if(request===revision&&autoStoryPending){autoStoryPending=false;startStory();}
+        if(request!==revision)return;
+        activeSectionTimeline=gsap.timeline()
+          .to([$ ('label-layer'),$('city-connectors'),$('journey-instruction')],{autoAlpha:1,duration:duration(.7)})
+          .to({}, {duration:2})
+          .call(()=>{if(request===revision&&autoStoryPending){autoStoryPending=false;startStory();}});
       });
       announce(t('storyHint'));toast('storyHint');
     })
@@ -922,7 +926,7 @@ function applyLanguage(){
   text('#intro-copy .sub-line:first-child','intro1');text('#intro-copy .sub-line:last-child','intro2');
   $('next-btn').firstChild.textContent=t('explore')+' ';
   document.querySelector('#journey-instruction p').firstChild.textContent=t('journey1');text('#journey-instruction p span','journey2');
-  text('#transition-screen .trans-line:first-child','journey1');text('#transition-screen .trans-line:last-child','journey2');
+  text('#transition-screen .trans-line:first-child','journeyEntry');text('#transition-screen .trans-line:last-child','journey2');
   text('#final-transition-screen .trans-line:first-child','final1');text('#final-transition-screen .trans-line:last-child','final2');
   text('#globe-fallback','fallback');attr('three-canvas','canvas');attr('header-home','home');attr('bottom-nav','navigation');attr('label-layer','cities');
   attr('destination-video-close','back');attr('video-stop-btn','close');text('#destination-video-retry','play');
