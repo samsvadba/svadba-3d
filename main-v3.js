@@ -1008,7 +1008,7 @@ $('header-home').onclick = $('nav-intro').onclick = ()=>{pauseStory();playIntroT
 $('nav-wedding').onclick = ()=>{pauseStory();playWeddingTransition();};
 $('video-stop-btn').onclick = ()=>{pauseStory();closeModal();};
 $('video-skip-btn').onclick = nextMemory;
-$('destination-video-next').onclick = nextMemory;
+$('destination-video-next').onclick = event => { event.stopPropagation(); nextMemory(); };
 document.addEventListener('keydown', event => { if (event.key === 'Escape'){pauseStory();closeModal();} });
 $('three-canvas').addEventListener('pointerdown', event => { pointerDown = event.isPrimary ? {x:event.clientX,y:event.clientY} : null; });
 $('three-canvas').addEventListener('pointerup', event => {
