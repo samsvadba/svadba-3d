@@ -199,21 +199,6 @@ const config = {
     },
     {
       "type": "text",
-      "key": "osaka",
-      "name": "Osaka",
-      "names": {
-        "sk": "Osaka",
-        "en": "Osaka"
-      },
-      "lat": 34.6937,
-      "lon": 135.5023,
-      "countryCode": "JPN",
-      "subname": "Japonsko",
-      "countryEn": "Japan",
-      "side": "left"
-    },
-    {
-      "type": "text",
       "key": "seoul",
       "name": "Seoul",
       "subname": "Južná Kórea",
