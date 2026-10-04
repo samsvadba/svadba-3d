@@ -16,7 +16,7 @@ const asset = (path) => `${base}${path}`;
 const screens = ['intro-overlay', 'journey-scene', 'transition-screen', 'final-transition-screen', 'wedding-handoff'];
 let state = 'loading', revision = 0, activeSectionTimeline, currentIndex = -1;
 let destinationReady=false, lastDestinationIndex=-1;
-let entranceActive=false;
+let entranceActive=false, autoStoryPending=false, consumeStoryTap=false;
 let storyActive=false, storyIndex=0, storyStarted=false, storyTimer, queuedDestination=null;
 let globeInitPromise, THREE, scene, camera, renderer, controls, globeGroup;
 let cameraMoving = false, hoveredIndex = -1, pointerDown;
@@ -164,7 +164,7 @@ function unloadMedia() {
 
 function killActiveSectionTransition() {
   clearTimeout(storyTimer);
-  entranceActive=false;
+  entranceActive=false;autoStoryPending=false;
   revision++;destinationReady=false;updateDestinationNavigation();
   activeSectionTimeline?.kill();
   activeSectionTimeline = null;
@@ -244,6 +244,7 @@ function animateTransitionLines(tl, screen, hold = .8) {
 
 async function playJourneyTransition() {
   const request = killActiveSectionTransition();
+  storyIndex=0;storyStarted=false;autoStoryPending=true;
   gsap.set([$ ('label-layer'), $('city-connectors')],{autoAlpha:0});
   hideAllScreensImmediate();
   setState('transition');
@@ -265,17 +266,21 @@ async function playJourneyTransition() {
   }
   const tl = gsap.timeline();
   activeSectionTimeline = tl;
-  animateTransitionLines(tl, $('transition-screen'));
+  $('transition-screen').querySelectorAll('.trans-line').forEach(line=>{
+    tl.to(line,{opacity:1,duration:duration(.3)}).to(line,{opacity:0,duration:duration(.25),delay:.3});
+  });
   tl.to($('transition-screen'), { autoAlpha: 0, duration: duration(.4) })
     .call(() => {
       $('transition-screen').setAttribute('aria-hidden', 'true');
       showScreen('journey-scene');
       setState('journey');entranceActive=true;
-      flyCamera(30,15,overviewDistance(),2.6,()=>{entranceActive=false;});
-      announce(t('select'));
+      flyCamera(30,15,overviewDistance(),2.6,()=>{
+        entranceActive=false;
+        if(request===revision&&autoStoryPending){autoStoryPending=false;startStory();}
+      });
+      announce(t('storyHint'));toast('storyHint');
     })
-    .to({}, {duration:duration(2.6)})
-    .to([$ ('label-layer'), $('city-connectors'), $('journey-instruction')], { autoAlpha: 1, duration: duration(.7) });
+    .to({}, {duration:duration(2.6)});
 }
 
 function playWeddingTransition() {
@@ -837,7 +842,7 @@ function syncStoryUI(){
 }
 
 function pauseStory(){
-  storyActive=false;clearTimeout(storyTimer);queuedDestination=null;syncStoryUI();
+  storyActive=false;autoStoryPending=false;clearTimeout(storyTimer);queuedDestination=null;syncStoryUI();
 }
 function startStory(){
   if(state!=='journey'||cameraMoving)return;
@@ -845,16 +850,20 @@ function startStory(){
   flyToAndShow(storyIndex);
 }
 function interruptStoryGesture(){
-  if((!storyActive&&!entranceActive)||fullscreenVideo.active)return;
+  if((!storyActive&&!entranceActive&&!autoStoryPending)||fullscreenVideo.active)return;
   pauseStory();killActiveSectionTransition();currentIndex=-1;setState('journey');
   gsap.to(framing,{x:0,y:.065,duration:duration(.4)});
   gsap.to(journeyMotion,{focus:0,duration:duration(.4)});
   gsap.to([$ ('label-layer'),$('city-connectors'),$('journey-instruction')],{autoAlpha:1,duration:duration(.4)});
 }
 $('story-play').onclick=()=>{if(storyActive){pauseStory();if(state==='memory')closeModal();}else startStory();};
+videoScene.addEventListener('click',event=>{
+  if(storyActive&&!event.target.closest('button,a')){pauseStory();closeFullscreenVideo();}
+});
 let storyPointer=null;
 $('three-canvas').addEventListener('pointerdown',event=>{
-  if(!storyActive&&!entranceActive)return;
+  if(!storyActive&&!entranceActive&&!autoStoryPending)return;
+  consumeStoryTap=true;interruptStoryGesture();
   if(storyPointer){interruptStoryGesture();return;}
   storyPointer={x:event.clientX,y:event.clientY};
   if(controls)controls.enabled=true;
@@ -862,7 +871,7 @@ $('three-canvas').addEventListener('pointerdown',event=>{
 $('three-canvas').addEventListener('pointermove',event=>{
   if(storyPointer&&Math.hypot(event.clientX-storyPointer.x,event.clientY-storyPointer.y)>6)interruptStoryGesture();
 },true);
-for(const type of ['pointerup','pointercancel'])$('three-canvas').addEventListener(type,()=>{storyPointer=null;if(cameraMoving&&controls)controls.enabled=false;},true);
+for(const type of ['pointerup','pointercancel'])$('three-canvas').addEventListener(type,()=>{storyPointer=null;if(consumeStoryTap){pointerDown=null;consumeStoryTap=false;}if(cameraMoving&&controls)controls.enabled=false;},true);
 $('three-canvas').addEventListener('wheel',interruptStoryGesture,{capture:true,passive:true});
 
 // Independent, persistent utility preferences; audio is never loaded without a source.
