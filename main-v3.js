@@ -16,6 +16,7 @@ const asset = (path) => `${base}${path}`;
 const screens = ['intro-overlay', 'journey-scene', 'transition-screen', 'final-transition-screen', 'wedding-handoff'];
 let state = 'loading', revision = 0, activeSectionTimeline, currentIndex = -1;
 let destinationReady=false, lastDestinationIndex=-1;
+let entranceActive=false;
 let storyActive=false, storyIndex=0, storyStarted=false, storyTimer, queuedDestination=null;
 let globeInitPromise, THREE, scene, camera, renderer, controls, globeGroup;
 let cameraMoving = false, hoveredIndex = -1, pointerDown;
@@ -163,6 +164,7 @@ function unloadMedia() {
 
 function killActiveSectionTransition() {
   clearTimeout(storyTimer);
+  entranceActive=false;
   revision++;destinationReady=false;updateDestinationNavigation();
   activeSectionTimeline?.kill();
   activeSectionTimeline = null;
@@ -237,6 +239,7 @@ async function playJourneyTransition() {
   setActiveNav('journey');
   showScreen('transition-screen', false);
   announce(t('prepare'));
+  gsap.set([$ ('label-layer'),$('city-connectors'),$('journey-instruction')],{autoAlpha:0});
   await ensureGlobeScene();
   if (request !== revision) return;
   currentIndex = -1;
@@ -245,10 +248,9 @@ async function playJourneyTransition() {
   showScreen('journey-scene', false);
   gsap.set([$ ('label-layer'), $('city-connectors'), $('journey-instruction')], { autoAlpha: 0 });
   if (camera) {
-    const start = latLonToVec3(30, 15, overviewDistance() * 1.6);
+    const start = latLonToVec3(30, reducedMotion.matches?15:-105, overviewDistance() * 1.25);
     camera.position.copy(start);
-    controls.autoRotate = !reducedMotion.matches;
-    flyCamera(30, 15, overviewDistance(), 2.4);
+    controls.autoRotate = false;
   }
   const tl = gsap.timeline();
   activeSectionTimeline = tl;
@@ -257,9 +259,11 @@ async function playJourneyTransition() {
     .call(() => {
       $('transition-screen').setAttribute('aria-hidden', 'true');
       showScreen('journey-scene');
-      setState('journey');
+      setState('journey');entranceActive=true;
+      flyCamera(30,15,overviewDistance(),2.6,()=>{entranceActive=false;});
       announce(t('select'));
     })
+    .to({}, {duration:duration(2.6)})
     .to([$ ('label-layer'), $('city-connectors'), $('journey-instruction')], { autoAlpha: 1, duration: duration(.7) });
 }
 
@@ -540,7 +544,7 @@ function animate(time) {
   if(!cameraMoving){
     // Touch focus survives closing a memory on Safari; it must not freeze idle rotation.
     const canSpin=state==='journey'&&!dragging&&!reducedMotion.matches&&performance.now()>idleSince;
-    journeyMotion.spin+=( (canSpin?.65:0)-journeyMotion.spin)*(1-Math.exp(-dt*2.2));
+    journeyMotion.spin+=( (canSpin?.78:0)-journeyMotion.spin)*(1-Math.exp(-dt*2.2));
     controls.autoRotate=canSpin || journeyMotion.spin>.001;
     controls.autoRotateSpeed=journeyMotion.spin;
     controls.update(dt);
@@ -599,7 +603,8 @@ function updateGeographicLabels(dt) {
     }
     item.alpha+=(alpha-item.alpha)*fade;
     if(!item.visible)item.alpha=Math.min(item.alpha,Math.max(0,item.facing)*5);
-    const markerAlpha=item.visible?smoothstep(.012,.13,item.facing)*(selected?1:1-journeyMotion.focus*.92):0;
+    const markerReveal=Number(gsap.getProperty($('label-layer'),'opacity'));
+    const markerAlpha=markerReveal*(item.visible?smoothstep(.012,.13,item.facing)*(selected?1:1-journeyMotion.focus*.92):0);
     item.mesh.material.opacity=markerAlpha;item.mesh.visible=markerAlpha>.005;
     // Keep dark points small in screen space during the strong camera zoom.
     const markerDistance=worldPoint.distanceTo(camera.position);
@@ -813,12 +818,13 @@ function nextMemory(){navigateDestination(1);}
 
 
 function syncStoryUI(){
-  const bar=$('journey-modes');if(!bar)return;
-  bar.hidden=state!=='journey';
-  $('story-play').textContent=t(storyStarted?'storyContinue':'storyPlay')+' ▶';
-  $('story-explore').textContent=t('storyExplore');
-  $('story-explore').setAttribute('aria-pressed',String(!storyActive));
+  const button=$('story-play');if(!button)return;
+  const label=t(storyActive?'storyPause':storyStarted?'storyContinue':'storyPlay');
+  button.setAttribute('aria-label',label);button.title=label;
+  button.setAttribute('aria-pressed',String(storyActive));
+  button.disabled=state!=='journey'&&!storyActive;
 }
+
 function pauseStory(){
   storyActive=false;clearTimeout(storyTimer);queuedDestination=null;syncStoryUI();
 }
@@ -828,17 +834,16 @@ function startStory(){
   flyToAndShow(storyIndex);
 }
 function interruptStoryGesture(){
-  if(!storyActive||fullscreenVideo.active)return;
+  if((!storyActive&&!entranceActive)||fullscreenVideo.active)return;
   pauseStory();killActiveSectionTransition();currentIndex=-1;setState('journey');
   gsap.to(framing,{x:0,y:.065,duration:duration(.4)});
   gsap.to(journeyMotion,{focus:0,duration:duration(.4)});
   gsap.to([$ ('label-layer'),$('city-connectors'),$('journey-instruction')],{autoAlpha:1,duration:duration(.4)});
 }
-$('story-play').onclick=startStory;
-$('story-explore').onclick=()=>{pauseStory();$('three-canvas').focus({preventScroll:true});};
+$('story-play').onclick=()=>{if(storyActive){pauseStory();if(state==='memory')closeModal();}else startStory();};
 let storyPointer=null;
 $('three-canvas').addEventListener('pointerdown',event=>{
-  if(!storyActive)return;
+  if(!storyActive&&!entranceActive)return;
   if(storyPointer){interruptStoryGesture();return;}
   storyPointer={x:event.clientX,y:event.clientY};
   if(controls)controls.enabled=true;

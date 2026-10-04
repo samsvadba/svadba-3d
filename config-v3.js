@@ -464,9 +464,10 @@ const config = {
       "nextJourney": "ĎALŠIA CESTA",
       "previousJourney": "PREDCHÁDZAJÚCA CESTA",
       "comingSoon": "Spomienky doplníme čoskoro.",
-      "storyPlay": "PREHRAŤ NÁŠ PRÍBEH",
-      "storyContinue": "POKRAČOVAŤ V PRÍBEHU",
-      "storyExplore": "OBJAVOVAŤ GLÓBUS"
+      "storyPlay": "Prehrať náš príbeh",
+      "storyContinue": "Pokračovať v príbehu",
+      "storyExplore": "OBJAVOVAŤ GLÓBUS",
+      "storyPause": "Pozastaviť príbeh"
     },
     "en": {
       "story": "A JOURNEY OF US",
@@ -520,9 +521,10 @@ const config = {
       "nextJourney": "NEXT JOURNEY",
       "previousJourney": "PREVIOUS JOURNEY",
       "comingSoon": "Memories coming soon.",
-      "storyPlay": "PLAY OUR STORY",
-      "storyContinue": "CONTINUE OUR STORY",
-      "storyExplore": "EXPLORE THE GLOBE"
+      "storyPlay": "Play our story",
+      "storyContinue": "Continue our story",
+      "storyExplore": "EXPLORE THE GLOBE",
+      "storyPause": "Pause our story"
     }
   },
   "countryEnglish": {

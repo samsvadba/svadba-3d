@@ -20,7 +20,6 @@
 <section id="journey-scene" class="screen" aria-label="Journey — naše spoločné cesty" aria-hidden="true" inert>
 <canvas id="three-canvas" aria-label="Glóbus: potiahnutím ho otočíte; mesto môžete vybrať aj tlačidlom"></canvas>
 <svg id="svg-canvas" aria-hidden="true"><g id="city-connectors" style="opacity:0;visibility:hidden"></g><line id="memory-connector"/></svg><div id="label-layer" aria-label="Mestá"></div>
-<div id="journey-modes" hidden><button id="story-play" type="button"></button><button id="story-explore" type="button"></button></div>
 <div id="journey-instruction"><svg viewBox="0 0 40 24" aria-hidden="true"><path d="M8 12h24M13 7l-5 5 5 5m14-10 5 5-5 5"/></svg><p>Roztočte glóbus a objavte naše spoločné chvíle.<br><span>Vyberte mesto a začnite.</span></p></div>
 <p id="globe-fallback" hidden>Glóbus sa nepodarilo zobraziť. Spomienky otvoríte výberom mesta.</p>
 <section id="modal" class="memory" aria-labelledby="modal-city" aria-hidden="true" inert>
@@ -41,6 +40,7 @@
 </section>
 <nav id="bottom-nav" aria-label="Navigácia príbehu" inert><div class="nav-labels"><button id="nav-intro" class="nav-item" aria-current="step">INTRO</button><button id="nav-journey" class="nav-item">JOURNEY <span id="journey-count"></span></button><button id="nav-wedding" class="nav-item">WEDDING</button></div><div class="nav-progress" aria-hidden="true"><span id="nav-fill"></span><i class="nav-dot active"></i><i class="nav-dot"></i><i class="nav-dot"></i></div></nav>
 <div id="utility-controls" role="group" aria-label="Globálne ovládanie">
+<button id="story-play" type="button" aria-label="Prehrať náš príbeh" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="story-play-shape" d="m8 5 11 7-11 7Z"/><path class="story-pause-shape" d="M8 5v14M16 5v14"/></svg></button>
 <button id="utility-sound" aria-label="Zapnúť hudbu" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4Z"/><path class="sound-on" d="M15 8q5 4 0 8m3-11q8 7 0 14"/><path class="sound-off" d="m16 9 6 6m0-6-6 6"/></svg></button>
 <button id="utility-gallery" aria-label="Svadobné fotografie"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h16v16H5zM2 7v15h15M7 15l4-5 4 4 3-3 2 4"/><circle cx="16" cy="7" r="1"/></svg></button>
 <button id="utility-mood" aria-label="Prepnúť na tmavú náladu" aria-pressed="false"><svg class="moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 15A9 9 0 0 1 9 4a9 9 0 1 0 11 11Z"/></svg><svg class="sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 1v3m0 16v3M1 12h3m16 0h3M4 4l2 2m12 12 2 2M4 20l2-2M18 6l2-2"/></svg></button>
