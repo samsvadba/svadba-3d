@@ -77,17 +77,18 @@ html[data-theme="dark"] .city-label.selected{border-color:#aeb3a2}
 @media(max-width:767px){#journey-instruction{bottom:164px}.memory{bottom:155px}.intro-caption{bottom:165px}}
 @media(prefers-reduced-motion:reduce){body,#journey-scene,#final-transition-screen,#wedding-handoff,.city-label,.memory,#utility-controls{transition:none}}
 
-/* Existing intro title, composed as one compact three-line typographic block. */
-.title-layout{position:absolute;inset:max(100px,15dvh) 5% max(155px,20dvh);display:flex;flex-direction:column;align-items:center;justify-content:center}
-.title-layout h1{font-family:'Oranienbaum',serif;font-weight:400;font-style:normal;font-size:clamp(100px,10.5vw,160px);line-height:.84;letter-spacing:-.035em;text-align:center;text-transform:none;text-shadow:none;-webkit-text-stroke:0;width:max-content;max-width:100%;margin:24px 0 28px;padding:0}
-.title-layout h1 span{display:block}
-.title-layout h1 span:last-child{margin:0;font-style:normal}
-.title-layout h1 em{position:static;display:block;font-family:inherit;font-weight:400;font-style:normal;font-size:.64em;line-height:.76;margin:4px 0 5px;transform:none}
+/* Intro wordmark: independently placed names, optically centered as a whole. */
+.title-layout{position:absolute;inset:max(100px,14dvh) 5% max(155px,21dvh);display:flex;flex-direction:column;align-items:center;justify-content:center}
+.title-layout h1{position:relative;flex-shrink:0;font-family:'Bodoni Moda',serif;font-optical-sizing:auto;font-weight:400;font-style:normal;font-size:clamp(100px,10vw,160px);line-height:.88;letter-spacing:-.045em;text-align:left;text-transform:none;text-shadow:none;-webkit-text-stroke:0;width:4.8em;height:2.12em;max-width:100%;margin:24px 0 32px;padding:0}
+.title-layout h1 span{position:absolute;display:block;white-space:nowrap}
+.title-layout h1 span:first-child{left:0;top:0}
+.title-layout h1 span:last-child{right:0;bottom:0;margin:0;font-style:normal}
+.title-layout h1 em{position:absolute;right:.22em;top:1.25em;display:block;font-family:inherit;font-weight:400;font-style:normal;font-size:.56em;line-height:1;margin:0;transform:none}
 .title-layout .eyebrow{text-align:center;max-width:100%;line-height:1.5}
 .title-layout .outline-button{flex-shrink:0}
-@media(max-width:767px){.title-layout h1{font-size:clamp(64px,20.5vw,95px);margin:24px 0 30px}.title-layout{inset:100px 5% 155px}.title-layout .eyebrow{font-size:9px;letter-spacing:.2em}}
-@media(max-height:580px){.title-layout{inset:65px 5% 125px}.title-layout h1{font-size:clamp(42px,12dvh,70px);margin:10px 0 14px}.title-layout .outline-button{min-height:38px;padding:9px 16px}}
-/* Destination-to-destination story navigation reuses the existing media surfaces. */
+@media(max-width:767px){.title-layout{inset:100px 5% 165px}.title-layout h1{font-size:clamp(58px,18vw,92px);margin:25px 0 34px}.title-layout .eyebrow{font-size:9px;letter-spacing:.2em}}
+@media(max-height:580px){.title-layout{inset:65px 5% 125px}.title-layout h1{font-size:clamp(40px,13dvh,70px);margin:10px 0 16px}.title-layout .outline-button{min-height:38px;padding:9px 16px}}
+
 .destination-next{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:24px;row-gap:5px;min-height:48px;padding:10px 0;text-align:left;color:inherit;max-width:100%}
 .destination-next .next-eyebrow{grid-column:1;font:400 8px/1.5 'DM Sans',sans-serif;letter-spacing:.16em;opacity:.7;margin:0}
 .destination-next .next-city{grid-column:1;font:400 15px/1.3 'DM Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;margin:0;overflow-wrap:anywhere}

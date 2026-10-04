@@ -394,7 +394,7 @@ const config = {
   "GLOBE_RADIUS": 12,
   "intro": {
     "poster": "photos/07-florence-engagement.jpeg",
-    "video": "Intro.mp4.mp4"
+    "video": "https://res.cloudinary.com/kxksv8hk/video/upload/w_1080,q_auto,f_auto/IMG_5897"
   },
   "wedding": {
     "couple": {

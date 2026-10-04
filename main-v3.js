@@ -207,8 +207,9 @@ function playIntroTextAnimations() {
   currentIndex = -1;
   if (intro.video) {
     const video = $('intro-video-bg');
-    video.src = asset(intro.video);
-    video.oncanplay = () => { video.hidden = false; };
+    video.src = /^https?:\/\//.test(intro.video) ? intro.video : asset(intro.video);
+    video.onplaying = () => { video.hidden = false; };
+    video.onerror = () => { video.hidden = true; };
     video.play().catch(() => { video.hidden = true; });
   }
   const tl = gsap.timeline();
