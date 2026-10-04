@@ -2,6 +2,7 @@ import { gsap } from 'gsap';
 import config from './config-v3.js';
 import countries from './countries-v3.json';
 import './style-v3.css';
+import { createWedding } from './wedding-v3.js';
 
 // Reference architecture: WeddingApp config, separate fullscreen screens,
 // interruptible GSAP section timelines, OrbitControls, flyToAndShow,
@@ -13,7 +14,8 @@ const mobile = () => innerWidth < 768;
 const duration = (seconds) => reducedMotion.matches ? 0 : seconds;
 const base = import.meta.env.BASE_URL;
 const asset = (path) => `${base}${path}`;
-const screens = ['intro-overlay', 'journey-scene', 'transition-screen', 'final-transition-screen', 'wedding-handoff'];
+const screens = ['intro-overlay', 'journey-scene', 'transition-screen', 'final-transition-screen', 'wedding-scene'];
+let weddingChapter;
 let state = 'loading', revision = 0, activeSectionTimeline, currentIndex = -1;
 let destinationReady=false, lastDestinationIndex=-1;
 let entranceActive=false, autoStoryPending=false, consumeStoryTap=false;
@@ -164,6 +166,7 @@ function unloadMedia() {
 }
 
 function killActiveSectionTransition() {
+  weddingChapter?.leave();
   clearTimeout(storyTimer);
   entranceActive=false;autoStoryPending=false;
   revision++;destinationReady=false;updateDestinationNavigation();
@@ -289,6 +292,8 @@ async function playJourneyTransition() {
 }
 
 function playWeddingTransition() {
+  if(state==='wedding')return;
+  pauseStory();
   killActiveSectionTransition();
   hideAllScreensImmediate();
   setState('final-transition');
@@ -301,13 +306,15 @@ function playWeddingTransition() {
   tl.to($('final-transition-screen'), { autoAlpha: 0, duration: duration(.5) })
     .call(() => {
       $('final-transition-screen').setAttribute('aria-hidden', 'true');
-      setState('handoff');
-      showScreen('wedding-handoff');
-      gsap.set($('wedding-handoff'), { opacity: 0 });
-      announce(t('redirect'));
+      currentIndex=-1;
+      setState('wedding');
+      if(!weddingChapter)weddingChapter=createWedding($('wedding-scene'),wedding,{t,gsap,reducedMotion});
+      showScreen('wedding-scene');
+      gsap.set($('wedding-scene'), { opacity: 0 });
+      weddingChapter.enter();
+      announce(t('navWedding'));
     })
-    .to($('wedding-handoff'), { opacity: 1, duration: duration(.7) })
-    .call(() => { window.location.assign(wedding.url); }, [], '+=1.6');
+    .to($('wedding-scene'), { opacity: 1, duration: duration(.7) });
 }
 
 function latLonToVec3(lat, lon, radius) {
@@ -938,7 +945,7 @@ function applyLanguage(){
   text('#globe-fallback','fallback');attr('three-canvas','canvas');attr('header-home','home');attr('bottom-nav','navigation');attr('label-layer','cities');
   attr('destination-video-close','back');attr('video-stop-btn','close');text('#destination-video-retry','play');
   updateDestinationNavigation();syncStoryUI();
-  document.querySelector('#wedding-handoff .outline-button').firstChild.textContent=t('handoff')+' ';
+  weddingChapter?.refreshLanguage();
   if(!$('media-error').classList.contains('empty-memory'))text('#media-error','imageError');
   for(const item of markerData){const loc=locations[item.index];item.element.setAttribute('aria-label',cityName(loc)+' — '+countryText(loc));item.element.querySelector('.city-subname').textContent=countryText(loc);item.element.querySelector('.city-name').textContent=cityName(loc);}
   if(currentIndex>=0){
@@ -956,11 +963,12 @@ function applyLanguage(){
   $('journey-scene').setAttribute('aria-label','Journey — '+t('journey1'));
   $('transition-screen').setAttribute('aria-label',t('prepare'));
   $('final-transition-screen').setAttribute('aria-label',t('final2'));
-  $('wedding-handoff').setAttribute('aria-label',t('handoff'));
+  $('wedding-scene').setAttribute('aria-label',t('navWedding'));
   $('instagram-link').textContent=t('instagram');
   document.querySelectorAll('#utility-controls button').forEach(button=>button.title=button.getAttribute('aria-label'));
   if(state==='intro')announce(t('introStatus'));
   if(state==='journey')announce(t('select'));
+  if(state==='wedding')announce(t('navWedding'));
   layoutDirty=true;
 }
 $('utility-sound').onclick=()=>{preferences.sound=!preferences.sound;musicEligible=true;savePreference('sm-sound',preferences.sound?'on':'off');applyLanguage();syncMusic();if(!config.audio.backgroundMusic)toast('noMusic');};
