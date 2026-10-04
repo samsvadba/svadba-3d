@@ -36,7 +36,7 @@ const layout = { minY:100, maxY:500, margin:20, modal:null };
 let worldPoint, projectedPoint, surfaceNormal, cameraDirection, centerPoint;
 const clamp = (n,a,b) => Math.max(a,Math.min(b,n));
 const smoothstep = (a,b,n) => {const t=clamp((n-a)/(b-a),0,1);return t*t*(3-2*t);};
-const fullscreenVideo = { active:false, closing:false, timeline:null };
+const fullscreenVideo = { active:false, closing:false, timeline:null, externalHold:false, resumeStory:false };
 const videoScene=$('destination-video-scene'), destinationVideo=$('destination-video');
 
 function resetFullscreenVideo() {
@@ -52,6 +52,7 @@ function resetFullscreenVideo() {
     $('app').inert=false;$('persistent-header').inert=false;$('bottom-nav').inert=false;
   }
   fullscreenVideo.active=false;fullscreenVideo.closing=false;
+  fullscreenVideo.externalHold=false;fullscreenVideo.resumeStory=false;
   delete document.body.dataset.fullscreenVideo;
   $('utility-controls').inert=false;syncMusic();
 }
@@ -72,9 +73,10 @@ function prepareFullscreenVideo(loc) {
 }
 
 function playFullscreenVideo() {
+  if(fullscreenVideo.externalHold)return;
   const request=revision;
   destinationVideo.play()?.catch(()=>{
-    if(request!==revision||!fullscreenVideo.active||fullscreenVideo.closing)return;
+    if(request!==revision||!fullscreenVideo.active||fullscreenVideo.closing||fullscreenVideo.externalHold)return;
     $('destination-video-status').textContent=t('videoTap');
     $('destination-video-retry').hidden=false;
   });
@@ -102,7 +104,7 @@ function closeFullscreenVideo(afterOverview=null) {
   }});
 }
 destinationVideo.addEventListener('playing',()=>{
-  if(!fullscreenVideo.active||fullscreenVideo.closing){destinationVideo.pause();return;}
+  if(!fullscreenVideo.active||fullscreenVideo.closing||fullscreenVideo.externalHold){destinationVideo.pause();return;}
   $('destination-video-status').textContent='';$('destination-video-retry').hidden=true;
   gsap.to(destinationVideo,{opacity:1,scale:1,duration:duration(1.1),ease:'power2.out'});
 });
@@ -112,7 +114,19 @@ destinationVideo.addEventListener('error',()=>{
   $('destination-video-retry').hidden=false;
 });
 $('destination-video-close').onclick=()=>{pauseStory();closeFullscreenVideo();};
-destinationVideo.addEventListener('ended',()=>storyActive?nextMemory():closeFullscreenVideo());
+// Native external navigation only: never reopen Instagram on focus/visibility/pageshow.
+$('destination-video-highlight').addEventListener('click',event=>{
+  if(!fullscreenVideo.active||fullscreenVideo.closing||!locations[currentIndex]?.instagramHighlight){event.preventDefault();return;}
+  event.stopPropagation();
+  if(!fullscreenVideo.externalHold)fullscreenVideo.resumeStory=storyActive;
+  fullscreenVideo.externalHold=true;
+  pauseStory();destinationVideo.pause();
+  $('destination-video-retry').hidden=true;
+});
+destinationVideo.addEventListener('ended',()=>{
+  if(fullscreenVideo.externalHold)return;
+  storyActive?nextMemory():closeFullscreenVideo();
+});
 $('destination-video-retry').onclick=()=>{destinationVideo.load();playFullscreenVideo();};
 videoScene.addEventListener('keydown',event=>{
   if(event.key!=='Tab')return;
@@ -848,7 +862,15 @@ function navigateDestination(offset=1) {
   clearTimeout(storyTimer);queuedDestination=target;
   closeModal(()=>{});
 }
-function nextMemory(){navigateDestination(1);}
+function nextMemory(){
+  if(state!=='memory'||!destinationReady||fullscreenVideo.closing)return;
+  if(fullscreenVideo.externalHold){
+    storyActive=fullscreenVideo.resumeStory;
+    fullscreenVideo.externalHold=false;fullscreenVideo.resumeStory=false;
+    syncStoryUI();
+  }
+  navigateDestination(1);
+}
 
 
 function syncStoryUI(){
@@ -1026,7 +1048,7 @@ $('three-canvas').addEventListener('keydown',event=>{
   spherical.phi=clamp(spherical.phi+(event.key==='ArrowUp'?-.1:event.key==='ArrowDown'?.1:0),.1,Math.PI-.1);
   camera.position.setFromSpherical(spherical); controls.update(); idleSince=performance.now()+1800;
 });
-window.addEventListener('pageshow', event => { if (event.persisted) playIntroTextAnimations(); });
+window.addEventListener('pageshow', event => { if (event.persisted && !fullscreenVideo.externalHold) playIntroTextAnimations(); });
 
 let loaded = false;
 function finishLoading() {
