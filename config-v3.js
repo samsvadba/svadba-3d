@@ -19,6 +19,7 @@ const config = {
     {
       "type": "text",
       "key": "vienna",
+      "fullscreenVideo": "https://res.cloudinary.com/kxksv8hk/video/upload/w_1080,q_auto,f_auto/IMG_1009",
       "name": "Vienna",
       "names": {
         "sk": "Viedeň",
@@ -34,6 +35,7 @@ const config = {
     {
       "type": "text",
       "key": "seville",
+      "fullscreenVideo": "https://res.cloudinary.com/kxksv8hk/video/upload/w_1080,q_auto,f_auto/IMG_3098",
       "name": "Seville",
       "subname": "Španielsko",
       "lat": 37.3891,
@@ -51,6 +53,7 @@ const config = {
     {
       "type": "text",
       "key": "caminito-del-rey",
+      "fullscreenVideo": "https://res.cloudinary.com/kxksv8hk/video/upload/w_1080,q_auto,f_auto/IMG_3217",
       "name": "Caminito del Rey",
       "names": {
         "sk": "Caminito del Rey",
