@@ -19,6 +19,7 @@ const config = {
     {
       "type": "text",
       "key": "vienna",
+      "instagramHighlight": "https://www.instagram.com/s/aGlnaGxpZ2h0OjE4MTI3MTk4ODI1ODc5MjIw?story_media_id=4000542899596017726&stkn=NGxqMnJsbGRqNWZ5",
       "fullscreenVideo": "https://res.cloudinary.com/kxksv8hk/video/upload/w_1080,q_auto,f_auto/IMG_1009",
       "name": "Vienna",
       "names": {
@@ -35,6 +36,7 @@ const config = {
     {
       "type": "text",
       "key": "seville",
+      "instagramHighlight": "https://www.instagram.com/s/aGlnaGxpZ2h0OjE3OTg1NTQ1MjQxMTExODc1?story_media_id=4000551949467946375&stkn=ZGlzeWNvMjkwa3Uz",
       "fullscreenVideo": "https://res.cloudinary.com/kxksv8hk/video/upload/w_1080,q_auto,f_auto/IMG_3098",
       "name": "Seville",
       "subname": "Španielsko",
@@ -53,6 +55,7 @@ const config = {
     {
       "type": "text",
       "key": "caminito-del-rey",
+      "instagramHighlight": "https://www.instagram.com/s/aGlnaGxpZ2h0OjE3OTA5NjE3MzUzMzEwMTE5?story_media_id=4000570806622536525&stkn=ODNwY3U3Y3RyeXpr",
       "fullscreenVideo": "https://res.cloudinary.com/kxksv8hk/video/upload/w_1080,q_auto,f_auto/IMG_3217",
       "name": "Caminito del Rey",
       "names": {
@@ -69,6 +72,7 @@ const config = {
     {
       "type": "text",
       "key": "marbella",
+      "instagramHighlight": "https://www.instagram.com/s/aGlnaGxpZ2h0OjE3OTk3MDY2NDUzMDQzMjU0?stkn=amhzcjk5YTR5OGpk",
       "fullscreenVideo": "https://res.cloudinary.com/kxksv8hk/video/upload/w_1080,q_auto,f_auto/IMG_3290",
       "name": "Marbella",
       "names": {
@@ -85,6 +89,7 @@ const config = {
     {
       "type": "image",
       "key": "granada",
+      "instagramHighlight": "https://www.instagram.com/s/aGlnaGxpZ2h0OjE4MzUzODMzNDY4MTY5ODk0?story_media_id=4000580815876017575&stkn=dDU1a20wMXU5eHY1",
       "fullscreenVideo": "https://res.cloudinary.com/kxksv8hk/video/upload/w_1080,q_auto,f_auto/IMG_3390",
       "name": "Granada",
       "subname": "Španielsko",
@@ -104,6 +109,7 @@ const config = {
     {
       "type": "text",
       "key": "malaga",
+      "instagramHighlight": "https://www.instagram.com/s/aGlnaGxpZ2h0OjE3OTUwODI0MDA2MDQ4OTgy?story_media_id=4000729303173271228&stkn=MXd6aHlvanExandmbQ==",
       "fullscreenVideo": "https://res.cloudinary.com/kxksv8hk/video/upload/w_1080,q_auto,f_auto/IMG_3504",
       "name": "Málaga",
       "subname": "Španielsko",
@@ -122,6 +128,7 @@ const config = {
     {
       "type": "image",
       "key": "london",
+      "instagramHighlight": "https://www.instagram.com/s/aGlnaGxpZ2h0OjE4MTI0ODE2ODk4NDg0NjI2?story_media_id=4000739522819714123&stkn=MTE5cmhrM2Q2bnFkYg==",
       "fullscreenVideo": "https://res.cloudinary.com/kxksv8hk/video/upload/w_1080,q_auto,f_auto/IMG_4209",
       "name": "London",
       "subname": "Spojené kráľovstvo",
@@ -141,6 +148,7 @@ const config = {
     {
       "type": "image",
       "key": "madeira",
+      "instagramHighlight": "https://www.instagram.com/s/aGlnaGxpZ2h0OjE3OTAwMzM0MDQ4NjU2NjMy?stkn=MTRnYWQ3a2ZkMXR1MQ==",
       "fullscreenVideo": "https://res.cloudinary.com/kxksv8hk/video/upload/w_1080,q_auto,f_auto/IMG_6011",
       "name": "Madeira",
       "subname": "Portugalsko",
@@ -160,11 +168,11 @@ const config = {
     {
       "type": "instagram",
       "key": "tokyo",
+      "instagramHighlight": "https://www.instagram.com/s/aGlnaGxpZ2h0OjE4MDYzMzQwNDUxMzQ3Mzk2?story_media_id=3706108608066373681&stkn=aWN5Y2YzeHF2eTB3",
       "instagramLabel": {
         "sk": "Viac z našej cesty v Tokiu",
         "en": "More from our journey in Tokyo"
       },
-      "instagramHighlight": "https://www.instagram.com/s/aGlnaGxpZ2h0OjE4MDYzMzQwNDUxMzQ3Mzk2?story_media_id=3706699429817129931&stkn=aWN5Y2YzeHF2eTB3",
       "fullscreenVideo": "https://res.cloudinary.com/kxksv8hk/video/upload/w_1080,q_auto,f_auto/IMG_7011",
       "name": "Tokyo",
       "subname": "Japonsko",
@@ -185,6 +193,7 @@ const config = {
     {
       "type": "text",
       "key": "kyoto",
+      "instagramHighlight": "https://www.instagram.com/s/aGlnaGxpZ2h0OjE4MDYzMzQwNDUxMzQ3Mzk2?story_media_id=3707556566885742338&stkn=aWN5Y2YzeHF2eTB3",
       "name": "Kyoto",
       "names": {
         "sk": "Kjóto",
@@ -201,6 +210,7 @@ const config = {
     {
       "type": "text",
       "key": "seoul",
+      "instagramHighlight": "https://www.instagram.com/s/aGlnaGxpZ2h0OjE4MTAyMjQ0Mzg3NTkzNzM3?story_media_id=3709532771460474919&stkn=emJqOTBidnRnZDNk",
       "name": "Seoul",
       "subname": "Južná Kórea",
       "lat": 37.5665,
@@ -219,6 +229,7 @@ const config = {
     {
       "type": "text",
       "key": "beijing",
+      "instagramHighlight": "https://www.instagram.com/s/aGlnaGxpZ2h0OjE4MTM4NzgzMDAxNDQxOTQ5?story_media_id=3711861645385043986&stkn=azhmaWVydWx6cXkx",
       "name": "Beijing",
       "subname": "Čína",
       "lat": 39.9042,
@@ -237,6 +248,7 @@ const config = {
     {
       "type": "text",
       "key": "manchester",
+      "instagramHighlight": "https://www.instagram.com/s/aGlnaGxpZ2h0OjE4MzE3MjYyNjE5MjE2NDE3?story_media_id=3771360984317855128&stkn=aGtuaHR4bjF4cW1x",
       "name": "Manchester",
       "names": {
         "sk": "Manchester",
@@ -253,6 +265,7 @@ const config = {
     {
       "type": "image",
       "key": "liverpool",
+      "instagramHighlight": "https://www.instagram.com/s/aGlnaGxpZ2h0OjE4MDk5OTAyMjk2ODE0Mjgw?story_media_id=3772172836350234131&stkn=MXYyMnkzcm82NnM4dA==",
       "name": "Liverpool",
       "subname": "Spojené kráľovstvo",
       "lat": 53.4084,
@@ -272,6 +285,7 @@ const config = {
     {
       "type": "text",
       "key": "carezza-dolomites",
+      "instagramHighlight": "https://www.instagram.com/s/aGlnaGxpZ2h0OjE4MDgzMzE2OTUyOTE3NDQx?story_media_id=3807811606843800394&stkn=dXRwb3JycnMycHcw",
       "name": "Carezza Dolomites",
       "names": {
         "sk": "Carezza Dolomites",
@@ -288,6 +302,7 @@ const config = {
     {
       "type": "text",
       "key": "bologna",
+      "instagramHighlight": "https://www.instagram.com/s/aGlnaGxpZ2h0OjE4MDk5MTMyODA4OTkyOTM0?story_media_id=3867336931839375028&stkn=MTJodHA5bHQwMThrcA==",
       "name": "Bologna",
       "names": {
         "sk": "Bologna",
@@ -304,6 +319,7 @@ const config = {
     {
       "type": "image",
       "key": "florence",
+      "instagramHighlight": "https://www.instagram.com/s/aGlnaGxpZ2h0OjE3ODU2OTYyNzQ4NjMxNTA2?story_media_id=3867746740908624398&stkn=eWY0NXozeDBmdnV1",
       "name": "Florence",
       "subname": "01 · 04 · 2026",
       "lat": 43.7696,
@@ -324,6 +340,7 @@ const config = {
     {
       "type": "text",
       "key": "pisa",
+      "instagramHighlight": "https://www.instagram.com/s/aGlnaGxpZ2h0OjE4MDg2ODAxMjc5NTkzMzcz?story_media_id=3868560024591193463&stkn=MWJ4OWN2ODY4Y3l2NQ==",
       "name": "Pisa",
       "names": {
         "sk": "Pisa",
@@ -340,6 +357,7 @@ const config = {
     {
       "type": "text",
       "key": "prague",
+      "instagramHighlight": "https://www.instagram.com/s/aGlnaGxpZ2h0OjE3ODgxNzMyODU0NTY2ODc3?story_media_id=3892481681969963795&stkn=dDJ2cGl4OG1ocmJk",
       "name": "Prague",
       "names": {
         "sk": "Praha",
@@ -356,6 +374,7 @@ const config = {
     {
       "type": "text",
       "key": "sardinia",
+      "instagramHighlight": "https://www.instagram.com/s/aGlnaGxpZ2h0OjE4MDU5MDYxMTY3NTQ2NzM1?story_media_id=4000762126645334557&stkn=MWFqZ215ZG1sMXJxeQ==",
       "name": "Sardinia",
       "subname": "Taliansko",
       "lat": 40.12,

@@ -63,7 +63,7 @@ function prepareFullscreenVideo(loc) {
   $('destination-video-country').textContent=countryText(loc);
   const highlight=$('destination-video-highlight');
   highlight.hidden=!loc.instagramHighlight;
-  highlight.textContent=t('moreFromTrip')+' ↗';
+  $('destination-video-highlight-text').textContent=t('moreFromTrip');
   if(loc.instagramHighlight)highlight.href=loc.instagramHighlight;
   else highlight.removeAttribute('href');
   $('destination-video-status').textContent=t('videoLoading');
@@ -951,7 +951,7 @@ function applyLanguage(){
   if(currentIndex>=0){
     const loc=locations[currentIndex];$('modal-location').textContent=memoryLocation(loc);
     $('destination-video-country').textContent=countryText(loc);
-    $('destination-video-highlight').textContent=t('moreFromTrip')+' ↗';
+    $('destination-video-highlight-text').textContent=t('moreFromTrip');
     $('modal-city').textContent=cityName(loc);$('destination-video-title').textContent=cityName(loc);
     if($('media-error').classList.contains('empty-memory'))$('media-error').textContent=t('comingSoon');
   }
