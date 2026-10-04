@@ -393,8 +393,8 @@ const config = {
   ],
   "GLOBE_RADIUS": 12,
   "intro": {
-    "poster": "photos/07-florence-engagement.jpeg",
-    "video": "https://res.cloudinary.com/kxksv8hk/video/upload/w_1080,q_auto,f_auto/IMG_5897"
+    "poster": null,
+    "video": "https://res.cloudinary.com/kxksv8hk/video/upload/eo_6.7,w_1080,q_auto,f_auto/IMG_5897"
   },
   "wedding": {
     "couple": {

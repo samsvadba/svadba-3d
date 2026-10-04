@@ -207,8 +207,13 @@ function playIntroTextAnimations() {
   currentIndex = -1;
   if (intro.video) {
     const video = $('intro-video-bg');
+    gsap.killTweensOf(video);gsap.set(video,{opacity:0});video.hidden=true;
     video.src = /^https?:\/\//.test(intro.video) ? intro.video : asset(intro.video);
-    video.onplaying = () => { video.hidden = false; };
+    video.onplaying = () => {
+      if(state!=='intro')return;
+      video.hidden=false;
+      gsap.to(video,{opacity:1,duration:duration(.8),ease:'power2.out'});
+    };
     video.onerror = () => { video.hidden = true; };
     video.play().catch(() => { video.hidden = true; });
   }
@@ -898,7 +903,6 @@ function applyLanguage(){
   text('#nav-intro','navIntro');text('#nav-wedding','navWedding');
   $('nav-journey').firstChild.textContent=t('navJourney')+' ';
   $('intro-overlay').setAttribute('aria-label',t('navIntro'));
-  $('intro-poster').alt=preferences.language==='sk'?'Simona a Martin':'Simona and Martin';
   document.querySelectorAll('#utility-controls button').forEach(button=>button.removeAttribute('title'));
   text('#pl-skip-btn','skip');attr('interactive-preloader','loading');
   text('#intro-copy .sub-line:first-child','intro1');text('#intro-copy .sub-line:last-child','intro2');
@@ -1012,7 +1016,4 @@ const loadTimeout = setTimeout(finishLoading, 6000);
 $('pl-skip-btn').onclick = finishLoading;
 $('preloader-percentage').textContent = '50%';
 $('loading-ring').style.setProperty('--p','50%');
-const poster = $('intro-poster');
-if (poster.complete) finishLoading();
-else { poster.addEventListener('load',finishLoading,{once:true}); poster.addEventListener('error',finishLoading,{once:true}); }
-
+finishLoading();
