@@ -179,6 +179,7 @@ export function createRSVP(root, { t, endpoint, gsap, reducedMotion = false }) {
       render(true, true); validateStep(); return;
     }
     status = 'sending'; render();
+    const requestId = crypto.randomUUID();
     const frame = document.createElement('iframe');
     frame.name = `sm-rsvp-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
     frame.title = t('rsvpSubmissionFrame'); frame.hidden = true;
@@ -187,7 +188,7 @@ export function createRSVP(root, { t, endpoint, gsap, reducedMotion = false }) {
     const field = document.createElement('input');
     field.type = 'hidden'; field.name = 'payload';
     const attending = answers.attending === 'yes';
-    field.value = JSON.stringify({ guestNames, attendance: answers.attending, transport: attending ? answers.transport : '', lodging: attending ? answers.lodging : '', lodgingCount: attending && answers.lodging === 'yes' ? answers.lodgingCount : 1, dietary: attending ? answers.dietary : '', music: attending ? answers.music : '', message: attending ? answers.message : '', website: '' });
+    field.value = JSON.stringify({ requestId, guestNames, attendance: answers.attending, transport: attending ? answers.transport : '', lodging: attending ? answers.lodging : '', lodgingCount: attending && answers.lodging === 'yes' ? answers.lodgingCount : 1, dietary: attending ? answers.dietary : '', music: attending ? answers.music : '', message: attending ? answers.message : '', website: '' });
     form.append(field); document.body.append(frame, form);
     let settled = false;
     const finish = outcome => {
@@ -198,7 +199,17 @@ export function createRSVP(root, { t, endpoint, gsap, reducedMotion = false }) {
       render(true, outcome === 'success');
     };
     const onMessage = event => {
-      if (event.source !== frame.contentWindow || event.data?.type !== 'sm-wedding-rsvp') return;
+      if (event.data?.type !== 'sm-wedding-rsvp' || event.data.requestId !== requestId || typeof event.data.ok !== 'boolean') return;
+      if (!/^https:\/\/(?:script\.google\.com|[a-z0-9-]+\.googleusercontent\.com)$/.test(event.origin)) return;
+      // HtmlService sends from a nested sandbox, not the outer submission iframe.
+      let sender = event.source;
+      try {
+        for (let depth = 0; sender && sender !== frame.contentWindow && depth < 8; depth += 1) {
+          if (sender.parent === sender) break;
+          sender = sender.parent;
+        }
+      } catch { return; }
+      if (sender !== frame.contentWindow) return;
       finish(event.data.ok === true ? 'success' : 'editing');
     };
     // A cross-origin iframe load is not evidence that the spreadsheet saved a response.
