@@ -15,6 +15,7 @@ const base = import.meta.env.BASE_URL;
 const asset = (path) => `${base}${path}`;
 const screens = ['intro-overlay', 'journey-scene', 'transition-screen', 'final-transition-screen', 'wedding-handoff'];
 let state = 'loading', revision = 0, activeSectionTimeline, currentIndex = -1;
+let destinationReady=false, lastDestinationIndex=-1;
 let globeInitPromise, THREE, scene, camera, renderer, controls, globeGroup;
 let cameraMoving = false, hoveredIndex = -1, pointerDown;
 const visited = new Set(), markerData = [];
@@ -25,7 +26,7 @@ const journeyMotion = { focus: 0, spin: 0 };
 let globeFlight, lastFrame = 0, idleSince = 0, dragging = false, layoutDirty = true;
 let globeMaterial, overviewMaterial, wireMaterial, detailPromise, detailReady = 0;
 const detailLayers = [];
-const countryByCity = { granada:'ESP', malaga:'ESP', sevilla:'ESP', trnava:'SVK', london:'GBR', liverpool:'GBR', madeira:'PRT', tokyo:'JPN', firenze:'ITA', sardinia:'ITA', seoul:'KOR', beijing:'CHN' };
+const countryByCity=Object.fromEntries(locations.map(loc=>[loc.key,loc.countryCode]));
 const layout = { minY:100, maxY:500, margin:20, modal:null };
 let worldPoint, projectedPoint, surfaceNormal, cameraDirection, centerPoint;
 const clamp = (n,a,b) => Math.max(a,Math.min(b,n));
@@ -53,14 +54,11 @@ function resetFullscreenVideo() {
 function prepareFullscreenVideo(loc) {
   destinationVideo.muted=true;destinationVideo.defaultMuted=true;
   destinationVideo.src=loc.fullscreenVideo;destinationVideo.load();
-  $('destination-video-title').textContent=loc.name;
+  $('destination-video-title').textContent=cityName(loc);
   $('destination-video-country').textContent=countryText(loc);
   const highlight=$('destination-video-highlight');
   highlight.hidden=!loc.instagramHighlight;
-  const caption=document.createElement('span'),cta=document.createElement('span');
-  caption.className='instagram-caption';caption.textContent=localized(loc.instagramLabel)||t('more');
-  cta.className='instagram-cta';cta.textContent=t('instagram');
-  highlight.replaceChildren(caption,cta);
+  highlight.textContent=t('moreFromTrip')+' ↗';
   if(loc.instagramHighlight)highlight.href=loc.instagramHighlight;
   else highlight.removeAttribute('href');
   $('destination-video-status').textContent=t('videoLoading');
@@ -88,13 +86,14 @@ function openFullscreenVideo() {
   playFullscreenVideo();
 }
 
-function closeFullscreenVideo() {
+function closeFullscreenVideo(afterOverview=null) {
+  if(typeof afterOverview!=='function')afterOverview=null;
   if(!fullscreenVideo.active||fullscreenVideo.closing)return;
-  fullscreenVideo.closing=true;
+  fullscreenVideo.closing=true;destinationReady=false;updateDestinationNavigation();
   fullscreenVideo.timeline?.kill();
   destinationVideo.pause();
   fullscreenVideo.timeline=gsap.to(videoScene,{autoAlpha:0,duration:duration(.6),ease:'power2.inOut',onComplete:()=>{
-    resetFullscreenVideo();closeModal();
+    resetFullscreenVideo();closeModal(afterOverview);
   }});
 }
 destinationVideo.addEventListener('playing',()=>{
@@ -112,7 +111,7 @@ destinationVideo.addEventListener('ended',closeFullscreenVideo);
 $('destination-video-retry').onclick=()=>{destinationVideo.load();playFullscreenVideo();};
 videoScene.addEventListener('keydown',event=>{
   if(event.key!=='Tab')return;
-  const focusable=[$('destination-video-highlight'),$('destination-video-close'),$('destination-video-retry')].filter(el=>!el.hidden);
+  const focusable=[$('destination-video-highlight'),$('destination-video-next'),$('destination-video-close'),$('destination-video-retry')].filter(el=>!el.hidden&&!el.disabled);
   const first=focusable[0],last=focusable[focusable.length-1];
   if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus();}
   else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}
@@ -160,7 +159,7 @@ function unloadMedia() {
 }
 
 function killActiveSectionTransition() {
-  revision++;
+  revision++;destinationReady=false;updateDestinationNavigation();
   activeSectionTimeline?.kill();
   activeSectionTimeline = null;
   gsap.killTweensOf($('modal'));
@@ -185,9 +184,10 @@ function setActiveNav(section) {
     else btn.removeAttribute('aria-current');
     document.querySelectorAll('.nav-dot')[i].classList.toggle('active', i <= ['intro', 'journey', 'wedding'].indexOf(section));
   });
-  const progress = section === 'intro' ? 0 : section === 'wedding' ? 100 : 50 + visited.size / locations.length * 45;
+  const progress = section === 'intro' ? 0 : section === 'wedding' ? 100 : 50 + Math.max(0,lastDestinationIndex+1) / locations.length * 45;
   $('nav-fill').style.width = `${progress}%`;
-  $('journey-count').textContent = visited.size ? `(${visited.size}/${locations.length})` : '';
+  $('journey-count').textContent = lastDestinationIndex>=0 ? `(${lastDestinationIndex+1}/${locations.length})` : '';
+  $('destination-video-progress').textContent=currentIndex>=0?`${currentIndex+1} / ${locations.length}`:'';
 }
 
 function announce(text) { $('app-status').textContent = text; }
@@ -337,8 +337,8 @@ function createLabels() {
     label.className = `city-label ${loc.side}-side`;
     label.dataset.city = loc.key;
     // Geographic placement replaces the config's old fixed label slots.
-    label.setAttribute('aria-label',loc.name+' — '+loc.subname);
-    const name = document.createElement('span'); name.className = 'city-name'; name.textContent = loc.name;
+    label.setAttribute('aria-label',cityName(loc)+' — '+loc.subname);
+    const name = document.createElement('span'); name.className = 'city-name'; name.textContent = cityName(loc);
     const sub = document.createElement('span'); sub.className = 'city-subname'; sub.textContent = loc.subname;
     label.append(name, sub);
     label.onclick = () => flyToAndShow(index);
@@ -423,7 +423,7 @@ async function ensureGlobeScene() {
         connector.style.visibility = 'hidden';
         showFallbackLabels();
       });
-      $('three-canvas').addEventListener('webglcontextrestored', () => { $('globe-fallback').hidden = true; layoutDirty=true; });
+      $('three-canvas').addEventListener('webglcontextrestored', () => { $('globe-fallback').hidden = true; $('label-layer').classList.remove('fallback-list'); layoutDirty=true; });
       renderer.setAnimationLoop(animate);
     } catch (error) {
       console.warn('Globe unavailable:', error.message);
@@ -491,17 +491,10 @@ function measureJourneyLayout() {
 
 function showFallbackLabels() {
   if($('globe-fallback').hidden)return;
-  measureJourneyLayout();
-  markerData.forEach((item,i)=>{
-    const side=i<6?'left':'right';
-    item.element.dataset.side=side;
-    const x=side==='left'?layout.margin:innerWidth-layout.margin-item.width;
-    const y=layout.minY+(i%6)*(layout.maxY-layout.minY)/6;
-    item.element.style.transform=`translate3d(${x}px,${y}px,0)`;
-    item.element.style.opacity='1'; item.element.style.visibility='visible';
-    item.element.style.pointerEvents=state==='memory'?'none':'auto';
-    item.element.tabIndex=0; item.element.removeAttribute('aria-hidden');
-    item.line.style.visibility='hidden';
+  $('label-layer').classList.add('fallback-list');
+  markerData.forEach(item=>{
+    item.element.style.transform='none';item.element.style.opacity='1';item.element.style.visibility='visible';
+    item.element.style.pointerEvents=state==='journey'?'auto':'none';item.element.tabIndex=0;item.element.removeAttribute('aria-hidden');item.line.style.visibility='hidden';
   });
 }
 
@@ -571,6 +564,7 @@ function updateGeographicLabels(dt) {
   const radius=view.height*.5/Math.tan(THREE.MathUtils.degToRad(camera.fov/2))*GLOBE_RADIUS/Math.sqrt(distance*distance-GLOBE_RADIUS*GLOBE_RADIUS);
   const sides={left:[],right:[]};
   for(const item of markerData){
+    item.crowdAllowed=true;
     item.mesh.getWorldPosition(worldPoint);
     surfaceNormal.copy(worldPoint).normalize();
     cameraDirection.copy(camera.position).sub(worldPoint).normalize();
@@ -604,14 +598,14 @@ function updateGeographicLabels(dt) {
     const leftMax=Math.max(layout.margin,cx-item.width-22);
     const rightMin=Math.min(view.width-layout.margin-item.width,cx+22);
     item.targetX=item.side==='left'?clamp(edge,layout.margin,leftMax):clamp(edge,rightMin,view.width-layout.margin-item.width);
-    if(item.alpha>.015 || alpha>.015)sides[item.side].push(item);
+    if(item.visible&&(item.index===currentIndex||journeyMotion.focus<.99))sides[item.side].push(item);
     item.element.dataset.side=item.side;
   }
   // Dense European clusters may exceed one edge's height on landscape phones.
   // Move the innermost projected points to the other edge, deterministically.
   for(const side of ['left','right']){
     const other=side==='left'?'right':'left';
-    const capacity=Math.max(1,Math.floor((layout.maxY-layout.minY)/((sides[side][0]?.height||34)+9)));
+    const capacity=Math.max(1,Math.floor((layout.maxY-layout.minY)/(Math.max(24,...sides[side].map(item=>item.height))+9)));
     while(sides[side].length>capacity&&sides[other].length<capacity){
       let candidate=sides[side].reduce((a,b)=>Math.abs(a.px-cx)<Math.abs(b.px-cx)?a:b);
       sides[side].splice(sides[side].indexOf(candidate),1);sides[other].push(candidate);
@@ -620,6 +614,11 @@ function updateGeographicLabels(dt) {
     }
   }
   for(const items of Object.values(sides)){
+    const capacity=Math.max(1,Math.floor((layout.maxY-layout.minY)/(Math.max(24,...items.map(item=>item.height))+9)));
+    if(items.length>capacity){
+      items.sort((a,b)=>(b.index===currentIndex?3:b.index===hoveredIndex?2:0)-(a.index===currentIndex?3:a.index===hoveredIndex?2:0)||b.facing-a.facing||a.index-b.index);
+      for(const item of items.splice(capacity))item.crowdAllowed=false;
+    }
     if(state==='journey' && journeyMotion.focus<.1){
       items.sort((a,b)=>a.py-b.py || a.index-b.index);
       const spread=Math.min(layout.maxY-layout.minY,mobile()?view.height*.58:view.height*.52);
@@ -641,15 +640,17 @@ function updateGeographicLabels(dt) {
     separateLabels(items,'y',layout.minY,layout.maxY);
   }
   for(const item of markerData){
-    const shown=item.alpha>.015 && item.visible;
+    item.crowdAlpha=(item.crowdAlpha??1)+((item.crowdAllowed?1:0)-(item.crowdAlpha??1))*fade;
+    const renderedAlpha=item.alpha*item.crowdAlpha;
+    const shown=renderedAlpha>.015 && item.visible;
     item.element.style.transform=`translate3d(${item.x.toFixed(2)}px,${item.y.toFixed(2)}px,0)`;
-    item.element.style.opacity=item.alpha.toFixed(3);
+    item.element.style.opacity=renderedAlpha.toFixed(3);
     item.element.style.visibility=shown?'visible':'hidden';
     item.element.style.pointerEvents=shown&&state==='journey'&&!cameraMoving?'auto':'none';
     item.element.tabIndex=shown?0:-1;
     item.element.setAttribute('aria-hidden',shown?'false':'true');
     item.line.style.visibility=shown?'visible':'hidden';
-    item.line.style.opacity=(item.alpha*.38).toFixed(3);
+    item.line.style.opacity=(renderedAlpha*.38).toFixed(3);
     if(shown){
       item.line.setAttribute('x1',item.px.toFixed(2));item.line.setAttribute('y1',item.py.toFixed(2));
       item.line.setAttribute('x2',(item.side==='left'?item.x+item.width:item.x).toFixed(2));
@@ -670,18 +671,18 @@ function updateConnector() {
 
 
 function flyToAndShow(index) {
-  if (!['journey', 'memory'].includes(state)) return;
+  if (state!=='journey'||cameraMoving||!locations[index])return;
   const request = killActiveSectionTransition();
-  currentIndex = index;
+  currentIndex = index;lastDestinationIndex=index;
   setState('memory');
   gsap.to(journeyMotion,{focus:1,duration:duration(1.7),ease:'power2.inOut'});
   loadGeographicDetail();
   setActiveNav('journey');
   const loc = locations[index];
-  if(loc.fullscreenVideo)prepareFullscreenVideo(loc);
+  updateDestinationNavigation();
   gsap.set($('journey-instruction'), { autoAlpha: 0 });
   markerData.forEach((item, i) => item.element.classList.toggle('selected', i === index));
-  $('modal-city').textContent = loc.name;
+  $('modal-city').textContent = cityName(loc);
   $('modal-location').textContent = memoryLocation(loc);
   $('memory-number').textContent = `${String(index + 1).padStart(2,'0')} / ${String(locations.length).padStart(2,'0')}`;
   const targetFraming = mobile() ? {x:0, y:.29} : {x:.22, y:0};
@@ -690,7 +691,8 @@ function flyToAndShow(index) {
     if (revision !== request) return;
     if(loc.fullscreenVideo){
       visited.add(index);markerData[index].element.classList.add('visited');setActiveNav('journey');
-      openFullscreenVideo();announce(`${loc.name}, ${countryText(loc)}. ${t('videoMemory')}`);return;
+      prepareFullscreenVideo(loc);destinationReady=true;updateDestinationNavigation();
+      openFullscreenVideo();announce(`${cityName(loc)}, ${countryText(loc)}. ${t('videoMemory')}`);return;
     }
     if (loc.type === 'instagram') {
       $('modal-instagram').src = loc.media;
@@ -698,12 +700,12 @@ function flyToAndShow(index) {
       $('instagram-link').href = loc.external;
       $('instagram-link').hidden = false;
     } else if (loc.type === 'text') {
-      $('media-error').textContent = loc.name;
+      $('media-error').textContent = t('comingSoon');
       $('media-error').classList.add('empty-memory');
       $('media-error').hidden = false;
     } else {
       const img = $('modal-image');
-      img.alt = `Simona a Martin — ${loc.name}`;
+      img.alt = `Simona a Martin — ${cityName(loc)}`;
       img.onerror = () => { img.hidden = true; $('media-error').hidden = false; };
       img.src = asset(loc.media);
       img.hidden = false;
@@ -711,44 +713,79 @@ function flyToAndShow(index) {
     visited.add(index);
     markerData[index].element.classList.add('visited');
     setActiveNav('journey');
-    $('video-skip-btn').innerHTML = t(visited.size === locations.length?'wedding':'next')+' <span aria-hidden="true">↗</span>';
+    updateDestinationNavigation();
+    destinationReady=true;updateDestinationNavigation();
     $('modal').setAttribute('aria-hidden','false');
     $('modal').inert = false;
     layoutDirty=true;
     gsap.to($('modal'), {autoAlpha:1,duration:duration(.6)});
     $('modal-city').focus({preventScroll:true});
-    announce(`${loc.name}, ${countryText(loc)}. ${t('memory')} ${index + 1} ${t('of')} ${locations.length}.`);
+    announce(`${cityName(loc)}, ${countryText(loc)}. ${t('memory')} ${index + 1} ${t('of')} ${locations.length}.`);
   });
 }
 
-function closeModal() {
-  if (state !== 'memory') return;
-  if(fullscreenVideo.active){closeFullscreenVideo();return;}
-  const previous = currentIndex;
+function closeModal(afterOverview=null) {
+  if(typeof afterOverview!=='function')afterOverview=null;
+  if(state!=='memory')return;
+  if(fullscreenVideo.active){closeFullscreenVideo(afterOverview);return;}
+  destinationReady=false;updateDestinationNavigation();
+  if(afterOverview&&!$('modal').inert){
+    $('modal').inert=true;
+    gsap.to($('modal'),{autoAlpha:0,duration:duration(.45),onComplete:()=>returnToOverview(afterOverview)});
+  }else returnToOverview(afterOverview);
+}
+
+function returnToOverview(afterOverview) {
+  const previous=currentIndex;
+  if(previous<0)return;
   const request=killActiveSectionTransition();
-  setState('journey');
-  currentIndex = -1;
-  gsap.to(framing, {x:0,y:.065,duration:duration(.8)});
-  const loc = locations[previous];
+  setState(afterOverview?'transition':'journey');currentIndex=-1;
+  gsap.to(framing,{x:0,y:.065,duration:duration(.8)});
   gsap.to(journeyMotion,{focus:0,duration:duration(1.8),ease:'power2.inOut'});
   const overviewUI=[$('label-layer'),$('city-connectors'),$('journey-instruction')];
   gsap.set(overviewUI,{autoAlpha:0});
+  const loc=locations[previous];
   flyCamera(loc.lat,loc.lon,overviewDistance(),1.8,()=>{
     if(request!==revision)return;
-    gsap.to(overviewUI,{autoAlpha:1,duration:duration(.7),onComplete:()=>{
+    activeSectionTimeline=gsap.timeline();
+    activeSectionTimeline.to(overviewUI,{autoAlpha:1,duration:duration(.55)});
+    if(afterOverview){
+      // A visible overview beat separates the two radial flights. Section navigation
+      // cancels this same timeline/revision, so no queued destination can reopen later.
+      activeSectionTimeline.to({}, {duration:duration(.3)}).call(()=>{
+        if(request!==revision)return;
+        setState('journey');afterOverview();
+      });
+    }else activeSectionTimeline.call(()=>{
       if(request===revision)markerData[previous].element.focus({preventScroll:true});
-    }});
+    });
   });
 }
 
-function nextMemory() {
-  if (state !== 'memory') return;
-  for (let offset = 1; offset <= locations.length; offset++) {
-    const next = (currentIndex + offset) % locations.length;
-    if (!visited.has(next)) { flyToAndShow(next); return; }
+function updateDestinationNavigation() {
+  const next=currentIndex+1;
+  for(const id of ['video-skip-btn','destination-video-next']){
+    const button=$(id);if(!button)return;
+    button.disabled=!destinationReady;
+    if(currentIndex<0)continue;
+    const label=next<locations.length?t('nextJourney'):t('wedding');
+    const name=next<locations.length?cityName(locations[next]):t('navWedding');
+    const eyebrow=document.createElement('span'),target=document.createElement('span'),arrow=document.createElement('span');
+    eyebrow.className='next-eyebrow';eyebrow.textContent=label;
+    target.className='next-city';target.textContent=name;
+    arrow.className='next-arrow';arrow.textContent='→';arrow.setAttribute('aria-hidden','true');
+    button.replaceChildren(eyebrow,target,arrow);button.setAttribute('aria-label',label+' — '+name);
   }
-  playWeddingTransition();
 }
+
+function navigateDestination(offset=1) {
+  if(state!=='memory'||!destinationReady||fullscreenVideo.closing)return;
+  const target=currentIndex+offset;
+  if(target<0||target>locations.length)return;
+  destinationReady=false;updateDestinationNavigation();
+  closeModal(()=>target===locations.length?playWeddingTransition():flyToAndShow(target));
+}
+function nextMemory(){navigateDestination(1);}
 
 // Independent, persistent utility preferences; audio is never loaded without a source.
 function readPreference(key,fallback){try{return localStorage.getItem(key)||fallback;}catch{return fallback;}}
@@ -760,7 +797,8 @@ let musicEligible=false,musicFailed=false,toastTimer;
 music.addEventListener('error',()=>{musicFailed=true;music.pause();});
 const t=key=>config.ui[preferences.language][key]||key;
 const localized=value=>typeof value==='object'?value?.[preferences.language]||value?.sk:value;
-const countryText=loc=>preferences.language==='en'?(config.countryEnglish[loc.key]||loc.subname):loc.subname;
+const cityName=loc=>localized(loc.names)||loc.name;
+const countryText=loc=>preferences.language==='en'?(loc.countryEn||loc.subname):loc.subname;
 const memoryLocation=loc=>loc.special==='engagement'?`${t('engagement')} · ${loc.subname}`:preferences.language==='en'?(loc.descriptionEn||countryText(loc)):(loc.description||loc.subname);
 function syncMusic(){
   if(!musicEligible||!preferences.sound||fullscreenVideo.active||document.hidden||musicFailed||!config.audio.backgroundMusic){music.pause();return;}
@@ -802,15 +840,16 @@ function applyLanguage(){
   text('#final-transition-screen .trans-line:first-child','final1');text('#final-transition-screen .trans-line:last-child','final2');
   text('#globe-fallback','fallback');attr('three-canvas','canvas');attr('header-home','home');attr('bottom-nav','navigation');attr('label-layer','cities');
   attr('destination-video-close','back');attr('video-stop-btn','close');text('#destination-video-retry','play');
-  $('video-skip-btn').innerHTML=t(visited.size===locations.length?'wedding':'next')+' <span aria-hidden="true">↗</span>';
+  updateDestinationNavigation();
   document.querySelector('#wedding-handoff .outline-button').firstChild.textContent=t('handoff')+' ';
   if(!$('media-error').classList.contains('empty-memory'))text('#media-error','imageError');
-  for(const item of markerData){const loc=locations[item.index];item.element.setAttribute('aria-label',loc.name+' — '+countryText(loc));item.element.querySelector('.city-subname').textContent=countryText(loc);}
+  for(const item of markerData){const loc=locations[item.index];item.element.setAttribute('aria-label',cityName(loc)+' — '+countryText(loc));item.element.querySelector('.city-subname').textContent=countryText(loc);item.element.querySelector('.city-name').textContent=cityName(loc);}
   if(currentIndex>=0){
     const loc=locations[currentIndex];$('modal-location').textContent=memoryLocation(loc);
     $('destination-video-country').textContent=countryText(loc);
-    const caption=$('destination-video-highlight').querySelector('.instagram-caption');if(caption)caption.textContent=localized(loc.instagramLabel)||t('more');
-    text('#destination-video-highlight .instagram-cta','instagram');
+    $('destination-video-highlight').textContent=t('moreFromTrip')+' ↗';
+    $('modal-city').textContent=cityName(loc);$('destination-video-title').textContent=cityName(loc);
+    if($('media-error').classList.contains('empty-memory'))$('media-error').textContent=t('comingSoon');
   }
   const status=$('destination-video-status');
   for(const key of ['videoLoading','videoTap','videoError'])if(Object.values(config.ui).some(d=>d[key]===status.textContent)){status.textContent=t(key);break;}
@@ -842,6 +881,7 @@ $('header-home').onclick = $('nav-intro').onclick = playIntroTextAnimations;
 $('nav-wedding').onclick = playWeddingTransition;
 $('video-stop-btn').onclick = closeModal;
 $('video-skip-btn').onclick = nextMemory;
+$('destination-video-next').onclick = nextMemory;
 document.addEventListener('keydown', event => { if (event.key === 'Escape') closeModal(); });
 $('three-canvas').addEventListener('pointerdown', event => { pointerDown = event.isPrimary ? {x:event.clientX,y:event.clientY} : null; });
 $('three-canvas').addEventListener('pointerup', event => {

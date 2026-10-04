@@ -25,7 +25,7 @@
 <section id="modal" class="memory" aria-labelledby="modal-city" aria-hidden="true" inert>
 <div class="memory-top"><span id="memory-number"></span><button id="video-stop-btn" class="icon-button" aria-label="Zatvoriť spomienku"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div>
 <div class="journey-modal-media"><img id="modal-image" alt="" hidden><iframe id="modal-instagram" title="Tokyo — Japan Reel" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen hidden></iframe><p id="media-error" hidden>Fotografiu sa nepodarilo načítať.</p></div>
-<div class="memory-bottom"><div><h2 id="modal-city" tabindex="-1"></h2><p id="modal-location"></p></div><button id="video-skip-btn" class="text-button">Ďalšia <span aria-hidden="true">↗</span></button></div><a id="instagram-link" target="_blank" rel="noopener noreferrer" hidden>Otvoriť Reel na Instagrame ↗</a>
+<div class="memory-bottom"><div><h2 id="modal-city" tabindex="-1"></h2><p id="modal-location"></p></div><button id="video-skip-btn" class="text-button destination-next">Ďalšia <span aria-hidden="true">↗</span></button></div><a id="instagram-link" target="_blank" rel="noopener noreferrer" hidden>Otvoriť Reel na Instagrame ↗</a>
 </section></section>
 <section id="transition-screen" class="screen transition-screen" aria-label="Začiatok Journey" aria-hidden="true" inert><div class="transition-text"><p class="trans-line">Roztočte glóbus a objavte naše spoločné chvíle.</p><p class="trans-line">Vyberte mesto a začnite.</p></div></section>
 <section id="final-transition-screen" class="screen transition-screen" aria-label="Naše nové dobrodružstvo" aria-hidden="true" inert><div class="transition-text"><p class="trans-line">And now,</p><p class="trans-line">Our new adventure begins.</p></div></section>
@@ -34,7 +34,7 @@
 <section id="destination-video-scene" role="dialog" aria-modal="true" aria-labelledby="destination-video-title" aria-hidden="true" inert>
 <video id="destination-video" autoplay muted playsinline preload="metadata"></video>
 <div class="destination-video-shade" aria-hidden="true"></div>
-<div class="destination-video-caption"><h2 id="destination-video-title"></h2><p id="destination-video-country"></p><a id="destination-video-highlight" target="_blank" rel="noopener noreferrer" hidden>INSTAGRAM HIGHLIGHT ↗</a></div>
+<div class="destination-video-caption"><p id="destination-video-progress"></p><h2 id="destination-video-title"></h2><p id="destination-video-country"></p><a id="destination-video-highlight" target="_blank" rel="noopener noreferrer" hidden>Pozrieť viac z tejto cesty ↗</a><button id="destination-video-next" class="destination-next" type="button" disabled></button></div>
 <button id="destination-video-close" class="icon-button" aria-label="Späť na Journey"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
 <p id="destination-video-status" role="status"></p><button id="destination-video-retry" hidden>Prehrať video</button>
 </section>
