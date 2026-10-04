@@ -214,7 +214,7 @@ function playIntroTextAnimations() {
     });
     tl.to('.title-layout', { autoAlpha: 1, duration: 1.2 });
   }
-  announce('Simona a Martin. A journey of us.');
+  announce(t('introStatus'));
 }
 
 // Keep the reference's line-by-line transition choreography.
@@ -780,12 +780,20 @@ function applyMood(animate=true){
   document.documentElement.dataset.theme=preferences.theme;
   $('utility-mood').setAttribute('aria-pressed',String(preferences.theme==='dark'));
   $('utility-mood').setAttribute('aria-label',t(preferences.theme==='dark'?'light':'dark'));
+  $('utility-mood').title=$('utility-mood').getAttribute('aria-label');
   gsap.to(mood,{value:preferences.theme==='dark'?1:0,duration:animate?duration(.45):0,onUpdate:applyGlobeTheme});
 }
 function applyLanguage(){
   document.documentElement.lang=preferences.language;
+  document.title='Simona & Martin — '+t('story');
   const text=(selector,key)=>document.querySelectorAll(selector).forEach(el=>{el.textContent=t(key);});
   const attr=(id,key)=>$(id).setAttribute('aria-label',t(key));
+  text('.header-subtitle, .title-layout .eyebrow','story');
+  text('#nav-intro','navIntro');text('#nav-wedding','navWedding');
+  $('nav-journey').firstChild.textContent=t('navJourney')+' ';
+  $('intro-overlay').setAttribute('aria-label',t('navIntro'));
+  $('intro-poster').alt=preferences.language==='sk'?'Simona a Martin':'Simona and Martin';
+  document.querySelectorAll('#utility-controls button').forEach(button=>button.removeAttribute('title'));
   text('#pl-skip-btn','skip');attr('interactive-preloader','loading');
   text('#intro-copy .sub-line:first-child','intro1');text('#intro-copy .sub-line:last-child','intro2');
   $('next-btn').firstChild.textContent=t('explore')+' ';
@@ -814,6 +822,8 @@ function applyLanguage(){
   $('final-transition-screen').setAttribute('aria-label',t('final2'));
   $('wedding-handoff').setAttribute('aria-label',t('handoff'));
   $('instagram-link').textContent=t('instagram');
+  document.querySelectorAll('#utility-controls button').forEach(button=>button.title=button.getAttribute('aria-label'));
+  if(state==='intro')announce(t('introStatus'));
   if(state==='journey')announce(t('select'));
   layoutDirty=true;
 }
