@@ -195,7 +195,8 @@ const config = {
       "countryCode": "JPN",
       "subname": "Japonsko",
       "countryEn": "Japan",
-      "side": "right"
+      "side": "right",
+      "fullscreenVideo": "https://res.cloudinary.com/kxksv8hk/video/upload/w_1080,q_auto,f_auto/IMG_7071"
     },
     {
       "type": "text",
@@ -212,7 +213,8 @@ const config = {
         "en": "Seoul"
       },
       "countryCode": "KOR",
-      "countryEn": "South Korea"
+      "countryEn": "South Korea",
+      "fullscreenVideo": "https://res.cloudinary.com/kxksv8hk/video/upload/w_1080,q_auto,f_auto/IMG_7371"
     },
     {
       "type": "text",
@@ -229,7 +231,8 @@ const config = {
         "en": "Beijing"
       },
       "countryCode": "CHN",
-      "countryEn": "China"
+      "countryEn": "China",
+      "fullscreenVideo": "https://res.cloudinary.com/kxksv8hk/video/upload/w_1080,q_auto,f_auto/IMG_7616"
     },
     {
       "type": "text",
@@ -244,7 +247,8 @@ const config = {
       "countryCode": "GBR",
       "subname": "Spojené kráľovstvo",
       "countryEn": "United Kingdom",
-      "side": "right"
+      "side": "right",
+      "fullscreenVideo": "https://res.cloudinary.com/kxksv8hk/video/upload/w_1080,q_auto,f_auto/IMG_8846"
     },
     {
       "type": "image",
@@ -262,7 +266,8 @@ const config = {
         "en": "Liverpool"
       },
       "countryCode": "GBR",
-      "countryEn": "United Kingdom"
+      "countryEn": "United Kingdom",
+      "fullscreenVideo": "https://res.cloudinary.com/kxksv8hk/video/upload/w_1080,q_auto,f_auto/IMG_2853"
     },
     {
       "type": "text",
@@ -277,7 +282,8 @@ const config = {
       "countryCode": "ITA",
       "subname": "Taliansko",
       "countryEn": "Italy",
-      "side": "right"
+      "side": "right",
+      "fullscreenVideo": "https://res.cloudinary.com/kxksv8hk/video/upload/w_1080,q_auto,f_auto/IMG_9612"
     },
     {
       "type": "text",
@@ -292,7 +298,8 @@ const config = {
       "countryCode": "ITA",
       "subname": "Taliansko",
       "countryEn": "Italy",
-      "side": "left"
+      "side": "left",
+      "fullscreenVideo": "https://res.cloudinary.com/kxksv8hk/video/upload/w_1080,q_auto,f_auto/IMG_0331"
     },
     {
       "type": "image",
@@ -311,7 +318,8 @@ const config = {
         "en": "Florence"
       },
       "countryCode": "ITA",
-      "countryEn": "Italy"
+      "countryEn": "Italy",
+      "fullscreenVideo": "https://res.cloudinary.com/kxksv8hk/video/upload/w_1080,q_auto,f_auto/IMG_0628"
     },
     {
       "type": "text",
@@ -326,7 +334,8 @@ const config = {
       "countryCode": "ITA",
       "subname": "Taliansko",
       "countryEn": "Italy",
-      "side": "left"
+      "side": "left",
+      "fullscreenVideo": "https://res.cloudinary.com/kxksv8hk/video/upload/w_1080,q_auto,f_auto/IMG_0723"
     },
     {
       "type": "text",
@@ -341,7 +350,8 @@ const config = {
       "countryCode": "CZE",
       "subname": "Česko",
       "countryEn": "Czechia",
-      "side": "right"
+      "side": "right",
+      "fullscreenVideo": "https://res.cloudinary.com/kxksv8hk/video/upload/w_1080,q_auto,f_auto/IMG_1243"
     },
     {
       "type": "text",
@@ -358,7 +368,8 @@ const config = {
         "en": "Sardinia"
       },
       "countryCode": "ITA",
-      "countryEn": "Italy"
+      "countryEn": "Italy",
+      "fullscreenVideo": "https://res.cloudinary.com/kxksv8hk/video/upload/w_1080,q_auto,f_auto/IMG_2437"
     },
     {
       "type": "image",
@@ -378,7 +389,8 @@ const config = {
         "en": "Trnava"
       },
       "countryCode": "SVK",
-      "countryEn": "Slovakia"
+      "countryEn": "Slovakia",
+      "fullscreenVideo": "https://res.cloudinary.com/kxksv8hk/video/upload/w_1080,q_auto,f_auto/IMG_0800"
     }
   ],
   "GLOBE_RADIUS": 12,
