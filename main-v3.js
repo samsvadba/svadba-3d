@@ -17,6 +17,7 @@ const screens = ['intro-overlay', 'journey-scene', 'transition-screen', 'final-t
 let state = 'loading', revision = 0, activeSectionTimeline, currentIndex = -1;
 let destinationReady=false, lastDestinationIndex=-1;
 let entranceActive=false, autoStoryPending=false, consumeStoryTap=false;
+let storyCycleEnd=-1;
 let storyActive=false, storyIndex=0, storyStarted=false, storyTimer, queuedDestination=null;
 let globeInitPromise, THREE, scene, camera, renderer, controls, globeGroup;
 let cameraMoving = false, hoveredIndex = -1, pointerDown;
@@ -244,7 +245,7 @@ function animateTransitionLines(tl, screen, hold = .8) {
 
 async function playJourneyTransition() {
   const request = killActiveSectionTransition();
-  storyIndex=0;storyStarted=false;autoStoryPending=true;
+  storyIndex=0;storyCycleEnd=-1;storyStarted=false;autoStoryPending=true;
   gsap.set([$ ('label-layer'), $('city-connectors')],{autoAlpha:0});
   hideAllScreensImmediate();
   setState('transition');
@@ -712,6 +713,7 @@ function flyToAndShow(index, travel=false) {
   const request = killActiveSectionTransition();
   currentIndex = index;lastDestinationIndex=index;
   if(storyActive)storyIndex=index;
+  else{storyCycleEnd=index;storyIndex=(index+1)%locations.length;storyStarted=true;}
   setState('memory');
   if(!travel)gsap.to(journeyMotion,{focus:1,duration:duration(1.7),ease:'power2.inOut'});
   if(travel)gsap.set([$ ('label-layer'),$('city-connectors')],{autoAlpha:0});
@@ -811,13 +813,15 @@ function returnToOverview(afterOverview) {
 }
 
 function updateDestinationNavigation() {
-  const next=currentIndex+1;
+  const cycle=storyActive&&storyCycleEnd>=0;
+  const finished=cycle&&currentIndex===storyCycleEnd;
+  const next=cycle?(currentIndex+1)%locations.length:currentIndex+1;
   for(const id of ['video-skip-btn','destination-video-next']){
     const button=$(id);if(!button)return;
     button.disabled=!destinationReady;
     if(currentIndex<0)continue;
-    const label=next<locations.length?t('nextJourney'):t('wedding');
-    const name=next<locations.length?cityName(locations[next]):t('navWedding');
+    const label=finished?t('back'):next<locations.length?t('nextJourney'):t('wedding');
+    const name=finished?t('navJourney'):next<locations.length?cityName(locations[next]):t('navWedding');
     const eyebrow=document.createElement('span'),target=document.createElement('span'),arrow=document.createElement('span');
     eyebrow.className='next-eyebrow';eyebrow.textContent=label;
     target.className='next-city';target.textContent=name;
@@ -828,7 +832,10 @@ function updateDestinationNavigation() {
 
 function navigateDestination(offset=1) {
   if(state!=='memory'||!destinationReady||fullscreenVideo.closing)return;
-  const target=currentIndex+offset;
+  if(storyActive&&storyCycleEnd>=0&&currentIndex===storyCycleEnd){
+    pauseStory();storyIndex=(currentIndex+1)%locations.length;closeModal();return;
+  }
+  const target=storyActive&&storyCycleEnd>=0?(currentIndex+offset+locations.length)%locations.length:currentIndex+offset;
   if(target<0||target>locations.length)return;
   destinationReady=false;updateDestinationNavigation();
   clearTimeout(storyTimer);queuedDestination=target;
