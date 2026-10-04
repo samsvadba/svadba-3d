@@ -69,6 +69,7 @@ const config = {
     {
       "type": "text",
       "key": "marbella",
+      "fullscreenVideo": "https://res.cloudinary.com/kxksv8hk/video/upload/w_1080,q_auto,f_auto/IMG_3290",
       "name": "Marbella",
       "names": {
         "sk": "Marbella",
@@ -84,6 +85,7 @@ const config = {
     {
       "type": "image",
       "key": "granada",
+      "fullscreenVideo": "https://res.cloudinary.com/kxksv8hk/video/upload/w_1080,q_auto,f_auto/IMG_3390",
       "name": "Granada",
       "subname": "Španielsko",
       "lat": 37.1773,
@@ -102,6 +104,7 @@ const config = {
     {
       "type": "text",
       "key": "malaga",
+      "fullscreenVideo": "https://res.cloudinary.com/kxksv8hk/video/upload/w_1080,q_auto,f_auto/IMG_3504",
       "name": "Málaga",
       "subname": "Španielsko",
       "lat": 36.7213,
@@ -119,6 +122,7 @@ const config = {
     {
       "type": "image",
       "key": "london",
+      "fullscreenVideo": "https://res.cloudinary.com/kxksv8hk/video/upload/w_1080,q_auto,f_auto/IMG_4209",
       "name": "London",
       "subname": "Spojené kráľovstvo",
       "lat": 51.5074,
@@ -137,6 +141,7 @@ const config = {
     {
       "type": "image",
       "key": "madeira",
+      "fullscreenVideo": "https://res.cloudinary.com/kxksv8hk/video/upload/w_1080,q_auto,f_auto/IMG_6011",
       "name": "Madeira",
       "subname": "Portugalsko",
       "lat": 32.7607,
