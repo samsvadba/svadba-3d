@@ -23,7 +23,7 @@ export function createWedding(root, wedding, { t, gsap, reducedMotion }) {
   root.innerHTML = `<section class="w-invitation" aria-label="${escape(t('wInvitation'))}">
     <div class="w-invitation-inner">
       <div class="w-monogram" aria-hidden="true"><span>S</span><span>&amp;</span><span>M</span></div>
-      <h2 tabindex="-1" class="w-invitation-names"><span>Simona Šarmírová</span><em>${copy('wAnd')}</em><span>Martin Fabian</span></h2>
+      <h2 tabindex="-1" class="w-invitation-names"><span class="sr-only">Simona Šarmírová ${copy('wAnd')} Martin Fabian</span><span class="w-invitation-wordmark" aria-hidden="true"></span></h2>
       <p class="w-invitation-announcement">${copy('wAnnounce')}<br>${copy('wSacrament')}</p>
       <div class="w-invitation-rule" aria-hidden="true"></div>
       <p class="w-invitation-date">${copy('wInvitationDate')}</p>
