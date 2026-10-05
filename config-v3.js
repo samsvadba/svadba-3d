@@ -557,6 +557,7 @@ const config = {
   "ui": {
     "sk": {
       "wInvitation": "Svadobná pozvánka",
+      "wInvitationTab": "POZVÁNKA",
       "wAnd": "a",
       "wAnnounce": "S radosťou vám oznamujeme,",
       "wSacrament": "že uzatvárame sviatosť manželstva",
@@ -746,6 +747,7 @@ const config = {
     },
     "en": {
       "wInvitation": "Wedding invitation",
+      "wInvitationTab": "INVITATION",
       "wAnd": "and",
       "wAnnounce": "With joy, we announce",
       "wSacrament": "that we will be united in the sacrament of marriage",

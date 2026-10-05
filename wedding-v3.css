@@ -145,7 +145,7 @@ body[data-state="wedding"] #bottom-nav,body[data-state="wedding"] #utility-contr
 @media(max-height:580px){#wedding-scene{padding-top:65px;padding-bottom:calc(130px + env(safe-area-inset-bottom))}.w-tabs button{min-height:40px}.w-panel{padding-top:22px}.w-panel-heading{margin-bottom:24px}.w-panel-heading h2{font-size:36px}}
 @media(prefers-reduced-motion:reduce){#wedding-scene,.w-tabs button,.w-tabs button:after,.w-faq-toggle svg{transition:none}}
 
-/* Wedding opens as a quiet invitation before its practical pages. */
+/* Invitation is the first page of the Wedding chapter. */
 .w-invitation{height:100%;overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y;text-align:center;scrollbar-width:thin}
 .w-invitation-inner{min-height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:12px 12px 30px}
 .w-monogram{position:relative;width:146px;height:116px;flex:none;margin:0 auto 10px;color:var(--olive,var(--ink));font:400 99px/1 'Bodoni Moda',serif;letter-spacing:-.07em}
@@ -168,3 +168,10 @@ body[data-state="wedding"] #bottom-nav,body[data-state="wedding"] #utility-contr
 .w-invitation-names{width:min(100%,520px);line-height:0;margin:0}
 .w-invitation-wordmark{display:block;width:100%;aspect-ratio:3 / .94;background:url("https://samsvadba.github.io/svadba/assets/invite-wordmark.png") no-repeat 61.4% 42.5% / 123.8% auto;background-color:var(--paper);background-blend-mode:multiply}
 html[data-theme="dark"] .w-invitation-wordmark{background-color:#dfdde0;filter:invert(1)}
+
+/* Keep the invitation within the shared tabs, with breathing room below S&M. */
+.w-panel.w-invitation{padding:20px 12px 28px}
+.w-invitation .w-monogram{margin-bottom:30px}
+.w-tabs{overflow-x:auto;scrollbar-width:none}
+.w-tabs::-webkit-scrollbar{display:none}
+@media(max-width:600px){.w-tabs{gap:0;padding:0;justify-content:space-between}.w-tabs button{min-width:0;flex:0 0 auto;padding:15px 7px;font-size:8px;letter-spacing:.07em}.w-panel.w-invitation{padding:16px 0 22px}.w-invitation .w-monogram{margin-bottom:24px}.w-invitation-inner{justify-content:flex-start}}

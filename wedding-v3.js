@@ -15,12 +15,12 @@ export function createWedding(root, wedding, { t, gsap, reducedMotion }) {
   };
   const icon = name => `<svg class="w-icon" viewBox="0 0 34 34" aria-hidden="true">${paths[name] || paths.rings}</svg>`;
   const link = (url, key) => `<a class="w-link" href="${escape(url)}" target="_blank" rel="noopener noreferrer">${copy(key)}${arrow}</a>`;
-  const tabKeys = ['detail','program','menu','rsvp','faq'];
-  const labels = {detail:'wDetail',program:'wProgram',menu:'wMenu',rsvp:'wRsvp',faq:'wFaq'};
+  const tabKeys = ['invitation','detail','program','menu','rsvp','faq'];
+  const labels = {invitation:'wInvitationTab',detail:'wDetail',program:'wProgram',menu:'wMenu',rsvp:'wRsvp',faq:'wFaq'};
   const heading = (eyebrow, title, intro) => `<header class="w-panel-heading"><p class="w-eyebrow">${copy(eyebrow)}</p><h2 tabindex="-1">${copy(title)}</h2>${intro ? `<p class="w-intro">${copy(intro)}</p>` : ''}</header>`;
   const jump = (tab, key) => `<button class="w-link" type="button" data-wedding-tab="${tab}">${copy(key)}${arrow}</button>`;
   const venue = (item, ceremony) => `<article class="w-venue">${icon(ceremony?'church':'rings')}<p class="w-eyebrow">${copy(ceremony?'wCeremony':'wReception')}</p><h3>${escape(item.name)}</h3><p class="w-venue-time">${ceremony?escape(item.time):copy('wAfterCeremony')}</p><p class="w-address">${escape(item.address)}</p>${link(item.maps,'wMap')}</article>`;
-  root.innerHTML = `<section class="w-invitation" aria-label="${escape(t('wInvitation'))}">
+  const invitationMarkup = `<section class="w-panel w-invitation" id="w-panel-invitation" role="tabpanel" aria-labelledby="w-tab-invitation" tabindex="0" aria-label="${escape(t('wInvitation'))}">
     <div class="w-invitation-inner">
       <div class="w-monogram" aria-hidden="true"><span>S</span><span>&amp;</span><span>M</span></div>
       <h2 tabindex="-1" class="w-invitation-names"><span class="sr-only">Simona Šarmírová ${copy('wAnd')} Martin Fabian</span><span class="w-invitation-wordmark" aria-hidden="true"></span></h2>
@@ -31,10 +31,11 @@ export function createWedding(root, wedding, { t, gsap, reducedMotion }) {
       <p class="w-invitation-meeting">${copy('wInvitationMeeting')}</p>
       <div class="w-invitation-actions">${jump('rsvp','wConfirm')}${jump('detail','wInformation')}</div>
     </div>
-  </section><div class="w-shell">
+  </section>`;
+  root.innerHTML = `<div class="w-shell">
     <div class="w-tabs" role="tablist" aria-label="${escape(t('wTabs'))}">${tabKeys.map((id,i)=>`<button type="button" role="tab" id="w-tab-${id}" aria-controls="w-panel-${id}" aria-selected="${i===0}" tabindex="${i===0?0:-1}">${copy(labels[id])}</button>`).join('')}</div>
-    <div class="w-pages">
-      <section class="w-panel" id="w-panel-detail" role="tabpanel" aria-labelledby="w-tab-detail" tabindex="0">
+    <div class="w-pages">${invitationMarkup}
+      <section class="w-panel" id="w-panel-detail" role="tabpanel" aria-labelledby="w-tab-detail" tabindex="0" hidden>
         <div class="w-detail-head"><p class="w-eyebrow">${copy('wChapter')}</p><h2 tabindex="-1">Simona <em>&</em> Martin</h2><p class="w-date">30 · 04 · 2027</p><p class="w-intro">${copy('wWelcome')}</p></div>
         <div class="w-countdown" role="timer" aria-live="off" aria-label="${escape(t('wCountdown'))}">${['wDays','wHours','wMinutes','wSeconds'].map((key,i)=>`<div><span class="w-count-number" data-w-count="${i}">00</span><span class="w-count-label">${copy(key)}</span></div>`).join('')}</div><p class="w-day-arrived" hidden>${copy('wDayArrived')}</p>
         <div class="w-venues">${venue(wedding.ceremony,true)}${venue(wedding.reception,false)}</div>
@@ -61,7 +62,7 @@ export function createWedding(root, wedding, { t, gsap, reducedMotion }) {
     </div>
   </div>`;
 
-  let active='detail', animation, countdownTimer;
+  let active='invitation', animation, countdownTimer;
   const panels = tabKeys.map(id=>root.querySelector(`#w-panel-${id}`));
   const tabs = tabKeys.map(id=>root.querySelector(`#w-tab-${id}`));
   const rsvp = createRSVP(root.querySelector('#w-rsvp-root'), {t,endpoint:wedding.rsvpEndpoint,gsap,reducedMotion});
@@ -69,9 +70,6 @@ export function createWedding(root, wedding, { t, gsap, reducedMotion }) {
 
   function selectTab(id, focusPanel=false) {
     if(!tabKeys.includes(id))return;
-    const invitation=root.querySelector('.w-invitation');
-    invitation.hidden=true;invitation.inert=true;
-    root.querySelector('.w-shell').hidden=false;root.querySelector('.w-shell').inert=false;
     animation?.kill();
     const previous=root.querySelector(`#w-panel-${active}`), next=root.querySelector(`#w-panel-${id}`);
     active=id;
@@ -126,12 +124,7 @@ export function createWedding(root, wedding, { t, gsap, reducedMotion }) {
   }
   return {
     refreshLanguage,
-    enter(){clearInterval(countdownTimer);refreshLanguage();updateCountdown();countdownTimer=setInterval(updateCountdown,1000);const invitation=root.querySelector('.w-invitation');
-      root.querySelector('.w-shell').hidden=true;root.querySelector('.w-shell').inert=true;
-      invitation.hidden=false;invitation.inert=false;invitation.scrollTop=0;
-      invitation.querySelector('h2').focus({preventScroll:true});
-      gsap.fromTo(invitation,{opacity:0,y:reducedMotion.matches?0:10},{opacity:1,y:0,duration:seconds(.75),ease:'power2.out'});
-    },
+    enter(){clearInterval(countdownTimer);refreshLanguage();updateCountdown();countdownTimer=setInterval(updateCountdown,1000);selectTab('invitation',true);root.querySelector('#w-panel-invitation').scrollTop=0;},
     leave(){clearInterval(countdownTimer);animation?.kill();panels.forEach(panel=>{panel.hidden=panel.id!==`w-panel-${active}`;panel.inert=panel.hidden;});gsap.set(panels,{opacity:1,y:0});}
   };
 }
