@@ -1,3 +1,4 @@
+import { monogram, names } from './brand-v3.js';
 import { gsap } from 'gsap';
 import config from './config-v3.js';
 import countries from './countries-v3.json';
@@ -1083,3 +1084,9 @@ $('pl-skip-btn').onclick = finishLoading;
 $('preloader-percentage').textContent = '50%';
 $('loading-ring').style.setProperty('--p','50%');
 finishLoading();
+
+// One monogram and one calligraphic name lockup, at every display size.
+document.querySelector('#header-home').innerHTML=monogram;
+document.querySelector('.preloader-monogram').innerHTML=monogram;
+const brandHero=document.querySelector('.title-layout h1');
+brandHero.classList.add('brand-names');brandHero.innerHTML=names;

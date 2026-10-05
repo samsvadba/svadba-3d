@@ -136,3 +136,20 @@ body[data-state="intro"] .nav-dot.active{background:#F2EBDD}
   .destination-video-caption h2{font-size:clamp(32px,3.3vw,60px);overflow-wrap:anywhere}
   #destination-video-next{max-width:calc((100vw - 56.25dvh)/2 - 10vw)}
 }
+
+/* Shared S&M monogram and original invitation calligraphy. */
+svg.brand-monogram{display:block;width:100%;height:100%;fill:currentColor;stroke:none;overflow:visible}
+.brand-initial{font-family:'Bodoni Moda',serif;font-size:105px;font-weight:400;letter-spacing:-5px}
+.brand-ampersand{font-family:'Cormorant Garamond',serif;font-size:39px;font-style:italic;font-weight:400}
+#header-home{width:65px;height:54px;padding:0;display:block}
+.preloader-monogram{display:block;width:102px;height:82px;margin:0 auto}
+.brand-names{display:block;width:min(100%,520px);margin-inline:auto;line-height:0}
+.brand-names-art{display:block;width:100%;aspect-ratio:3 / .94;background:url('https://samsvadba.github.io/svadba/assets/invite-wordmark.png') no-repeat 61.4% 42.5% / 123.8% auto;background-color:var(--paper);background-blend-mode:multiply}
+html[data-theme="dark"] .brand-names-art{background-color:#dfdde0;filter:invert(1)}
+.title-layout h1.brand-names{width:min(720px,100%);height:auto;font-size:inherit;margin:30px 0 38px;mix-blend-mode:screen}
+.title-layout h1.brand-names .brand-names-art{position:static;white-space:normal;background-color:white;filter:invert(1);margin:0}
+.title-layout h1.brand-names .sr-only{position:absolute;width:1px;height:1px;overflow:hidden}
+.w-monogram .brand-monogram{width:100%;height:100%}
+.w-detail-head h2.brand-names{margin:20px auto;width:min(100%,480px)}
+.w-signature.brand-names{width:min(100%,270px);margin:30px auto 0}
+@media(max-width:600px){#header-home{width:58px;height:47px}.title-layout h1.brand-names{margin:30px 0 36px}.w-detail-head h2.brand-names{width:100%}}

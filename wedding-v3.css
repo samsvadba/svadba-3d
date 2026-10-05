@@ -149,7 +149,6 @@ body[data-state="wedding"] #bottom-nav,body[data-state="wedding"] #utility-contr
 .w-invitation{height:100%;overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y;text-align:center;scrollbar-width:thin}
 .w-invitation-inner{min-height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:12px 12px 30px}
 .w-monogram{position:relative;width:146px;height:116px;flex:none;margin:0 auto 10px;color:var(--olive,var(--ink));font:400 99px/1 'Bodoni Moda',serif;letter-spacing:-.07em}
-.w-monogram span{position:absolute}.w-monogram span:first-child{left:8px;top:-6px}.w-monogram span:nth-child(2){font:400 38px/1 'Cormorant Garamond',serif;left:65px;top:34px;z-index:1}.w-monogram span:last-child{right:5px;bottom:0;font-size:86px}
 .w-invitation-names{font:400 clamp(36px,4vw,57px)/1.1 'Cormorant Garamond',serif;letter-spacing:-.025em;margin:0}
 .w-invitation-names>span{display:block}.w-invitation-names em{display:block;font:400 24px/1 Allura,cursive;margin:5px 0}
 .w-invitation-announcement{font:400 9px/1.9 'DM Sans',sans-serif;letter-spacing:.16em;text-transform:uppercase;margin:10px 0 0;opacity:.75;max-width:440px}
@@ -166,8 +165,6 @@ body[data-state="wedding"] #bottom-nav,body[data-state="wedding"] #utility-contr
 .w-monogram{color:#626950}html[data-theme="dark"] .w-monogram{color:#bcc3a5}
 
 .w-invitation-names{width:min(100%,520px);line-height:0;margin:0}
-.w-invitation-wordmark{display:block;width:100%;aspect-ratio:3 / .94;background:url("https://samsvadba.github.io/svadba/assets/invite-wordmark.png") no-repeat 61.4% 42.5% / 123.8% auto;background-color:var(--paper);background-blend-mode:multiply}
-html[data-theme="dark"] .w-invitation-wordmark{background-color:#dfdde0;filter:invert(1)}
 
 /* Keep the invitation within the shared tabs, with breathing room below S&M. */
 .w-panel.w-invitation{padding:20px 12px 28px}

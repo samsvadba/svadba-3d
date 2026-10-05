@@ -1,3 +1,4 @@
+import { monogram, names } from './brand-v3.js';
 import { createRSVP } from './rsvp-v3.js';
 import './wedding-v3.css';
 
@@ -22,8 +23,8 @@ export function createWedding(root, wedding, { t, gsap, reducedMotion }) {
   const venue = (item, ceremony) => `<article class="w-venue">${icon(ceremony?'church':'rings')}<p class="w-eyebrow">${copy(ceremony?'wCeremony':'wReception')}</p><h3>${escape(item.name)}</h3><p class="w-venue-time">${ceremony?escape(item.time):copy('wAfterCeremony')}</p><p class="w-address">${escape(item.address)}</p>${link(item.maps,'wMap')}</article>`;
   const invitationMarkup = `<section class="w-panel w-invitation" id="w-panel-invitation" role="tabpanel" aria-labelledby="w-tab-invitation" tabindex="0" aria-label="${escape(t('wInvitation'))}">
     <div class="w-invitation-inner">
-      <div class="w-monogram" aria-hidden="true"><span>S</span><span>&amp;</span><span>M</span></div>
-      <h2 tabindex="-1" class="w-invitation-names"><span class="sr-only">Simona Šarmírová ${copy('wAnd')} Martin Fabian</span><span class="w-invitation-wordmark" aria-hidden="true"></span></h2>
+      <div class="w-monogram" aria-hidden="true">${monogram}</div>
+      <h2 tabindex="-1" class="w-invitation-names brand-names">${names}</h2>
       <p class="w-invitation-announcement">${copy('wAnnounce')}<br>${copy('wSacrament')}</p>
       <div class="w-invitation-rule" aria-hidden="true"></div>
       <p class="w-invitation-date">${copy('wInvitationDate')}</p>
@@ -36,12 +37,12 @@ export function createWedding(root, wedding, { t, gsap, reducedMotion }) {
     <div class="w-tabs" role="tablist" aria-label="${escape(t('wTabs'))}">${tabKeys.map((id,i)=>`<button type="button" role="tab" id="w-tab-${id}" aria-controls="w-panel-${id}" aria-selected="${i===0}" tabindex="${i===0?0:-1}">${copy(labels[id])}</button>`).join('')}</div>
     <div class="w-pages">${invitationMarkup}
       <section class="w-panel" id="w-panel-detail" role="tabpanel" aria-labelledby="w-tab-detail" tabindex="0" hidden>
-        <div class="w-detail-head"><p class="w-eyebrow">${copy('wChapter')}</p><h2 tabindex="-1">Simona <em>&</em> Martin</h2><p class="w-date">30 · 04 · 2027</p><p class="w-intro">${copy('wWelcome')}</p></div>
+        <div class="w-detail-head"><p class="w-eyebrow">${copy('wChapter')}</p><h2 tabindex="-1" class="brand-names">${names}</h2><p class="w-date">30 · 04 · 2027</p><p class="w-intro">${copy('wWelcome')}</p></div>
         <div class="w-countdown" role="timer" aria-live="off" aria-label="${escape(t('wCountdown'))}">${['wDays','wHours','wMinutes','wSeconds'].map((key,i)=>`<div><span class="w-count-number" data-w-count="${i}">00</span><span class="w-count-label">${copy(key)}</span></div>`).join('')}</div><p class="w-day-arrived" hidden>${copy('wDayArrived')}</p>
         <div class="w-venues">${venue(wedding.ceremony,true)}${venue(wedding.reception,false)}</div>
         <div class="w-practical"><div><p class="w-eyebrow">${copy('wTransport')}</p><p>${copy('wTransportShort')}</p></div><div><p class="w-eyebrow">${copy('wLodging')}</p><p>${copy('wLodgingShort')}</p></div></div>
         <div class="w-detail-links">${jump('rsvp','wConfirm')}${jump('faq','wPractical')}</div>
-        <p class="w-signature">Simona & Martin</p>
+        <p class="w-signature brand-names">${names}</p>
       </section>
       <section class="w-panel" id="w-panel-program" role="tabpanel" aria-labelledby="w-tab-program" tabindex="0" hidden>
         ${heading('wProgram','wProgramTitle','wProgramIntro')}
@@ -57,7 +58,7 @@ export function createWedding(root, wedding, { t, gsap, reducedMotion }) {
       <section class="w-panel" id="w-panel-faq" role="tabpanel" aria-labelledby="w-tab-faq" tabindex="0" hidden>
         ${heading('wFaq','wFaqTitle','wFaqIntro')}
         <div class="w-faq">${wedding.faq.map((item,i)=>`<article><h3><button type="button" class="w-faq-toggle" id="w-question-${i}" aria-expanded="false" aria-controls="w-answer-${i}"><span class="w-faq-number">${String(i+1).padStart(2,'0')}</span>${copy(item.questionKey)}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M12 5v14"/></svg></button></h3><div class="w-faq-answer" id="w-answer-${i}" aria-labelledby="w-question-${i}" hidden><div><p>${copy(item.answerKey)}</p>${(item.links||[]).map(item=>link(item.url,item.labelKey)).join('')}${item.tab?jump(item.tab,'wConfirm'):''}</div></div></article>`).join('')}</div>
-        <p class="w-faq-signoff">${copy('wThanks')}<span class="w-signature">Simona & Martin</span></p>
+        <p class="w-faq-signoff">${copy('wThanks')}<span class="w-signature brand-names">${names}</span></p>
       </section>
     </div>
   </div>`;
