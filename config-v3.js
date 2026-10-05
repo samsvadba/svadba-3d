@@ -556,6 +556,14 @@ const config = {
   },
   "ui": {
     "sk": {
+      "wInvitation": "Svadobná pozvánka",
+      "wAnd": "a",
+      "wAnnounce": "S radosťou vám oznamujeme,",
+      "wSacrament": "že uzatvárame sviatosť manželstva",
+      "wInvitationDate": "30. apríla 2027",
+      "wInvitationPlace": "v Kostole sv. Jakuba v Trnave",
+      "wInvitationMeeting": "14:00 · stretnutie v Šúrovciach",
+      "wInformation": "Svadobné informácie",
       "story": "NÁŠ SPOLOČNÝ PRÍBEH",
       "navIntro": "ÚVOD",
       "navJourney": "CESTA",
@@ -737,6 +745,14 @@ const config = {
       "rsvpSubmissionFrame": "Odoslanie svadobnej odpovede"
     },
     "en": {
+      "wInvitation": "Wedding invitation",
+      "wAnd": "and",
+      "wAnnounce": "With joy, we announce",
+      "wSacrament": "that we will be united in the sacrament of marriage",
+      "wInvitationDate": "30 April 2027",
+      "wInvitationPlace": "at the Church of St. James in Trnava",
+      "wInvitationMeeting": "14:00 · gathering in Šúrovce",
+      "wInformation": "Wedding details",
       "story": "A JOURNEY OF US",
       "navIntro": "INTRO",
       "navJourney": "JOURNEY",

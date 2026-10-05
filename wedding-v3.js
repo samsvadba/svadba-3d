@@ -20,7 +20,18 @@ export function createWedding(root, wedding, { t, gsap, reducedMotion }) {
   const heading = (eyebrow, title, intro) => `<header class="w-panel-heading"><p class="w-eyebrow">${copy(eyebrow)}</p><h2 tabindex="-1">${copy(title)}</h2>${intro ? `<p class="w-intro">${copy(intro)}</p>` : ''}</header>`;
   const jump = (tab, key) => `<button class="w-link" type="button" data-wedding-tab="${tab}">${copy(key)}${arrow}</button>`;
   const venue = (item, ceremony) => `<article class="w-venue">${icon(ceremony?'church':'rings')}<p class="w-eyebrow">${copy(ceremony?'wCeremony':'wReception')}</p><h3>${escape(item.name)}</h3><p class="w-venue-time">${ceremony?escape(item.time):copy('wAfterCeremony')}</p><p class="w-address">${escape(item.address)}</p>${link(item.maps,'wMap')}</article>`;
-  root.innerHTML = `<div class="w-shell">
+  root.innerHTML = `<section class="w-invitation" aria-label="${escape(t('wInvitation'))}">
+    <div class="w-invitation-inner">
+      <div class="w-monogram" aria-hidden="true"><span>S</span><span>&amp;</span><span>M</span></div>
+      <h2 tabindex="-1" class="w-invitation-names"><span>Simona Šarmírová</span><em>${copy('wAnd')}</em><span>Martin Fabian</span></h2>
+      <p class="w-invitation-announcement">${copy('wAnnounce')}<br>${copy('wSacrament')}</p>
+      <div class="w-invitation-rule" aria-hidden="true"></div>
+      <p class="w-invitation-date">${copy('wInvitationDate')}</p>
+      <p class="w-invitation-place">${copy('wInvitationPlace')}</p>
+      <p class="w-invitation-meeting">${copy('wInvitationMeeting')}</p>
+      <div class="w-invitation-actions">${jump('rsvp','wConfirm')}${jump('detail','wInformation')}</div>
+    </div>
+  </section><div class="w-shell">
     <div class="w-tabs" role="tablist" aria-label="${escape(t('wTabs'))}">${tabKeys.map((id,i)=>`<button type="button" role="tab" id="w-tab-${id}" aria-controls="w-panel-${id}" aria-selected="${i===0}" tabindex="${i===0?0:-1}">${copy(labels[id])}</button>`).join('')}</div>
     <div class="w-pages">
       <section class="w-panel" id="w-panel-detail" role="tabpanel" aria-labelledby="w-tab-detail" tabindex="0">
@@ -58,6 +69,9 @@ export function createWedding(root, wedding, { t, gsap, reducedMotion }) {
 
   function selectTab(id, focusPanel=false) {
     if(!tabKeys.includes(id))return;
+    const invitation=root.querySelector('.w-invitation');
+    invitation.hidden=true;invitation.inert=true;
+    root.querySelector('.w-shell').hidden=false;root.querySelector('.w-shell').inert=false;
     animation?.kill();
     const previous=root.querySelector(`#w-panel-${active}`), next=root.querySelector(`#w-panel-${id}`);
     active=id;
@@ -104,6 +118,7 @@ export function createWedding(root, wedding, { t, gsap, reducedMotion }) {
   }
   function refreshLanguage() {
     root.setAttribute('aria-label',t('navWedding'));
+    root.querySelector('.w-invitation').setAttribute('aria-label',t('wInvitation'));
     root.querySelectorAll('[data-wedding-i18n]').forEach(element=>{element.textContent=t(element.dataset.weddingI18n);});
     root.querySelector('[role="tablist"]').setAttribute('aria-label',t('wTabs'));
     root.querySelector('[role="timer"]').setAttribute('aria-label',t('wCountdown'));
@@ -111,7 +126,12 @@ export function createWedding(root, wedding, { t, gsap, reducedMotion }) {
   }
   return {
     refreshLanguage,
-    enter(){clearInterval(countdownTimer);refreshLanguage();updateCountdown();countdownTimer=setInterval(updateCountdown,1000);selectTab(active,true);},
+    enter(){clearInterval(countdownTimer);refreshLanguage();updateCountdown();countdownTimer=setInterval(updateCountdown,1000);const invitation=root.querySelector('.w-invitation');
+      root.querySelector('.w-shell').hidden=true;root.querySelector('.w-shell').inert=true;
+      invitation.hidden=false;invitation.inert=false;invitation.scrollTop=0;
+      invitation.querySelector('h2').focus({preventScroll:true});
+      gsap.fromTo(invitation,{opacity:0,y:reducedMotion.matches?0:10},{opacity:1,y:0,duration:seconds(.75),ease:'power2.out'});
+    },
     leave(){clearInterval(countdownTimer);animation?.kill();panels.forEach(panel=>{panel.hidden=panel.id!==`w-panel-${active}`;panel.inert=panel.hidden;});gsap.set(panels,{opacity:1,y:0});}
   };
 }

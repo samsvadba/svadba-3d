@@ -144,3 +144,23 @@ body[data-state="wedding"] #bottom-nav,body[data-state="wedding"] #utility-contr
 }
 @media(max-height:580px){#wedding-scene{padding-top:65px;padding-bottom:calc(130px + env(safe-area-inset-bottom))}.w-tabs button{min-height:40px}.w-panel{padding-top:22px}.w-panel-heading{margin-bottom:24px}.w-panel-heading h2{font-size:36px}}
 @media(prefers-reduced-motion:reduce){#wedding-scene,.w-tabs button,.w-tabs button:after,.w-faq-toggle svg{transition:none}}
+
+/* Wedding opens as a quiet invitation before its practical pages. */
+.w-invitation{height:100%;overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y;text-align:center;scrollbar-width:thin}
+.w-invitation-inner{min-height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:12px 12px 30px}
+.w-monogram{position:relative;width:146px;height:116px;flex:none;margin:0 auto 22px;color:var(--olive,var(--ink));font:400 99px/1 'Bodoni Moda',serif;letter-spacing:-.07em}
+.w-monogram span{position:absolute}.w-monogram span:first-child{left:8px;top:-6px}.w-monogram span:nth-child(2){font:400 38px/1 'Cormorant Garamond',serif;left:65px;top:34px;z-index:1}.w-monogram span:last-child{right:5px;bottom:0;font-size:86px}
+.w-invitation-names{font:400 clamp(36px,4vw,57px)/1.1 'Cormorant Garamond',serif;letter-spacing:-.025em;margin:0}
+.w-invitation-names>span{display:block}.w-invitation-names em{display:block;font:400 24px/1 Allura,cursive;margin:5px 0}
+.w-invitation-announcement{font:400 9px/1.9 'DM Sans',sans-serif;letter-spacing:.16em;text-transform:uppercase;margin:24px 0 0;opacity:.75;max-width:440px}
+.w-invitation-rule{width:34px;height:1px;background:var(--line);margin:22px 0}
+.w-invitation-date{font:400 clamp(22px,2.5vw,30px)/1.3 'Cormorant Garamond',serif;letter-spacing:.12em}
+.w-invitation-place{font:400 12px/1.7 'Cormorant Garamond',serif;letter-spacing:.08em;margin:9px 0 0}
+.w-invitation-meeting{font:400 9px/1.7 'DM Sans',sans-serif;letter-spacing:.03em;opacity:.5;margin:8px 0 0}
+.w-invitation-actions{display:flex;gap:30px;justify-content:center;flex-wrap:wrap;margin-top:23px}
+.w-invitation-actions .w-link:last-child{opacity:.6}
+@media(max-width:600px){.w-invitation-inner{padding:8px 0 24px}.w-monogram{transform:scale(.85);margin:-6px auto 9px}.w-invitation-names{font-size:clamp(30px,8.5vw,40px)}.w-invitation-announcement{font-size:8px;letter-spacing:.09em;margin-top:20px}.w-invitation-rule{margin:17px 0}.w-invitation-actions{gap:4px 20px;margin-top:18px}.w-invitation-actions .w-link{font-size:8px;letter-spacing:.07em}}
+@media(max-height:740px){.w-invitation-inner{justify-content:flex-start}.w-monogram{height:96px;font-size:83px;margin-bottom:14px}.w-monogram span:last-child{font-size:74px}}
+
+.w-invitation-names:focus{outline:none}
+.w-monogram{color:#626950}html[data-theme="dark"] .w-monogram{color:#bcc3a5}
