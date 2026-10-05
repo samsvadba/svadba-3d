@@ -126,3 +126,13 @@ html[data-theme="dark"] .city-label.selected{border-color:#aeb3a2}
 body[data-state="intro"] .nav-progress{background:#F2EBDD66}
 body[data-state="intro"] .nav-dot{border-color:#F2EBDD;background:transparent}
 body[data-state="intro"] .nav-dot.active{background:#F2EBDD}
+
+/* Wide screens retain the entire portrait film, with a quiet still behind it. */
+@media(min-width:900px) and (min-aspect-ratio:4/3){
+  #destination-video-scene{background:#24231f}
+  #destination-video-scene::before{content:'';position:absolute;inset:-36px;background-image:var(--destination-backdrop,none);background-size:cover;background-position:center;filter:blur(26px);opacity:.38;pointer-events:none}
+  #destination-video{object-fit:contain}
+  .destination-video-caption{max-width:calc((100vw - 56.25dvh)/2 - 10vw)}
+  .destination-video-caption h2{font-size:clamp(32px,3.3vw,60px);overflow-wrap:anywhere}
+  #destination-video-next{max-width:calc((100vw - 56.25dvh)/2 - 10vw)}
+}

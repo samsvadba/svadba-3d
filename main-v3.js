@@ -41,6 +41,7 @@ const videoScene=$('destination-video-scene'), destinationVideo=$('destination-v
 
 function resetFullscreenVideo() {
   fullscreenVideo.timeline?.kill();
+  videoScene.style.removeProperty('--destination-backdrop');
   gsap.killTweensOf(destinationVideo);
   destinationVideo.pause();
   if(destinationVideo.hasAttribute('src')){
@@ -58,6 +59,16 @@ function resetFullscreenVideo() {
 }
 
 function prepareFullscreenVideo(loc) {
+  // A single small still fills wide screens; never decode a second video.
+  videoScene.style.removeProperty('--destination-backdrop');
+  if(window.matchMedia('(min-width: 900px) and (min-aspect-ratio: 4/3)').matches){
+    const source=new URL(loc.fullscreenVideo);
+    if(source.hostname==='res.cloudinary.com'&&source.pathname.includes('/video/upload/')){
+      const asset=source.pathname.split('/').pop();
+      const backdrop=source.origin+source.pathname.split('/video/upload/')[0]+'/video/upload/so_0,w_960,q_auto,f_jpg/'+asset;
+      videoScene.style.setProperty('--destination-backdrop', 'url("'+backdrop+'")');
+    }
+  }
   destinationVideo.muted=true;destinationVideo.defaultMuted=true;
   destinationVideo.src=loc.fullscreenVideo;destinationVideo.load();
   $('destination-video-title').textContent=cityName(loc);
