@@ -1089,4 +1089,4 @@ finishLoading();
 document.querySelector('#header-home').innerHTML=monogram;
 document.querySelector('.preloader-monogram').innerHTML=monogram;
 const brandHero=document.querySelector('.title-layout h1');
-brandHero.classList.add('brand-names');brandHero.innerHTML=names;
+brandHero.classList.add('brand-names');brandHero.innerHTML=names();
