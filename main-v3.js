@@ -4,6 +4,7 @@ import config from './config-v3.js';
 import countries from './countries-v3.json';
 import './style-v3.css';
 import { createWedding } from './wedding-v3.js';
+import { createOrigins } from './origins-v3.js';
 
 // Reference architecture: WeddingApp config, separate fullscreen screens,
 // interruptible GSAP section timelines, OrbitControls, flyToAndShow,
@@ -17,6 +18,7 @@ const base = import.meta.env.BASE_URL;
 const asset = (path) => `${base}${path}`;
 const screens = ['intro-overlay', 'journey-scene', 'transition-screen', 'final-transition-screen', 'wedding-scene'];
 let weddingChapter;
+let originMarkers;
 let state = 'loading', revision = 0, activeSectionTimeline, currentIndex = -1;
 let destinationReady=false, lastDestinationIndex=-1;
 let entranceActive=false, autoStoryPending=false, consumeStoryTap=false;
@@ -96,7 +98,7 @@ function playFullscreenVideo() {
 
 function openFullscreenVideo() {
   fullscreenVideo.active=true;
-  music.pause();$('utility-controls').inert=true;
+  syncMusic();$('utility-controls').inert=true;
   document.body.dataset.fullscreenVideo='true';
   videoScene.inert=false;videoScene.setAttribute('aria-hidden','false');
   $('app').inert=true;$('persistent-header').inert=true;$('bottom-nav').inert=true;
@@ -192,6 +194,7 @@ function unloadMedia() {
 }
 
 function killActiveSectionTransition() {
+  originMarkers?.reset();
   weddingChapter?.leave();
   clearTimeout(storyTimer);
   entranceActive=false;autoStoryPending=false;
@@ -455,6 +458,8 @@ async function ensureGlobeScene() {
       $('three-canvas').tabIndex=0;
       globeGroup = new THREE.Group();
       scene.add(globeGroup);
+      originMarkers=createOrigins($('journey-scene'),config.origins,{THREE,gsap,reducedMotion,radius:GLOBE_RADIUS+.17});
+      originMarkers.refreshLanguage(t('originLabel'));
       globeGroup.add(new THREE.Mesh(new THREE.SphereGeometry(GLOBE_RADIUS, 128, 96), (globeMaterial=new THREE.MeshBasicMaterial({color: 0xf5f4f0}))));
       wireMaterial=new THREE.LineBasicMaterial({color:0x8e918c,transparent:true,opacity:.08,depthWrite:false});
       const netSource=new THREE.IcosahedronGeometry(GLOBE_RADIUS,3);
@@ -622,6 +627,7 @@ function animate(time) {
     layer.line.visible=layer.material.opacity>.002;
   }
   updateGeographicLabels(dt);
+  originMarkers?.update(camera,globeGroup,view.width,view.height,state==='journey'&&!cameraMoving&&!entranceActive?Number(gsap.getProperty($('label-layer'),'opacity')):0,state==='journey'&&!cameraMoving);
   renderer.render(scene,camera);
   updateConnector();
 }
@@ -658,11 +664,12 @@ function updateGeographicLabels(dt) {
     item.alpha+=(alpha-item.alpha)*fade;
     if(!item.visible)item.alpha=Math.min(item.alpha,Math.max(0,item.facing)*5);
     const markerReveal=Number(gsap.getProperty($('label-layer'),'opacity'));
-    const markerAlpha=markerReveal*(item.visible?smoothstep(.012,.13,item.facing)*(selected?1:1-journeyMotion.focus*.92):0);
+    const homePulse=selected&&locations[item.index].key==='trnava'?(originMarkers?.highlight||0):0;
+    const markerAlpha=Math.max(markerReveal,homePulse)*(item.visible?smoothstep(.012,.13,item.facing)*(selected?1:1-journeyMotion.focus*.92):0);
     item.mesh.material.opacity=markerAlpha;item.mesh.visible=markerAlpha>.005;
     // Keep dark points small in screen space during the strong camera zoom.
     const markerDistance=worldPoint.distanceTo(camera.position);
-    const pixelSize=selected?3:2;
+    const pixelSize=selected?3+homePulse*.5:2;
     item.mesh.scale.setScalar(clamp(pixelSize*markerDistance*Math.tan(THREE.MathUtils.degToRad(camera.fov/2))/(view.height*.5*.13),.08,1.5));
     item.targetY=clamp(item.py-item.height/2,layout.minY,layout.maxY-item.height);
     const edge=item.side==='left'?cx-radius-18-item.width+dx*.12:cx+radius+18+dx*.12;
@@ -753,6 +760,7 @@ function flyToAndShow(index, travel=false) {
   loadGeographicDetail();
   setActiveNav('journey');
   const loc = locations[index];
+  if(storyActive&&loc.key==='trnava')originMarkers?.pulse(travel?2.05:1.5);
   updateDestinationNavigation();
   gsap.set($('journey-instruction'), { autoAlpha: 0 });
   markerData.forEach((item, i) => item.element.classList.toggle('selected', i === index));
@@ -931,18 +939,29 @@ function readPreference(key,fallback){try{return localStorage.getItem(key)||fall
 function savePreference(key,value){try{localStorage.setItem(key,value);}catch{}}
 const preferences={sound:readPreference('sm-sound','off')==='on',theme:readPreference('sm-theme','light')==='dark'?'dark':'light',language:readPreference('sm-language','sk')==='en'?'en':'sk'};
 const mood={value:preferences.theme==='dark'?1:0};
-const music=new Audio();music.loop=true;music.preload='none';
+const music=new Audio();music.loop=true;music.preload='none';music.crossOrigin='anonymous';music.volume=0;music.id='background-music';music.hidden=true;document.body.append(music);
+let musicContext,musicGain;
 let musicEligible=false,musicFailed=false,toastTimer;
-music.addEventListener('error',()=>{musicFailed=true;music.pause();});
+music.addEventListener('error',()=>{musicFailed=true;music.pause();preferences.sound=false;savePreference('sm-sound','off');applyLanguage();toast('musicUnavailable');});
 const t=key=>config.ui[preferences.language][key]||key;
 const localized=value=>typeof value==='object'?value?.[preferences.language]||value?.sk:value;
 const cityName=loc=>localized(loc.names)||loc.name;
 const countryText=loc=>preferences.language==='en'?(loc.countryEn||loc.subname):loc.subname;
 const memoryLocation=loc=>loc.special==='engagement'?`${t('engagement')} · ${loc.subname}`:preferences.language==='en'?(loc.descriptionEn||countryText(loc)):(loc.description||loc.subname);
 function syncMusic(){
-  if(!musicEligible||!preferences.sound||fullscreenVideo.active||document.hidden||musicFailed||!config.audio.backgroundMusic){music.pause();return;}
+  gsap.killTweensOf(musicGain?.gain||music);
+  if(!musicEligible||!preferences.sound||document.hidden||musicFailed||!config.audio.backgroundMusic){music.pause();return;}
+  // Reuse the same audio element; a gain stage also supports smooth ducking on iOS.
+  if(!musicContext){
+    const AudioContext=window.AudioContext||window.webkitAudioContext;
+    if(AudioContext){
+      try{musicContext=new AudioContext();musicGain=musicContext.createGain();musicGain.gain.value=0;musicContext.createMediaElementSource(music).connect(musicGain);musicGain.connect(musicContext.destination);music.volume=1;}catch{musicGain=null;music.volume=0;}
+    }
+  }
+  musicContext?.resume().catch(()=>{});
   if(!music.getAttribute('src'))music.src=/^(https?:|\/)/.test(config.audio.backgroundMusic)?config.audio.backgroundMusic:asset(config.audio.backgroundMusic);
   if(music.paused)music.play().catch(()=>{});
+  gsap.to(musicGain?.gain||music,{[musicGain?'value':'volume']:fullscreenVideo.active?.16:.45,duration:.8,ease:'sine.inOut'});
 }
 function toast(key){clearTimeout(toastTimer);$('utility-toast').dataset.key=key;$('utility-toast').textContent=t(key);$('utility-toast').hidden=false;toastTimer=setTimeout(()=>{$('utility-toast').hidden=true;},3200);}
 function applyGlobeTheme(){
@@ -961,6 +980,7 @@ function applyMood(animate=true){
   gsap.to(mood,{value:preferences.theme==='dark'?1:0,duration:animate?duration(.45):0,onUpdate:applyGlobeTheme});
 }
 function applyLanguage(){
+  originMarkers?.refreshLanguage(t('originLabel'));
   document.documentElement.lang=preferences.language;
   document.title='Simona & Martin — '+t('story');
   const text=(selector,key)=>document.querySelectorAll(selector).forEach(el=>{el.textContent=t(key);});
@@ -1009,7 +1029,7 @@ $('utility-sound').onclick=()=>{preferences.sound=!preferences.sound;musicEligib
 $('utility-gallery').onclick=()=>{if(config.gallery.url)window.open(config.gallery.url,'_blank','noopener,noreferrer');else toast('gallery');};
 $('utility-mood').onclick=()=>{preferences.theme=preferences.theme==='light'?'dark':'light';savePreference('sm-theme',preferences.theme);applyMood();};
 $('utility-language').onclick=()=>{preferences.language=preferences.language==='sk'?'en':'sk';savePreference('sm-language',preferences.language);applyLanguage();};
-document.addEventListener('click',event=>{if(event.target.closest('#next-btn,#nav-journey')){musicEligible=true;syncMusic();}},true);
+document.addEventListener('click',event=>{if(event.target.closest('#next-btn,#nav-journey,#nav-wedding,#story-play')){musicEligible=true;syncMusic();}},true);
 document.addEventListener('visibilitychange',syncMusic);
 
 createLabels();

@@ -1,4 +1,17 @@
 /* The third V3 chapter. Only its active page scrolls; global controls stay outside it. */
+.w-shell{position:relative}
+.w-invitation-time{font:400 12px/1.5 'DM Sans',sans-serif;letter-spacing:.08em;margin:8px 0}
+.w-scroll-hint{position:absolute;bottom:-26px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:9px;font:400 7px/1 'DM Sans',sans-serif;letter-spacing:.2em;opacity:0;pointer-events:none}
+.w-scroll-hint svg{width:10px;height:20px;fill:none;stroke:currentColor;stroke-width:1}
+.w-map-preview{display:block;overflow:hidden;margin:24px 0 5px;border:1px solid var(--line);background:var(--paper);color:var(--ink)}
+.w-map-preview svg{display:block;width:100%;height:auto;overflow:hidden}
+.w-map-buildings{fill:currentColor;opacity:.075}
+.w-map-minor,.w-map-roads{fill:none;stroke:currentColor;stroke-linejoin:round;stroke-linecap:round}
+.w-map-minor{stroke-width:1;opacity:.13}.w-map-roads{stroke-width:2.8;opacity:.28}
+.w-map-town{font:10px 'DM Sans',sans-serif;letter-spacing:2px;fill:currentColor;opacity:.6}
+.w-map-pin-halo{fill:var(--paper)}.w-map-pin{fill:currentColor}.w-map-pin-stem{stroke:currentColor;stroke-width:1}
+.w-map-credit{display:block;text-align:right;font:400 7px/1.5 'DM Sans',sans-serif;opacity:.45;margin-bottom:12px}
+.w-map-preview:focus-visible{outline:1px solid currentColor;outline-offset:4px}
 #wedding-scene{background:var(--paper);color:var(--ink);padding:max(104px,calc(env(safe-area-inset-top) + 86px)) 28px calc(142px + env(safe-area-inset-bottom));transition:background-color .45s,color .45s}
 .w-shell{height:100%;max-width:880px;margin:0 auto;display:flex;flex-direction:column;min-height:0}
 .w-tabs{flex:none;display:flex;justify-content:center;border-bottom:1px solid var(--line);gap:12px;padding:0 8px}

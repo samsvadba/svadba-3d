@@ -159,3 +159,13 @@ svg.brand-monogram{display:block;width:100%;height:100%;fill:currentColor;stroke
 html[data-theme="dark"]{--intro-ink:#000;--intro-muted:#0006}
 #intro-overlay{transition:color .45s}
 .title-layout h1.brand-names{color:inherit}
+.origin-layer{position:absolute;inset:0;pointer-events:none;visibility:hidden;z-index:4;color:#80434c}
+html[data-theme="dark"] .origin-layer{color:#c48b94}
+.origin-leaders{position:absolute;inset:0;width:100%;height:100%;fill:none;stroke:currentColor;stroke-width:.7}
+.origin-marker{position:absolute;left:0;top:0;width:44px;height:44px;padding:14px;pointer-events:none;opacity:0;color:inherit;background:none;border:0;touch-action:manipulation}
+.origin-marker>svg{display:block;width:16px;height:16px;fill:var(--paper);fill-opacity:.65;stroke:currentColor;stroke-width:1.3;transform:scale(var(--origin-pulse,1))}
+.origin-tooltip{position:absolute;bottom:42px;left:50%;transform:translate(-50%,4px);min-width:92px;padding:7px 10px;background:var(--paper);color:var(--ink);font:400 10px/1.5 'DM Sans',sans-serif;opacity:0;visibility:hidden;transition:opacity .2s,transform .2s;pointer-events:none;white-space:nowrap}
+.origin-tooltip strong{display:block;font-size:8px;font-weight:400;letter-spacing:.14em;text-transform:uppercase}
+.origin-tooltip>span{display:block;opacity:.6}
+.origin-marker:is(:hover,:focus-visible,[aria-expanded="true"]) .origin-tooltip{opacity:1;visibility:visible;transform:translate(-50%,0)}
+.origin-marker:focus-visible{outline:1px solid currentColor;outline-offset:-6px}

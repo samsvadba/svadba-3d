@@ -525,12 +525,20 @@ const config = {
         ]
       },
       {
-        "questionKey": "wFaqDressQ",
-        "answerKey": "wFaqDressA"
+        "questionKey": "wFaqArrivalQ",
+        "answerKey": "wFaqArrivalA"
       },
       {
-        "questionKey": "wFaqGiftsQ",
-        "answerKey": "wFaqGiftsA"
+        "questionKey": "wFaqPlusOneQ",
+        "answerKey": "wFaqPlusOneA"
+      },
+      {
+        "questionKey": "wFaqChildrenQ",
+        "answerKey": "wFaqChildrenA"
+      },
+      {
+        "questionKey": "wFaqDressQ",
+        "answerKey": "wFaqDressA"
       },
       {
         "questionKey": "wFaqDietQ",
@@ -538,9 +546,20 @@ const config = {
         "tab": "rsvp"
       },
       {
-        "questionKey": "wFaqRsvpQ",
-        "answerKey": "wFaqRsvpA",
-        "tab": "rsvp"
+        "questionKey": "wFaqPhotosQ",
+        "answerKey": "wFaqPhotosA"
+      },
+      {
+        "questionKey": "wFaqMenuQ",
+        "answerKey": "wFaqMenuA"
+      },
+      {
+        "questionKey": "wFaqDrinksQ",
+        "answerKey": "wFaqDrinksA"
+      },
+      {
+        "questionKey": "wFaqGiftsQ",
+        "answerKey": "wFaqGiftsA"
       },
       {
         "questionKey": "wFaqContactQ",
@@ -549,7 +568,7 @@ const config = {
     ]
   },
   "audio": {
-    "backgroundMusic": null
+    "backgroundMusic": "https://res.cloudinary.com/kxksv8hk/video/upload/v1791220008/tropical-sunset-stan-town-main-version-47825-02-12.mp3"
   },
   "gallery": {
     "url": null
@@ -563,7 +582,7 @@ const config = {
       "wSacrament": "že uzatvárame sviatosť manželstva",
       "wInvitationDate": "30. apríla 2027",
       "wInvitationPlace": "v Kostole sv. Jakuba v Trnave",
-      "wInvitationMeeting": "14:00 · stretnutie v Šúrovciach",
+      "wInvitationMeeting": "14:00 hod. · stretnutie v Šúrovciach",
       "wInformation": "Svadobné informácie",
       "story": "NÁŠ SPOLOČNÝ PRÍBEH",
       "navIntro": "ÚVOD",
@@ -605,8 +624,8 @@ const config = {
       "memory": "Spomienka",
       "of": "zo",
       "videoMemory": "Video spomienka.",
-      "final1": "A teraz,",
-      "final2": "Začína sa naše nové dobrodružstvo.",
+      "final1": "A teraz…",
+      "final2": "Začína naše nové dobrodružstvo…",
       "home": "Simona a Martin — späť na intro",
       "navigation": "Navigácia príbehu",
       "cities": "Mestá",
@@ -624,7 +643,7 @@ const config = {
       "wDetail": "DETAIL",
       "wProgram": "PROGRAM",
       "wMenu": "MENU",
-      "wRsvp": "RSVP",
+      "wRsvp": "PRE HOSTÍ",
       "wFaq": "FAQ",
       "wChapter": "NAŠA SVADBA",
       "wDate": "30. apríla 2027",
@@ -667,19 +686,19 @@ const config = {
       "wRsvpIntro": "Vaša odpoveď nám pomôže pripraviť náš spoločný deň.",
       "wFaqTitle": "Dobré vedieť",
       "wFaqIntro": "Malé odpovede na veľký deň.",
-      "wFaqCeremonyQ": "Kde a kedy sa koná obrad?",
+      "wFaqCeremonyQ": "Kde a kedy sa koná svadobný obrad?",
       "wFaqCeremonyA": "Svadobný obrad sa uskutoční 30. apríla 2027 o 15:00 v Kostole sv. Jakuba, Františkánska 1, 917 01 Trnava.",
-      "wFaqReceptionQ": "Kde budeme oslavovať?",
+      "wFaqReceptionQ": "Kde bude svadobná oslava?",
       "wFaqReceptionA": "Po obrade sa stretneme na svadobnej oslave v Penzióne Zemiansky dvor, Krakovská 67, 919 25 Šúrovce.",
-      "wFaqTransportQ": "Ako sa dostaneme na svadbu?",
+      "wFaqTransportQ": "Ako sa dostaneme na obrad a späť?",
       "wFaqTransportA": "O 14:00 sa stretneme v Šúrovciach. Autobus odchádza o 14:15 do Trnavy; presné miesto nástupu doplníme. Môžete prísť aj priamo pred Kostol sv. Jakuba. V RSVP nám, prosím, dajte vedieť, ktorú možnosť využijete. Po oslave autobus odvezie hostí späť do Šúroviec.",
-      "wFaqParkingQ": "Kde môžeme zaparkovať?",
+      "wFaqParkingQ": "Kde môžem zaparkovať?",
       "wFaqParkingA": "Parkovanie pri kostole nájdete na priloženej mape.",
       "wParking": "Parkovanie pri kostole",
-      "wFaqLodgingQ": "Je možné zostať na noc?",
+      "wFaqLodgingQ": "Je zabezpečené ubytovanie?",
       "wFaqLodgingA": "Penzión Zemiansky dvor ponúka 9 izieb priamo v areáli. Ak máte záujem o noc z 30. apríla na 1. mája 2027, dostupnosť a rezerváciu si overte priamo v penzióne. V RSVP uveďte počet osôb, ktoré majú o ubytovanie záujem; odpoveď v RSVP nenahrádza rezerváciu.",
       "wBooking": "Informácie a rezervácia",
-      "wFaqDressQ": "Čo si máme obliecť?",
+      "wFaqDressQ": "Aký je dress code?",
       "wFaqDressA": "Zvoľte si oblečenie, v ktorom sa budete cítiť slávnostne a pohodlne. Ďalšie odporúčania doplníme.",
       "wFaqGiftsQ": "Čo svadobné dary?",
       "wFaqGiftsA": "Najväčším darom pre nás bude, že tento deň oslávite spolu s nami. Ak by ste nás chceli obdarovať aj niečím navyše, veľmi nás poteší finančný príspevok do nášho spoločného začiatku.",
@@ -687,7 +706,7 @@ const config = {
       "wFaqDietA": "Vegetariánske, bezlepkové a ďalšie diétne požiadavky nám napíšte do RSVP. Kompletné svadobné menu ešte pripravujeme.",
       "wFaqRsvpQ": "Ako a dokedy potvrdiť účasť?",
       "wFaqRsvpA": "Vyplňte RSVP priamo tu na stránke. Uveďte mená hostí, účasť a prípadné požiadavky na dopravu, ubytovanie či stravu. Termín potvrdenia ešte doplníme.",
-      "wFaqContactQ": "Na koho sa obrátiť s ďalšími otázkami?",
+      "wFaqContactQ": "Koho kontaktovať, ak mám ďalšie otázky?",
       "wFaqContactA": "Budeme radi, keď sa ozvete. Kontaktné údaje a e-mail doplníme. Odkaz nám zatiaľ môžete nechať pri potvrdení účasti.",
       "wThanks": "Tešíme sa na vás.",
       "rsvpParticipation": "Účasť",
@@ -743,7 +762,22 @@ const config = {
       "rsvpSendError": "Odpoveď sa nepodarilo uložiť. Skontrolujte pripojenie a skúste to znova.",
       "rsvpUnconfirmed": "Potvrdenie uloženia zatiaľ neprišlo. Odpoveď mohla byť doručená; vaše údaje tu zostali. Pred opakovaným odoslaním si doručenie overte s nami, aby nevznikla duplicita.",
       "rsvpRetry": "Odoslať znovu",
-      "rsvpSubmissionFrame": "Odoslanie svadobnej odpovede"
+      "rsvpSubmissionFrame": "Odoslanie svadobnej odpovede",
+      "wInvitationTime": "15:00 hod.",
+      "musicUnavailable": "Hudbu sa nepodarilo načítať. Skúste to, prosím, neskôr.",
+      "originLabel": "Miesto, odkiaľ pochádzame",
+      "wFaqArrivalQ": "Ako skoro mám prísť?",
+      "wFaqArrivalA": "Stretnutie v Šúrovciach je o 14:00, autobus odchádza o 14:15. Obrad v Trnave sa začína o 15:00. Odporúčaný čas príchodu priamo ku kostolu ešte doplníme.",
+      "wFaqPlusOneQ": "Môžem si priniesť +1?",
+      "wFaqPlusOneA": "Informácie o sprievode ešte doplníme.",
+      "wFaqChildrenQ": "Sú deti vítané?",
+      "wFaqChildrenA": "Informácie o účasti detí ešte doplníme.",
+      "wFaqPhotosQ": "Môžeme počas svadby fotografovať a natáčať?",
+      "wFaqPhotosA": "Pokyny k fotografovaniu a natáčaniu počas svadby ešte doplníme. Po svadbe budete môcť pridať svoje fotografie do spoločnej galérie, ktorú sprístupníme cez ikonu galérie.",
+      "wFaqMenuQ": "Čo bude na menu?",
+      "wFaqMenuA": "Na detailoch nášho svadobného menu ešte pracujeme. Kompletné menu zverejníme čoskoro.",
+      "wFaqDrinksQ": "Budú zabezpečené nápoje a alkohol?",
+      "wFaqDrinksA": "Podrobnosti o nápojoch a alkohole ešte doplníme."
     },
     "en": {
       "wInvitation": "Wedding invitation",
@@ -795,8 +829,8 @@ const config = {
       "memory": "Memory",
       "of": "of",
       "videoMemory": "Video memory.",
-      "final1": "And now,",
-      "final2": "Our new adventure begins.",
+      "final1": "And now…",
+      "final2": "Our new adventure begins…",
       "home": "Simona and Martin — back to intro",
       "navigation": "Story navigation",
       "cities": "Cities",
@@ -814,7 +848,7 @@ const config = {
       "wDetail": "DETAIL",
       "wProgram": "TIMELINE",
       "wMenu": "MENU",
-      "wRsvp": "RSVP",
+      "wRsvp": "FOR GUESTS",
       "wFaq": "FAQ",
       "wChapter": "OUR WEDDING",
       "wDate": "April 30, 2027",
@@ -861,12 +895,12 @@ const config = {
       "wFaqCeremonyA": "Our wedding ceremony takes place on April 30, 2027 at 15:00 at Kostol sv. Jakuba, Františkánska 1, 917 01 Trnava.",
       "wFaqReceptionQ": "Where will we celebrate?",
       "wFaqReceptionA": "After the ceremony, join us for the celebration at Penzión Zemiansky dvor, Krakovská 67, 919 25 Šúrovce.",
-      "wFaqTransportQ": "How do we get to the wedding?",
+      "wFaqTransportQ": "How do we get to the ceremony and back?",
       "wFaqTransportA": "We will meet in Šúrovce at 14:00. The bus leaves for Trnava at 14:15; we will announce the exact boarding point. You can also come directly to Kostol sv. Jakuba. Please select your preference in the RSVP. After the celebration, the bus will take guests back to Šúrovce.",
-      "wFaqParkingQ": "Where can we park?",
+      "wFaqParkingQ": "Where can I park?",
       "wFaqParkingA": "Please see the linked map for parking near the church.",
       "wParking": "Parking near the church",
-      "wFaqLodgingQ": "Can we stay overnight?",
+      "wFaqLodgingQ": "Is accommodation available?",
       "wFaqLodgingA": "Penzión Zemiansky dvor has 9 rooms on site. For the night of April 30 to May 1, 2027, please check availability and book directly with the guesthouse. Include the number of people interested in accommodation in your RSVP; an RSVP does not make a room reservation.",
       "wBooking": "Information and booking",
       "wFaqDressQ": "What should we wear?",
@@ -877,7 +911,7 @@ const config = {
       "wFaqDietA": "Please tell us about vegetarian, gluten-free or other dietary requirements in your RSVP. We are still preparing the full wedding menu.",
       "wFaqRsvpQ": "How and when should we RSVP?",
       "wFaqRsvpA": "Use the RSVP here on this page. Include guest names, attendance and any transport, accommodation or dietary requirements. The reply deadline will be announced.",
-      "wFaqContactQ": "Who can I contact with other questions?",
+      "wFaqContactQ": "Who can I contact with further questions?",
       "wFaqContactA": "We would love to hear from you. Contact details and an email address will be added. For now, you can leave us a message in your RSVP.",
       "wThanks": "We cannot wait to see you.",
       "rsvpParticipation": "Attendance",
@@ -933,7 +967,22 @@ const config = {
       "rsvpSendError": "Your reply could not be saved. Please check your connection and try again.",
       "rsvpUnconfirmed": "We have not received a save confirmation yet. Your reply may have arrived; your details are still here. Please check with us before sending again to avoid a duplicate.",
       "rsvpRetry": "Send again",
-      "rsvpSubmissionFrame": "Wedding reply submission"
+      "rsvpSubmissionFrame": "Wedding reply submission",
+      "wInvitationTime": "15:00",
+      "musicUnavailable": "Music could not be loaded. Please try again later.",
+      "originLabel": "Where we come from",
+      "wFaqArrivalQ": "How early should I arrive?",
+      "wFaqArrivalA": "We gather in Šúrovce at 14:00 and the bus leaves at 14:15. The ceremony in Trnava starts at 15:00. We will add a recommended arrival time for guests travelling directly to the church.",
+      "wFaqPlusOneQ": "May I bring a plus-one?",
+      "wFaqPlusOneA": "We will share information about plus-ones soon.",
+      "wFaqChildrenQ": "Are children welcome?",
+      "wFaqChildrenA": "We will share information about children attending soon.",
+      "wFaqPhotosQ": "May we take photos and videos during the wedding?",
+      "wFaqPhotosA": "We will share guidance on photography and filming during the wedding soon. After the wedding, you will be able to add your photos to a shared gallery through the gallery icon.",
+      "wFaqMenuQ": "What will be on the menu?",
+      "wFaqMenuA": "We are still putting the finishing touches on our wedding menu. The full menu is coming soon.",
+      "wFaqDrinksQ": "Will drinks and alcohol be provided?",
+      "wFaqDrinksA": "We will share details about drinks and alcohol soon."
     }
   },
   "countryEnglish": {
@@ -944,6 +993,23 @@ const config = {
     "seoul": "South Korea",
     "beijing": "China",
     "sardinia": "Italy"
-  }
+  },
+  "origins": [
+    {
+      "name": "Hlohovec",
+      "person": "Martin",
+      "lat": 48.4278838,
+      "lon": 17.798782,
+      "source": "https://www.openstreetmap.org/node/26036344"
+    },
+    {
+      "name": "Cífer",
+      "person": "Simona",
+      "lat": 48.3151877,
+      "lon": 17.4902571,
+      "source": "https://www.openstreetmap.org/node/26036625"
+    }
+  ]
 };
+
 export default config;
