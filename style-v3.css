@@ -159,7 +159,7 @@ html[data-theme="dark"]{--intro-ink:#000;--intro-muted:#0006}
 html[data-palette="olive"]{
   --paper:var(--ivory);--ink:var(--olive);
   --line:var(--ink);--connector:var(--ink);--selected-border:var(--ink);
-  --origin:var(--ink);--empty-ink:var(--ink);--nav-track:var(--ink);--nav-border:var(--ink);
+  --empty-ink:var(--ink);--nav-track:var(--ink);--nav-border:var(--ink);
   --intro-ink:var(--paper);--intro-muted:var(--paper);--video-ink:var(--ink);
   --media-paper:var(--paper);--video-backdrop:var(--paper);--intro-paper:var(--paper);--embed-paper:var(--paper);
   --hover-paper:var(--ink);--hover-ink:var(--paper);
