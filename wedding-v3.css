@@ -1,6 +1,6 @@
 /* The third V3 chapter. Only its active page scrolls; global controls stay outside it. */
 .w-shell{position:relative}
-.w-invitation-date{display:flex;align-items:baseline;justify-content:center;gap:clamp(6px,1.2vw,12px);white-space:nowrap}
+.w-invitation-date{max-width:100%;flex-wrap:wrap;display:flex;align-items:baseline;justify-content:center;gap:clamp(6px,1.2vw,12px);white-space:nowrap}
 .w-invitation-time-separator{font:inherit;letter-spacing:0;opacity:.48}
 .w-scroll-hint{position:absolute;bottom:-26px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:9px;font:400 7px/1 'DM Sans',sans-serif;letter-spacing:.2em;opacity:0;pointer-events:none}
 .w-scroll-hint svg{width:10px;height:20px;fill:none;stroke:currentColor;stroke-width:1}
@@ -25,7 +25,7 @@
 .w-panel:focus{outline:none}.w-panel:focus-visible{outline:1px solid var(--line);outline-offset:-1px}
 .w-eyebrow{font:400 9px/1.5 'DM Sans',sans-serif;letter-spacing:.2em;text-transform:uppercase}
 .w-panel-heading{text-align:center;margin:6px auto 46px;max-width:550px}
-.w-panel-heading h2{font:400 clamp(39px,4.5vw,64px)/1.04 'Cormorant Garamond',serif;letter-spacing:-.025em;margin:14px 0 15px}
+.w-panel-heading h2{overflow-wrap:break-word;text-wrap:balance;font:400 clamp(39px,4.5vw,64px)/1.04 'Cormorant Garamond',serif;letter-spacing:-.025em;margin:14px 0 15px}
 .w-panel h2:focus{outline:none}
 .w-intro{font:400 12px/1.9 'DM Sans',sans-serif;opacity:.66;max-width:440px;margin:0 auto}
 .w-detail-head{text-align:center}
@@ -150,7 +150,7 @@ html[data-palette="olive"] .w-input:-webkit-autofill{-webkit-text-fill-color:var
   .w-panel-heading{margin:0 auto 33px}.w-panel-heading h2{font-size:40px;margin:12px 0}
   .w-intro{font-size:11px;max-width:295px;line-height:1.9}
   .w-detail-head h2{font-size:45px;margin:14px 0}.w-date{font-size:10px}
-  .w-countdown{margin:28px auto 34px}.w-countdown>div{min-width:66px;padding:0 13px}.w-count-number{font-size:42px}.w-count-label{font-size:7px;margin-top:10px}
+  .w-countdown{margin:28px auto 34px}.w-countdown>div{flex:1;min-width:0;padding:0 4px}.w-count-number{font-size:42px}.w-count-label{font-size:7px;margin-top:10px}
   .w-venues{grid-template-columns:1fr;padding:0;border-bottom:0}
   .w-venue{padding:30px 12px;border-bottom:1px solid var(--line)}.w-venue+.w-venue{border-left:0}
   .w-venue h3{font-size:31px}.w-venue .w-icon{margin-bottom:12px}.w-venue .w-address{max-width:none}
@@ -168,7 +168,7 @@ html[data-palette="olive"] .w-input:-webkit-autofill{-webkit-text-fill-color:var
 /* Invitation is the first page of the Wedding chapter. */
 .w-invitation{height:100%;overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y;text-align:center;scrollbar-width:thin}
 .w-invitation-inner{min-height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:12px 12px 30px}
-.w-monogram{position:relative;width:146px;height:116px;flex:none;margin:0 auto 10px;color:var(--olive,var(--ink));font:400 99px/1 'Bodoni Moda',serif;letter-spacing:-.07em}
+.w-monogram{position:relative;width:146px;height:116px;flex:none;margin:0 auto 10px;color:var(--ink);font:400 99px/1 'Bodoni Moda',serif;letter-spacing:-.07em}
 .w-invitation-names{font:400 clamp(36px,4vw,57px)/1.1 'Cormorant Garamond',serif;letter-spacing:-.025em;margin:0}
 .w-invitation-names>span{display:block}.w-invitation-names em{display:block;font:400 24px/1 Allura,cursive;margin:5px 0}
 .w-invitation-announcement{font:400 9px/1.9 'DM Sans',sans-serif;letter-spacing:.16em;text-transform:uppercase;margin:10px 0 0;opacity:.75;max-width:440px}

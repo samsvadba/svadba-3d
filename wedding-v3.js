@@ -65,18 +65,19 @@ export function createWedding(root, wedding, { t, gsap, reducedMotion }) {
     <div class="w-scroll-hint" aria-hidden="true">SCROLL<svg viewBox="0 0 16 24"><path d="M8 2v18m-4-4 4 4 4-4"/></svg></div>
   </div>`;
 
-  let active='invitation', animation, countdownTimer, hintTimer, entered=false;
+  let active='invitation', animation, countdownTimer, hintTimer, entered=false, hintVisible=false;
   const panels = tabKeys.map(id=>root.querySelector(`#w-panel-${id}`));
   const tabs = tabKeys.map(id=>root.querySelector(`#w-tab-${id}`));
   const rsvp = createRSVP(root.querySelector('#w-rsvp-root'), {t,endpoint:wedding.rsvpEndpoint,gsap,reducedMotion});
   const seconds = value => reducedMotion.matches ? 0 : value;
   const hint=root.querySelector('.w-scroll-hint');
-  function hideHint(){clearTimeout(hintTimer);gsap.to(hint,{opacity:0,duration:seconds(.2),overwrite:true});}
+  function hideHint(){clearTimeout(hintTimer);if(!hintVisible)return;hintVisible=false;gsap.to(hint,{opacity:0,duration:seconds(.2),overwrite:true});}
   function showHint(){
     hideHint();
     requestAnimationFrame(()=>{
       const panel=root.querySelector(`#w-panel-${active}`);
       if(!entered||panel.hidden||panel.scrollTop>2||panel.scrollHeight<=panel.clientHeight+2)return;
+      hintVisible=true;
       gsap.to(hint,{opacity:.55,duration:seconds(.35),overwrite:true});
       hintTimer=setTimeout(hideHint,2600);
     });
@@ -91,7 +92,7 @@ export function createWedding(root, wedding, { t, gsap, reducedMotion }) {
   }
 
   function selectTab(id, focusPanel=false) {
-    if(!tabKeys.includes(id))return;
+    if(!tabKeys.includes(id)||(!focusPanel&&id===active))return;
     hideHint();
     const invitationChildren=root.querySelector('.w-invitation-inner').children;
     gsap.killTweensOf(invitationChildren);

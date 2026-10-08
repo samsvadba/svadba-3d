@@ -944,6 +944,7 @@ function savePreference(key,value){try{localStorage.setItem(key,value);}catch{}}
 const preferences={sound:readPreference('sm-sound','off')==='on',theme:readPreference('sm-theme','light')==='dark'?'dark':'light',palette:readPreference('sm-palette','classic')==='olive'?'olive':'classic',language:readPreference('sm-language','sk')==='en'?'en':'sk'};
 const mood={value:preferences.theme==='dark'?1:0,palette:preferences.palette==='olive'?1:0};
 let oliveGlobeColors;
+const appliedGlobeTheme={material:null,value:null,palette:null,markers:0};
 const music=new Audio();music.loop=true;music.preload='none';music.crossOrigin='anonymous';music.volume=0;music.id='background-music';music.hidden=true;document.body.append(music);
 let musicContext,musicGain;
 let musicEligible=false,musicFailed=false,toastTimer;
@@ -971,6 +972,9 @@ function syncMusic(){
 function toast(key){clearTimeout(toastTimer);$('utility-toast').dataset.key=key;$('utility-toast').textContent=t(key);$('utility-toast').hidden=false;toastTimer=setTimeout(()=>{$('utility-toast').hidden=true;},3200);}
 function applyGlobeTheme(){
   if(!globeMaterial)return;
+  // Recolour only while the mood changes or geometry is newly created.
+  if(appliedGlobeTheme.material===globeMaterial&&appliedGlobeTheme.value===mood.value&&appliedGlobeTheme.palette===mood.palette&&appliedGlobeTheme.markers===markerData.length)return;
+  Object.assign(appliedGlobeTheme,{material:globeMaterial,value:mood.value,palette:mood.palette,markers:markerData.length});
   // Cache linear-space colours from the same CSS tokens used by the interface.
   if(!oliveGlobeColors){
     const css=getComputedStyle(document.documentElement);
