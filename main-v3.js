@@ -987,14 +987,20 @@ function applyGlobeTheme(){
   wireMaterial.color.lerp(oliveGlobeColors.ink,mood.palette);
   for(const item of markerData)item.mesh?.material.color.setRGB(.019*(1-n)+.84*n,.02*(1-n)+.81*n,.018*(1-n)+.72*n).lerp(oliveGlobeColors.ink,mood.palette);
 }
+function nextThemeFor(palette){return preferences.palette===palette&&preferences.theme==='dark'?'light':'dark';}
+function themeControlLabel(palette){return t(palette==='olive'?(nextThemeFor(palette)==='dark'?'paletteOlive':'paletteIvory'):(nextThemeFor(palette)==='dark'?'classicDark':'classicLight'));}
+function selectThemePair(palette){
+  preferences.theme=nextThemeFor(palette);preferences.palette=palette;
+  savePreference('sm-theme',preferences.theme);savePreference('sm-palette',palette);applyMood();
+}
 function applyMood(animate=true){
   document.documentElement.dataset.theme=preferences.theme;
   document.documentElement.dataset.palette=preferences.palette;
-  $('utility-mood').setAttribute('aria-pressed',String(preferences.theme==='dark'));
-  $('utility-mood').setAttribute('aria-label',t(preferences.theme==='dark'?'light':'dark'));
+  $('utility-mood').setAttribute('aria-pressed',String(preferences.palette==='classic'&&preferences.theme==='dark'));
+  $('utility-mood').setAttribute('aria-label',themeControlLabel('classic'));
   $('utility-mood').title=$('utility-mood').getAttribute('aria-label');
   $('utility-palette').setAttribute('aria-pressed',String(preferences.palette==='olive'));
-  $('utility-palette').setAttribute('aria-label',t(preferences.palette==='olive'?'paletteClassic':'paletteOlive'));
+  $('utility-palette').setAttribute('aria-label',themeControlLabel('olive'));
   $('utility-palette').title=$('utility-palette').getAttribute('aria-label');
   document.querySelector('meta[name="theme-color"]')?.setAttribute('content',getComputedStyle(document.documentElement).getPropertyValue('--paper').trim());
   gsap.to(mood,{value:preferences.theme==='dark'?1:0,palette:preferences.palette==='olive'?1:0,duration:animate?duration(.5):0,overwrite:true,onUpdate:applyGlobeTheme});
@@ -1032,8 +1038,8 @@ function applyLanguage(){
   const status=$('destination-video-status');
   for(const key of ['videoLoading','videoTap','videoError'])if(Object.values(config.ui).some(d=>d[key]===status.textContent)){status.textContent=t(key);break;}
   $('utility-language').textContent=preferences.language.toUpperCase();attr('utility-language','language');attr('utility-gallery','photos');attr('utility-controls','controls');
-  $('utility-sound').setAttribute('aria-pressed',String(preferences.sound));attr('utility-sound',preferences.sound?'soundOn':'soundOff');attr('utility-mood',preferences.theme==='dark'?'light':'dark');
-  attr('utility-palette',preferences.palette==='olive'?'paletteClassic':'paletteOlive');
+  $('utility-sound').setAttribute('aria-pressed',String(preferences.sound));attr('utility-sound',preferences.sound?'soundOn':'soundOff');$('utility-mood').setAttribute('aria-label',themeControlLabel('classic'));
+  $('utility-palette').setAttribute('aria-label',themeControlLabel('olive'));
   if(!$('utility-toast').hidden)$('utility-toast').textContent=t($('utility-toast').dataset.key);
   $('journey-scene').setAttribute('aria-label','Journey — '+t('journey1'));
   $('transition-screen').setAttribute('aria-label',t('prepare'));
@@ -1048,8 +1054,8 @@ function applyLanguage(){
 }
 $('utility-sound').onclick=()=>{preferences.sound=!preferences.sound;musicEligible=true;savePreference('sm-sound',preferences.sound?'on':'off');applyLanguage();syncMusic();if(!config.audio.backgroundMusic)toast('noMusic');};
 $('utility-gallery').onclick=()=>{if(config.gallery.url)window.open(config.gallery.url,'_blank','noopener,noreferrer');else toast('gallery');};
-$('utility-mood').onclick=()=>{preferences.theme=preferences.theme==='light'?'dark':'light';savePreference('sm-theme',preferences.theme);applyMood();};
-$('utility-palette').onclick=()=>{preferences.palette=preferences.palette==='classic'?'olive':'classic';savePreference('sm-palette',preferences.palette);applyMood();};
+$('utility-mood').onclick=()=>selectThemePair('classic');
+$('utility-palette').onclick=()=>selectThemePair('olive');
 $('utility-language').onclick=()=>{preferences.language=preferences.language==='sk'?'en':'sk';savePreference('sm-language',preferences.language);applyLanguage();};
 document.addEventListener('click',event=>{if(event.target.closest('#next-btn,#nav-journey,#nav-wedding,#story-play')){musicEligible=true;syncMusic();}},true);
 document.addEventListener('visibilitychange',syncMusic);

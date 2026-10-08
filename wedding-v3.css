@@ -33,11 +33,11 @@
 .w-detail-head h2 em{font:400 .85em Allura,cursive;padding:0 .13em}
 .w-date{font:400 12px/1.5 'DM Sans',sans-serif;letter-spacing:.24em;margin:16px 0}
 .w-detail-head .w-intro{max-width:410px}
-.w-countdown{display:flex;justify-content:center;gap:0;margin:32px auto 45px;font-variant-numeric:tabular-nums}
+.w-countdown{color:var(--ink);display:flex;justify-content:center;gap:0;margin:32px auto 45px;font-variant-numeric:tabular-nums}
 .w-countdown>div{position:relative;min-width:88px;text-align:center;padding:0 18px}
 .w-countdown>div+div:before{content:':';position:absolute;left:-2px;top:12px;font:300 23px 'Cormorant Garamond',serif;opacity:.3}
-.w-count-number{display:block;font:400 clamp(41px,5.5vw,64px)/1 'Cormorant Garamond',serif;letter-spacing:-.045em}
-.w-count-label{display:block;font:400 8px/1.5 'DM Sans',sans-serif;letter-spacing:.13em;margin-top:12px;opacity:.55}
+.w-count-number{color:var(--ink);display:block;font:400 clamp(41px,5.5vw,64px)/1 'Cormorant Garamond',serif;letter-spacing:-.045em}
+.w-count-label{color:var(--ink);display:block;font:400 8px/1.5 'DM Sans',sans-serif;letter-spacing:.13em;margin-top:12px;opacity:.55}
 .w-day-arrived{text-align:center;font:italic 30px 'Cormorant Garamond',serif;margin:30px}
 .w-venues{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:32px 0}
 .w-venue{text-align:center;padding:0 24px}
