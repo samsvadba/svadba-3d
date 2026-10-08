@@ -20,6 +20,8 @@
 @media(max-height:550px){.city-label .city-name{font-size:21px}.city-label{padding:3px 0}.city-label .city-subname{margin-top:3px;font-size:6px}.city-label:after{margin-top:3px}}
 
 /* Journey-only geographic overlay. Positions are projected each frame. */
+#globe-surface{position:absolute;inset:0;touch-action:none;user-select:none;-webkit-user-select:none}
+#globe-surface .city-label,#globe-surface .origin-marker{touch-action:none}
 #label-layer{z-index:4}
 #label-layer .city-label{left:0;right:auto;top:0;min-width:96px;max-width:165px;min-height:34px;padding:9px 14px;text-align:center;background:var(--paper);border:1px solid var(--line);will-change:transform,opacity;visibility:hidden;opacity:0;transition:none}
 #label-layer .city-label .city-name{font:500 10px/1.4 'DM Sans',sans-serif;letter-spacing:.11em;text-transform:uppercase;white-space:nowrap}
@@ -107,7 +109,7 @@ body[data-state="loading"] #utility-controls,body[data-fullscreen-video] #utilit
 #video-skip-btn{flex-basis:100%;width:100%;margin-top:10px}
 #label-layer .city-label .city-name{white-space:normal;overflow-wrap:normal}
 #label-layer.fallback-list{inset:110px 20px 180px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;align-content:start;overflow:auto;pointer-events:auto;touch-action:pan-y;overscroll-behavior:contain}
-#label-layer.fallback-list .city-label{position:relative;width:100%;max-width:none;min-width:0;min-height:44px}
+#label-layer.fallback-list .city-label{position:relative;width:100%;max-width:none;min-width:0;min-height:44px;touch-action:pan-y}
 @media(max-height:580px){#destination-video-highlight{margin-top:8px}.destination-video-caption h2{font-size:32px}#destination-video-progress{margin-bottom:6px}}
 /* Reserve room for the new story link above the persistent chapter navigation. */
 .journey-modal-media{height:min(34dvh,340px)}

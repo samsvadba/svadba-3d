@@ -5,6 +5,7 @@ import countries from './countries-v3.json';
 import './style-v3.css';
 import { createWedding } from './wedding-v3.js';
 import { createOrigins } from './origins-v3.js';
+import { bindGlobeInput } from './globe-input-v3.js';
 
 // Reference architecture: WeddingApp config, separate fullscreen screens,
 // interruptible GSAP section timelines, OrbitControls, flyToAndShow,
@@ -21,16 +22,18 @@ let weddingChapter;
 let originMarkers;
 let state = 'loading', revision = 0, activeSectionTimeline, currentIndex = -1;
 let destinationReady=false, lastDestinationIndex=-1;
-let entranceActive=false, autoStoryPending=false, consumeStoryTap=false;
+let entranceActive=false, autoStoryPending=false;
 let storyCycleEnd=-1;
 let storyActive=false, storyIndex=0, storyStarted=false, storyTimer, queuedDestination=null;
 let globeInitPromise, THREE, scene, camera, renderer, controls, globeGroup;
-let cameraMoving = false, hoveredIndex = -1, pointerDown;
+let cameraMoving = false, hoveredIndex = -1;
+const globeSurface = $('globe-surface');
 const visited = new Set(), markerData = [];
 const framing = { x: 0, y: 0 };
 const connector = $('memory-connector');
 const view = { width: 0, height: 0 };
 const journeyMotion = { focus: 0, spin: 0 };
+const entranceSweep = Math.PI * 1.65;
 let globeFlight, lastFrame = 0, idleSince = 0, dragging = false, layoutDirty = true;
 let globeMaterial, overviewMaterial, wireMaterial, detailPromise, detailReady = 0;
 const detailLayers = [];
@@ -293,9 +296,15 @@ async function playJourneyTransition() {
   showScreen('journey-scene', false);
   gsap.set([$ ('label-layer'), $('city-connectors'), $('journey-instruction')], { autoAlpha: 0 });
   if (camera) {
-    const start = latLonToVec3(30, reducedMotion.matches?15:-105, overviewDistance() * 1.25);
+    const start = latLonToVec3(30, 15, overviewDistance());
+    if (!reducedMotion.matches) {
+      const orbit = new THREE.Spherical().setFromVector3(start);
+      orbit.theta += entranceSweep; orbit.radius *= 1.3;
+      start.setFromSpherical(orbit);
+    }
     camera.position.copy(start);
-    controls.autoRotate = false;
+    camera.lookAt(0,0,0);
+    controls.autoRotate = false; controls.enabled = false; cameraMoving = true;
   }
   const tl = gsap.timeline();
   activeSectionTimeline = tl;
@@ -307,17 +316,17 @@ async function playJourneyTransition() {
       $('transition-screen').setAttribute('aria-hidden', 'true');
       showScreen('journey-scene');
       setState('journey');entranceActive=true;
-      flyCamera(30,15,overviewDistance(),2.6,()=>{
+      flyCamera(30,15,overviewDistance(),3,()=>{
         entranceActive=false;
         if(request!==revision)return;
         activeSectionTimeline=gsap.timeline()
           .to([$ ('label-layer'),$('city-connectors'),$('journey-instruction')],{autoAlpha:1,duration:duration(.7)})
           .to({}, {duration:2})
           .call(()=>{if(request===revision&&autoStoryPending){autoStoryPending=false;startStory();}});
-      });
+      },false,true);
       announce(t('storyHint'));toast('storyHint');
     })
-    .to({}, {duration:duration(2.6)});
+    .to({}, {duration:duration(3)});
 }
 
 function playWeddingTransition() {
@@ -356,7 +365,7 @@ function latLonToVec3(lat, lon, radius) {
 function overviewDistance() { return Math.max(60, 51 / (innerWidth / innerHeight)); }
 function memoryDistance() { return mobile() ? 18 : 15.8; }
 
-function flyCamera(lat, lon, distance, seconds, onComplete, travel=false) {
+function flyCamera(lat, lon, distance, seconds, onComplete, travel=false, entrance=false) {
   if (!camera) { onComplete?.(); return; }
   globeFlight?.kill();
   gsap.killTweensOf(camera.position);
@@ -373,10 +382,18 @@ function flyCamera(lat, lon, distance, seconds, onComplete, travel=false) {
   const identity = new THREE.Quaternion(), step = new THREE.Quaternion();
   const direction = new THREE.Vector3();
   const flight = { turn:0, radius:camera.position.length() };
+  const overviewAtStart=overviewDistance(), overviewFlight=distance===overviewAtStart;
+  // A broad entrance orbit accelerates then settles; geography stays fixed.
+  const entry = entrance ? new THREE.Spherical().setFromVector3(end) : null;
+  if (entry && !reducedMotion.matches) flight.radius = distance * 1.3;
   const update = () => {
-    step.copy(identity).slerp(rotation,flight.turn);
-    direction.copy(start).applyQuaternion(step);
-    camera.position.copy(direction).multiplyScalar(Math.max(GLOBE_RADIUS+2.5,flight.radius));
+    if (entry) direction.setFromSphericalCoords(1, entry.phi, entry.theta + entranceSweep * (1-flight.turn));
+    else {
+      step.copy(identity).slerp(rotation,flight.turn);
+      direction.copy(start).applyQuaternion(step);
+    }
+    const radius=flight.radius*(overviewFlight?overviewDistance()/overviewAtStart:1);
+    camera.position.copy(direction).multiplyScalar(Math.max(GLOBE_RADIUS+2.5,radius));
     camera.lookAt(0,0,0);
   };
   const complete = () => {
@@ -390,6 +407,7 @@ function flyCamera(lat, lon, distance, seconds, onComplete, travel=false) {
   if (reducedMotion.matches || seconds===0) {
     flight.turn=1; flight.radius=distance; update(); complete(); return;
   }
+  if (entry) update();
   globeFlight=gsap.timeline({onUpdate:update,onComplete:complete});
   if(travel){
     const startRadius=flight.radius, peak=Math.max(overviewDistance()*.78,startRadius,distance);
@@ -441,18 +459,18 @@ async function ensureGlobeScene() {
       renderer = new THREE.WebGLRenderer({ canvas: $('three-canvas'), antialias: true, alpha: true, powerPreference: 'low-power' });
       renderer.setPixelRatio(Math.min(devicePixelRatio, mobile() ? 1.5 : 2));
       renderer.setSize(innerWidth, innerHeight);
-      controls = new orbit.OrbitControls(camera, renderer.domElement);
+      controls = new orbit.OrbitControls(camera, globeSurface);
       controls.enableDamping = true;
       controls.enablePan = false;
       controls.enableZoom = true;
-      controls.zoomSpeed = .7;
+      controls.zoomSpeed = 1;
       controls.minDistance = GLOBE_RADIUS * 1.25;
       controls.maxDistance = overviewDistance() * 1.3;
       controls.touches.ONE = THREE.TOUCH.ROTATE;
-      controls.touches.TWO = THREE.TOUCH.DOLLY_ROTATE;
+      controls.touches.TWO = THREE.TOUCH.DOLLY_PAN;
       controls.autoRotateSpeed = 0;
-      controls.dampingFactor = .075;
-      controls.rotateSpeed = mobile() ? .5 : .65;
+      controls.dampingFactor = .05;
+      controls.rotateSpeed = 1;
       controls.addEventListener('start',()=>{dragging=true;journeyMotion.spin=0;controls.autoRotate=false;});
       controls.addEventListener('end',()=>{dragging=false;idleSince=performance.now()+900;});
       worldPoint=new THREE.Vector3(); projectedPoint=new THREE.Vector3();
@@ -460,7 +478,7 @@ async function ensureGlobeScene() {
       $('three-canvas').tabIndex=0;
       globeGroup = new THREE.Group();
       scene.add(globeGroup);
-      originMarkers=createOrigins($('journey-scene'),config.origins,{THREE,gsap,reducedMotion,radius:GLOBE_RADIUS+.17});
+      originMarkers=createOrigins(globeSurface,config.origins,{THREE,gsap,reducedMotion,radius:GLOBE_RADIUS+.17});
       originMarkers.refreshLanguage(t('originLabel'));
       globeGroup.add(new THREE.Mesh(new THREE.SphereGeometry(GLOBE_RADIUS, 128, 96), (globeMaterial=new THREE.MeshBasicMaterial({color: 0xf5f4f0}))));
       wireMaterial=new THREE.LineBasicMaterial({color:0x8e918c,transparent:true,opacity:.08,depthWrite:false});
@@ -500,7 +518,7 @@ async function ensureGlobeScene() {
         connector.style.visibility = 'hidden';
         showFallbackLabels();
       });
-      $('three-canvas').addEventListener('webglcontextrestored', () => { $('globe-fallback').hidden = true; $('label-layer').classList.remove('fallback-list'); layoutDirty=true; });
+      $('three-canvas').addEventListener('webglcontextrestored', () => { $('globe-fallback').hidden = true; globeSurface.style.touchAction='none'; controls.enabled=state==='journey'&&!cameraMoving; $('label-layer').classList.remove('fallback-list'); layoutDirty=true; });
       renderer.setAnimationLoop(animate);
     } catch (error) {
       console.warn('Globe unavailable:', error.message);
@@ -568,6 +586,8 @@ function measureJourneyLayout() {
 
 function showFallbackLabels() {
   if($('globe-fallback').hidden)return;
+  globeSurface.style.touchAction='pan-y';
+  if(controls)controls.enabled=false;
   $('label-layer').classList.add('fallback-list');
   markerData.forEach(item=>{
     item.element.style.transform='none';item.element.style.opacity='1';item.element.style.visibility='visible';
@@ -924,19 +944,28 @@ $('story-play').onclick=()=>{if(storyActive){pauseStory();if(state==='memory')cl
 videoScene.addEventListener('click',event=>{
   if(storyActive&&!event.target.closest('button,a')){pauseStory();closeFullscreenVideo();}
 });
-let storyPointer=null;
-$('three-canvas').addEventListener('pointerdown',event=>{
-  if(!storyActive&&!entranceActive&&!autoStoryPending)return;
-  consumeStoryTap=true;interruptStoryGesture();
-  if(storyPointer){interruptStoryGesture();return;}
-  storyPointer={x:event.clientX,y:event.clientY};
-  if(controls)controls.enabled=true;
-},true);
-$('three-canvas').addEventListener('pointermove',event=>{
-  if(storyPointer&&Math.hypot(event.clientX-storyPointer.x,event.clientY-storyPointer.y)>6)interruptStoryGesture();
-},true);
-for(const type of ['pointerup','pointercancel'])$('three-canvas').addEventListener(type,()=>{storyPointer=null;if(consumeStoryTap){pointerDown=null;consumeStoryTap=false;}if(cameraMoving&&controls)controls.enabled=false;},true);
-$('three-canvas').addEventListener('wheel',interruptStoryGesture,{capture:true,passive:true});
+bindGlobeInput(globeSurface, {
+  canInteract: () => camera && $('globe-fallback').hidden && !fullscreenVideo.active &&
+    (state==='journey' || (storyActive && state==='memory' && !destinationReady)),
+  canTap: () => state==='journey' && !cameraMoving && !entranceActive,
+  onInteract: () => {
+    interruptStoryGesture();
+    if(state==='journey' && !cameraMoving) controls.enabled=true;
+    journeyMotion.spin=0; controls.autoRotate=false; idleSince=performance.now()+900;
+  },
+  onTap: (target,x,y) => {
+    if(target) { target.click(); return; }
+    let closest=-1, distance=15;
+    markerData.forEach((item,index)=>{
+      const world=item.mesh.getWorldPosition(worldPoint);
+      if(surfaceNormal.copy(world).normalize().dot(cameraDirection.copy(camera.position).sub(world).normalize())<.02)return;
+      const p=world.project(camera);
+      const delta=Math.hypot((p.x+1)*innerWidth/2-x,(1-p.y)*innerHeight/2-y);
+      if(delta<distance){closest=index;distance=delta;}
+    });
+    if(closest>=0)flyToAndShow(closest);
+  }
+});
 
 // Independent, persistent utility preferences; audio is never loaded without a source.
 function readPreference(key,fallback){try{return localStorage.getItem(key)||fallback;}catch{return fallback;}}
@@ -1074,39 +1103,35 @@ $('video-stop-btn').onclick = ()=>{pauseStory();closeModal();};
 $('video-skip-btn').onclick = nextMemory;
 $('destination-video-next').onclick = event => { event.stopPropagation(); nextMemory(); };
 document.addEventListener('keydown', event => { if (event.key === 'Escape'){pauseStory();closeModal();} });
-$('three-canvas').addEventListener('pointerdown', event => { pointerDown = event.isPrimary ? {x:event.clientX,y:event.clientY} : null; });
-$('three-canvas').addEventListener('pointerup', event => {
-  if (state !== 'journey' || cameraMoving || !camera || !pointerDown || Math.hypot(event.clientX-pointerDown.x,event.clientY-pointerDown.y)>6) return;
-  let closest = -1, distance = 15;
-  markerData.forEach((item,index) => {
-    const world = item.mesh.getWorldPosition(worldPoint);
-    if (surfaceNormal.copy(world).normalize().dot(cameraDirection.copy(camera.position).sub(world).normalize()) < .02) return;
-    const p = world.project(camera);
-    const delta = Math.hypot((p.x+1)*innerWidth/2-event.clientX,(1-p.y)*innerHeight/2-event.clientY);
-    if (delta < distance) {closest=index;distance=delta;}
-  });
-  if (closest >= 0) flyToAndShow(closest);
-});
+let previousOverview=overviewDistance();
 window.addEventListener('resize', () => {
   layoutDirty=true;
+  const nextOverview=overviewDistance(), zoomRatio=nextOverview/previousOverview;
+  previousOverview=nextOverview;
   if (!camera) {showFallbackLabels();return;}
-  controls.maxDistance=overviewDistance()*1.3;
+  controls.maxDistance=nextOverview*1.3;
   if (state === 'memory') {
     gsap.killTweensOf(framing);
     framing.x = mobile() ? 0 : .22; framing.y = mobile() ? .29 : 0;
     const loc = locations[currentIndex];
     if (!cameraMoving) flyCamera(loc.lat,loc.lon,memoryDistance(),0);
-  } else if (state === 'journey' && !cameraMoving) camera.position.normalize().multiplyScalar(overviewDistance());
+  } else if (state === 'journey' && !cameraMoving) {
+    // Safari toolbar/viewport changes preserve the user's relative zoom.
+    const distance=clamp(camera.position.length()*zoomRatio,controls.minDistance,controls.maxDistance);
+    camera.position.setLength(distance);
+  }
 });
 reducedMotion.addEventListener('change', () => {
   if (controls) controls.autoRotate=state==='journey'&&!reducedMotion.matches;
   journeyMotion.spin=0;
   if(reducedMotion.matches && globeFlight) globeFlight.progress(1);
 });
-$('three-canvas').addEventListener('pointercancel',()=>{pointerDown=null;dragging=false;idleSince=performance.now()+900;});
 $('three-canvas').addEventListener('keydown',event=>{
-  if(state!=='journey'||cameraMoving||!camera||!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(event.key))return;
+  if(state!=='journey'||!camera||!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(event.key))return;
   event.preventDefault();
+  interruptStoryGesture();
+  if(cameraMoving)return;
+  controls.enabled=true;controls.autoRotate=false;journeyMotion.spin=0;
   const spherical=new THREE.Spherical().setFromVector3(camera.position);
   spherical.theta += event.key==='ArrowLeft'?.13:event.key==='ArrowRight'?-.13:0;
   spherical.phi=clamp(spherical.phi+(event.key==='ArrowUp'?-.1:event.key==='ArrowDown'?.1:0),.1,Math.PI-.1);

@@ -34,10 +34,12 @@
 
 </section>
 <section id="journey-scene" class="screen" aria-label="Journey — naše spoločné cesty" aria-hidden="true" inert>
+<div id="globe-surface">
 <canvas id="three-canvas" aria-label="Glóbus: potiahnutím ho otočíte; mesto môžete vybrať aj tlačidlom"></canvas>
 <svg id="svg-canvas" aria-hidden="true"><g id="city-connectors" style="opacity:0;visibility:hidden"></g><line id="memory-connector"/></svg><div id="label-layer" aria-label="Mestá"></div>
 <div id="journey-instruction"><svg viewBox="0 0 40 24" aria-hidden="true"><path d="M8 12h24M13 7l-5 5 5 5m14-10 5 5-5 5"/></svg><p>Roztočte glóbus a objavte naše spoločné chvíle.<br><span>Vyberte mesto a začnite.</span></p></div>
 <p id="globe-fallback" hidden>Glóbus sa nepodarilo zobraziť. Spomienky otvoríte výberom mesta.</p>
+</div>
 <section id="modal" class="memory" aria-labelledby="modal-city" aria-hidden="true" inert>
 <div class="memory-top"><span id="memory-number"></span><button id="video-stop-btn" class="icon-button" aria-label="Zatvoriť spomienku"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div>
 <div class="journey-modal-media"><img id="modal-image" alt="" hidden><iframe id="modal-instagram" title="Tokyo — Japan Reel" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen hidden></iframe><p id="media-error" hidden>Fotografiu sa nepodarilo načítať.</p></div>
