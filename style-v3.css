@@ -160,7 +160,7 @@ html[data-palette="olive"]{
   --paper:var(--ivory);--ink:var(--olive);
   --line:var(--ink);--connector:var(--ink);--selected-border:var(--ink);
   --empty-ink:var(--ink);--nav-track:var(--ink);--nav-border:var(--ink);
-  --intro-ink:var(--paper);--intro-muted:var(--paper);--video-ink:var(--ink);
+  --intro-ink:var(--paper);--intro-muted:var(--paper);--video-ink:var(--ivory);
   --media-paper:var(--paper);--video-backdrop:var(--paper);--intro-paper:var(--paper);--embed-paper:var(--paper);
   --hover-paper:var(--ink);--hover-ink:var(--paper);
   --memory-shadow:none;--video-caption-shadow:none;--video-control-shadow:none;
