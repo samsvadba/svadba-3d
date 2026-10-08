@@ -961,7 +961,7 @@ function syncMusic(){
   musicContext?.resume().catch(()=>{});
   if(!music.getAttribute('src'))music.src=/^(https?:|\/)/.test(config.audio.backgroundMusic)?config.audio.backgroundMusic:asset(config.audio.backgroundMusic);
   if(music.paused)music.play().catch(()=>{});
-  gsap.to(musicGain?.gain||music,{[musicGain?'value':'volume']:fullscreenVideo.active?.16:.45,duration:.8,ease:'sine.inOut'});
+  gsap.to(musicGain?.gain||music,{[musicGain?'value':'volume']:.45,duration:.8,ease:'sine.inOut'});
 }
 function toast(key){clearTimeout(toastTimer);$('utility-toast').dataset.key=key;$('utility-toast').textContent=t(key);$('utility-toast').hidden=false;toastTimer=setTimeout(()=>{$('utility-toast').hidden=true;},3200);}
 function applyGlobeTheme(){

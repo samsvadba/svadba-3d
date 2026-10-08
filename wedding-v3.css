@@ -1,6 +1,7 @@
 /* The third V3 chapter. Only its active page scrolls; global controls stay outside it. */
 .w-shell{position:relative}
-.w-invitation-time{font:400 12px/1.5 'DM Sans',sans-serif;letter-spacing:.08em;margin:8px 0}
+.w-invitation-date{display:flex;align-items:baseline;justify-content:center;gap:clamp(6px,1.2vw,12px);white-space:nowrap}
+.w-invitation-time-separator{font:inherit;letter-spacing:0;opacity:.48}
 .w-scroll-hint{position:absolute;bottom:-26px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:9px;font:400 7px/1 'DM Sans',sans-serif;letter-spacing:.2em;opacity:0;pointer-events:none}
 .w-scroll-hint svg{width:10px;height:20px;fill:none;stroke:currentColor;stroke-width:1}
 .w-map-preview{display:block;overflow:hidden;margin:24px 0 5px;border:1px solid var(--line);background:var(--paper);color:var(--ink)}
@@ -175,7 +176,7 @@ body[data-state="wedding"] #bottom-nav,body[data-state="wedding"] #utility-contr
 @media(max-height:740px){.w-invitation-inner{justify-content:flex-start}.w-monogram{height:96px;font-size:83px;margin-bottom:4px}.w-monogram span:last-child{font-size:74px}}
 
 .w-invitation-names:focus{outline:none}
-.w-monogram{color:#626950}html[data-theme="dark"] .w-monogram{color:#bcc3a5}
+.w-monogram{color:var(--ink)}
 
 .w-invitation-names{width:min(100%,520px);line-height:0;margin:0}
 

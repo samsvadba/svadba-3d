@@ -28,8 +28,7 @@ export function createWedding(root, wedding, { t, gsap, reducedMotion }) {
       <h2 tabindex="-1" class="w-invitation-names brand-names">${names()}</h2>
       <p class="w-invitation-announcement">${copy('wAnnounce')}<br>${copy('wSacrament')}</p>
       <div class="w-invitation-rule" aria-hidden="true"></div>
-      <p class="w-invitation-date">${copy('wInvitationDate')}</p>
-      <p class="w-invitation-time">${copy('wInvitationTime')}</p>
+      <p class="w-invitation-date"><span>${copy('wInvitationDate')}</span><span class="w-invitation-time-separator" aria-hidden="true">·</span><span>${copy('wInvitationTime')}</span></p>
       <p class="w-invitation-place">${copy('wInvitationPlace')}</p>
       <p class="w-invitation-meeting">${copy('wInvitationMeeting')}</p>
       <div class="w-invitation-actions">${jump('rsvp','wConfirm')}${jump('detail','wInformation')}</div>
