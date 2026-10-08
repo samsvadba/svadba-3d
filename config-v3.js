@@ -688,7 +688,7 @@ const config = {
       "wDiet": "Vegetariánske, bezlepkové a iné diétne požiadavky nám, prosím, uveďte pri potvrdení účasti.",
       "wRsvpTitle": "Budete pri tom?",
       "wRsvpIntro": "Vaša odpoveď nám pomôže pripraviť náš spoločný deň.",
-      "wFaqTitle": "Dobré vedieť",
+      "wFaqTitle": "Dobre vedieť",
       "wFaqIntro": "Malé odpovede na veľký deň.",
       "wFaqCeremonyQ": "Kde a kedy sa koná svadobný obrad?",
       "wFaqCeremonyA": "Svadobný obrad sa uskutoční 30. apríla 2027 o 15:00 v Kostole sv. Jakuba, Františkánska 1, 917 01 Trnava.",
