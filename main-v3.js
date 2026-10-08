@@ -373,7 +373,9 @@ function updateManualRotateSpeed(dt) {
   // proportional to focalLength * R / (distance - R). Focal length and R
   // cancel relative to the far view, so compensate with surface clearance.
   const clearance=near-GLOBE_RADIUS+zoom*(far-near);
-  const target=clamp(clearance/Math.max(.001,far-GLOBE_RADIUS),.025,1);
+  const compensated=clamp(clearance/Math.max(.001,far-GLOBE_RADIUS),.025,1);
+  // User tuning: 30% more responsive, with the original far-view ceiling.
+  const target=Math.min(1,compensated*1.3);
   controls.rotateSpeed+=(target-controls.rotateSpeed)*(1-Math.exp(-dt/.08));
 }
 
