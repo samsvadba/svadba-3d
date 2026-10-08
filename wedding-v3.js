@@ -87,14 +87,17 @@ export function createWedding(root, wedding, { t, gsap, reducedMotion }) {
     gsap.killTweensOf(inner.children);
     if(reducedMotion.matches){gsap.set(inner.children,{clearProps:'opacity,transform,clipPath'});return;}
     animation=gsap.timeline({onComplete:showHint})
-      .fromTo(inner.children,{opacity:0,y:10,clipPath:'inset(0 0 100% 0)'},{opacity:1,y:0,clipPath:'inset(0 0 0% 0)',duration:1.05,stagger:.09,ease:'power2.out',clearProps:'opacity,transform,clipPath'});
+      .to(inner.children,{opacity:1,y:0,clipPath:'inset(0 0 0% 0)',duration:1.05,stagger:.09,ease:'power2.out',clearProps:'opacity,transform,clipPath'});
   }
 
   function selectTab(id, focusPanel=false) {
     if(!tabKeys.includes(id))return;
     hideHint();
-    gsap.killTweensOf(root.querySelector('.w-invitation-inner').children);
-    gsap.set(root.querySelector('.w-invitation-inner').children,{clearProps:'opacity,transform,clipPath'});
+    const invitationChildren=root.querySelector('.w-invitation-inner').children;
+    gsap.killTweensOf(invitationChildren);
+    gsap.set(invitationChildren,{clearProps:'opacity,transform,clipPath'});
+    // Keep the invitation hidden while its panel fades in, then reveal it once.
+    if(id==='invitation'&&!reducedMotion.matches)gsap.set(invitationChildren,{opacity:0,y:10,clipPath:'inset(0 0 100% 0)'});
     animation?.kill();
     const previous=root.querySelector(`#w-panel-${active}`), next=root.querySelector(`#w-panel-${id}`);
     active=id;

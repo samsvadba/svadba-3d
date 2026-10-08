@@ -338,12 +338,14 @@ function playWeddingTransition() {
       currentIndex=-1;
       setState('wedding');
       if(!weddingChapter)weddingChapter=createWedding($('wedding-scene'),wedding,{t,gsap,reducedMotion});
-      showScreen('wedding-scene');
-      gsap.set($('wedding-scene'), { opacity: 0 });
       weddingChapter.enter();
+      // Prepare the invitation before exposing the chapter, including on repeat visits.
+      $('wedding-scene').setAttribute('aria-hidden', 'false');
+      $('wedding-scene').inert = false;
+      gsap.set($('wedding-scene'), { autoAlpha: 0 });
       announce(t('navWedding'));
     })
-    .to($('wedding-scene'), { opacity: 1, duration: duration(.7) });
+    .to($('wedding-scene'), { autoAlpha: 1, duration: duration(.7) });
 }
 
 function latLonToVec3(lat, lon, radius) {
