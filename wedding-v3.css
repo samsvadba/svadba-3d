@@ -104,6 +104,12 @@ body[data-state="wedding"] #bottom-nav,body[data-state="wedding"] #utility-contr
 .w-rsvp select.w-input{appearance:auto}
 .w-choice{position:relative;display:flex;align-items:center;gap:13px;min-height:52px;padding:16px 0;border-bottom:1px solid var(--line);font:400 13px/1.6 'DM Sans',sans-serif;cursor:pointer}
 .w-choice input{accent-color:var(--ink);width:16px;height:16px;margin:0;flex:none}
+/* Native radio/autofill colours otherwise bypass the two-colour palette. */
+html[data-palette="olive"] .w-choice input{appearance:none;border:1px solid var(--ink);border-radius:50%;background:var(--paper)}
+html[data-palette="olive"] .w-choice input:checked{background:radial-gradient(circle,var(--ink) 0 3px,var(--paper) 3.5px)}
+html[data-palette="olive"] .w-input::placeholder{color:var(--ink);opacity:1}
+html[data-palette="olive"] .w-input:autofill{color:var(--ink);background:var(--paper)}
+html[data-palette="olive"] .w-input:-webkit-autofill{-webkit-text-fill-color:var(--ink);caret-color:var(--ink);box-shadow:0 0 0 1000px var(--paper) inset}
 .w-rsvp input[type="radio"]:focus-visible{outline:1px solid var(--ink);outline-offset:4px}
 .w-form-nav{display:flex;align-items:center;justify-content:space-between;gap:20px;border-top:1px solid var(--line);margin-top:35px;padding-top:14px}
 .w-action{font:400 10px/1.5 'DM Sans',sans-serif;text-transform:uppercase;letter-spacing:.14em;min-height:48px;padding:12px 0;display:inline-flex;gap:18px;align-items:center;text-align:left}

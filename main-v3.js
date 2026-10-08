@@ -625,8 +625,8 @@ function animate(time) {
     // The existing vector contour becomes dark; neighbors remain light, without fills.
     const night=mood.value,e=layer.emphasis;
     layer.material.color.setRGB((.392-.27*e)*(1-night)+(.69+.23*e)*night,(.408-.28*e)*(1-night)+(.70+.20*e)*night,(.373-.26*e)*(1-night)+(.65+.22*e)*night);
-    oliveGlobeColors.detail.copy(oliveGlobeColors.ink).lerp(oliveGlobeColors.paper,.28*(1-e));
-    layer.material.color.lerp(oliveGlobeColors.detail,mood.palette);
+    // Emphasis uses opacity; all Olive boundaries share the exact foreground colour.
+    layer.material.color.lerp(oliveGlobeColors.ink,mood.palette);
     layer.material.opacity=detailReady*(detail*.19+layer.emphasis*.76);
     layer.line.visible=layer.material.opacity>.002;
   }
@@ -974,7 +974,7 @@ function applyGlobeTheme(){
   // Cache linear-space colours from the same CSS tokens used by the interface.
   if(!oliveGlobeColors){
     const css=getComputedStyle(document.documentElement);
-    oliveGlobeColors={olive:new THREE.Color(css.getPropertyValue('--olive').trim()),ivory:new THREE.Color(css.getPropertyValue('--ivory').trim()),paper:new THREE.Color(),ink:new THREE.Color(),detail:new THREE.Color()};
+    oliveGlobeColors={olive:new THREE.Color(css.getPropertyValue('--olive').trim()),ivory:new THREE.Color(css.getPropertyValue('--ivory').trim()),paper:new THREE.Color(),ink:new THREE.Color()};
   }
   const n=mood.value;
   oliveGlobeColors.paper.copy(oliveGlobeColors.ivory).lerp(oliveGlobeColors.olive,n);
