@@ -2,8 +2,12 @@
 .w-shell{position:relative}
 .w-invitation-date{max-width:100%;flex-wrap:wrap;display:flex;align-items:baseline;justify-content:center;gap:clamp(6px,1.2vw,12px);white-space:nowrap}
 .w-invitation-time-separator{font:inherit;letter-spacing:0;opacity:.48}
-.w-scroll-hint{position:absolute;bottom:-26px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:9px;font:400 7px/1 'DM Sans',sans-serif;letter-spacing:.2em;opacity:0;pointer-events:none}
-.w-scroll-hint svg{width:10px;height:20px;fill:none;stroke:currentColor;stroke-width:1}
+.w-scroll-hint{position:absolute;z-index:2;bottom:24px;left:50%;transform:translateX(-50%);width:64px;height:64px;border-radius:50%;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:6px;background:rgba(35,36,33,.76);color:#fff;font:400 8px/1 'DM Sans',sans-serif;letter-spacing:.17em;opacity:0;visibility:hidden;pointer-events:none;user-select:none}
+.w-scroll-hint svg{width:20px;height:27px;fill:none;stroke:currentColor;stroke-width:1.35}
+.w-scroll-wheel{animation:w-scroll-nudge 1.7s ease-in-out infinite;animation-play-state:paused}
+.w-scroll-hint.is-visible .w-scroll-wheel{animation-play-state:running}
+@keyframes w-scroll-nudge{0%,100%{transform:translateY(0);opacity:1}65%{transform:translateY(4px);opacity:.3}}
+@media(prefers-reduced-motion:reduce){.w-scroll-wheel{animation:none}}
 .w-map-preview{display:block;overflow:hidden;margin:24px 0 5px;border:1px solid var(--line);background:var(--paper);color:var(--ink)}
 .w-map-preview svg{display:block;width:100%;height:auto;overflow:hidden}
 .w-map-buildings{fill:currentColor;opacity:.075}

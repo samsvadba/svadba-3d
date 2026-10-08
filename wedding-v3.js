@@ -61,28 +61,35 @@ export function createWedding(root, wedding, { t, gsap, reducedMotion }) {
         <div class="w-faq">${wedding.faq.map((item,i)=>`<article><h3><button type="button" class="w-faq-toggle" id="w-question-${i}" aria-expanded="false" aria-controls="w-answer-${i}"><span class="w-faq-number">${String(i+1).padStart(2,'0')}</span>${copy(item.questionKey)}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M12 5v14"/></svg></button></h3><div class="w-faq-answer" id="w-answer-${i}" aria-labelledby="w-question-${i}" hidden><div><p>${copy(item.answerKey)}</p>${(item.links||[]).map(item=>link(item.url,item.labelKey)).join('')}${item.tab?jump(item.tab,'wConfirm'):''}</div></div></article>`).join('')}</div>
         <p class="w-faq-signoff">${copy('wThanks')}<span class="w-signature brand-names">${names()}</span></p>
       </section>
+      <div class="w-scroll-hint" aria-hidden="true"><svg viewBox="0 0 24 32"><rect x="4" y="2" width="16" height="28" rx="8"/><path class="w-scroll-wheel" d="M12 8v5"/></svg><span>SCROLL</span></div>
     </div>
-    <div class="w-scroll-hint" aria-hidden="true">SCROLL<svg viewBox="0 0 16 24"><path d="M8 2v18m-4-4 4 4 4-4"/></svg></div>
   </div>`;
 
-  let active='invitation', animation, countdownTimer, hintTimer, entered=false, hintVisible=false;
+  let active='invitation', animation, countdownTimer, hintFrame, entered=false, hintVisible=false, panelReady=false;
   const panels = tabKeys.map(id=>root.querySelector(`#w-panel-${id}`));
   const tabs = tabKeys.map(id=>root.querySelector(`#w-tab-${id}`));
   const rsvp = createRSVP(root.querySelector('#w-rsvp-root'), {t,endpoint:wedding.rsvpEndpoint,gsap,reducedMotion});
   const seconds = value => reducedMotion.matches ? 0 : value;
   const hint=root.querySelector('.w-scroll-hint');
-  function hideHint(){clearTimeout(hintTimer);if(!hintVisible)return;hintVisible=false;gsap.to(hint,{opacity:0,duration:seconds(.2),overwrite:true});}
+  function hideHint(){cancelAnimationFrame(hintFrame);hintFrame=null;if(!hintVisible)return;hintVisible=false;hint.classList.remove('is-visible');gsap.to(hint,{autoAlpha:0,duration:seconds(.2),overwrite:true});}
   function showHint(){
-    hideHint();
-    requestAnimationFrame(()=>{
+    if(hintFrame!=null)return;
+    hintFrame=requestAnimationFrame(()=>{
+      hintFrame=null;
       const panel=root.querySelector(`#w-panel-${active}`);
-      if(!entered||panel.hidden||panel.scrollTop>2||panel.scrollHeight<=panel.clientHeight+2)return;
+      const remaining=panel.scrollHeight-panel.clientHeight-Math.max(0,panel.scrollTop);
+      if(!entered||!panelReady||active==='invitation'||panel.hidden||panel.inert||panel.scrollTop>2||remaining<=2){hideHint();return;}
+      if(hintVisible)return;
       hintVisible=true;
-      gsap.to(hint,{opacity:.55,duration:seconds(.35),overwrite:true});
-      hintTimer=setTimeout(hideHint,2600);
+      hint.classList.add('is-visible');
+      gsap.to(hint,{autoAlpha:1,duration:seconds(.35),overwrite:true});
     });
   }
-  panels.forEach(panel=>panel.addEventListener('scroll',hideHint,{passive:true}));
+  panels.forEach(panel=>panel.addEventListener('scroll',showHint,{passive:true}));
+  // Observe the actual scrollports and their content (FAQ/RSVP, translations,
+  // fonts and viewport resizing), rather than the non-scrolling window.
+  const hintObserver=new ResizeObserver(showHint);
+  panels.forEach(panel=>{hintObserver.observe(panel);Array.from(panel.children).forEach(child=>hintObserver.observe(child));});
   function invitationEntrance(){
     const inner=root.querySelector('.w-invitation-inner');
     gsap.killTweensOf(inner.children);
@@ -93,7 +100,7 @@ export function createWedding(root, wedding, { t, gsap, reducedMotion }) {
 
   function selectTab(id, focusPanel=false) {
     if(!tabKeys.includes(id)||(!focusPanel&&id===active))return;
-    hideHint();
+    panelReady=false;hideHint();
     const invitationChildren=root.querySelector('.w-invitation-inner').children;
     gsap.killTweensOf(invitationChildren);
     gsap.set(invitationChildren,{clearProps:'opacity,transform,clipPath'});
@@ -108,7 +115,7 @@ export function createWedding(root, wedding, { t, gsap, reducedMotion }) {
       gsap.set(next,{opacity:0,y:reducedMotion.matches?0:8});
       if(focusPanel)next.querySelector('h2')?.focus({preventScroll:true});
     };
-    const ready=()=>{if(id==='invitation')invitationEntrance();else showHint();};
+    const ready=()=>{panelReady=true;if(id==='invitation')invitationEntrance();else showHint();};
     if(previous===next){show();animation=gsap.to(next,{opacity:1,y:0,duration:seconds(.35),onComplete:ready});return;}
     panels.forEach(panel=>{panel.inert=true;});
     animation=gsap.timeline().to(previous,{opacity:0,duration:seconds(.14)})
@@ -155,6 +162,6 @@ export function createWedding(root, wedding, { t, gsap, reducedMotion }) {
   return {
     refreshLanguage,
     enter(){entered=true;clearInterval(countdownTimer);refreshLanguage();updateCountdown();countdownTimer=setInterval(updateCountdown,1000);selectTab('invitation',true);root.querySelector('#w-panel-invitation').scrollTop=0;},
-    leave(){entered=false;hideHint();clearInterval(countdownTimer);animation?.kill();gsap.killTweensOf(root.querySelector('.w-invitation-inner').children);gsap.set(root.querySelector('.w-invitation-inner').children,{clearProps:'opacity,transform,clipPath'});panels.forEach(panel=>{panel.hidden=panel.id!==`w-panel-${active}`;panel.inert=panel.hidden;});gsap.set(panels,{opacity:1,y:0});}
+    leave(){entered=false;panelReady=false;hideHint();clearInterval(countdownTimer);animation?.kill();gsap.killTweensOf(root.querySelector('.w-invitation-inner').children);gsap.set(root.querySelector('.w-invitation-inner').children,{clearProps:'opacity,transform,clipPath'});panels.forEach(panel=>{panel.hidden=panel.id!==`w-panel-${active}`;panel.inert=panel.hidden;});gsap.set(panels,{opacity:1,y:0});}
   };
 }
