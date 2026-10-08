@@ -365,6 +365,18 @@ function latLonToVec3(lat, lon, radius) {
 function overviewDistance() { return Math.max(60, 51 / (innerWidth / innerHeight)); }
 function memoryDistance() { return mobile() ? 18 : 15.8; }
 
+function updateManualRotateSpeed(dt) {
+  const near=controls.minDistance, far=controls.maxDistance;
+  const distance=camera.position.distanceTo(controls.target);
+  const zoom=clamp((distance-near)/Math.max(.001,far-near),0,1);
+  // At the facing surface, perspective displacement per orbit radian is
+  // proportional to focalLength * R / (distance - R). Focal length and R
+  // cancel relative to the far view, so compensate with surface clearance.
+  const clearance=near-GLOBE_RADIUS+zoom*(far-near);
+  const target=clamp(clearance/Math.max(.001,far-GLOBE_RADIUS),.025,1);
+  controls.rotateSpeed+=(target-controls.rotateSpeed)*(1-Math.exp(-dt/.08));
+}
+
 function flyCamera(lat, lon, distance, seconds, onComplete, travel=false, entrance=false) {
   if (!camera) { onComplete?.(); return; }
   globeFlight?.kill();
@@ -623,6 +635,7 @@ function animate(time) {
   if(layoutDirty)measureJourneyLayout();
   applyFraming();
   if(!cameraMoving){
+    if(state==='journey')updateManualRotateSpeed(dt);
     // Touch focus survives closing a memory on Safari; it must not freeze idle rotation.
     const canSpin=state==='journey'&&!dragging&&!reducedMotion.matches&&performance.now()>idleSince;
     journeyMotion.spin+=( (canSpin?.78:0)-journeyMotion.spin)*(1-Math.exp(-dt*2.2));
