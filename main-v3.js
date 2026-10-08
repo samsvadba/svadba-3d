@@ -625,6 +625,8 @@ function animate(time) {
     // The existing vector contour becomes dark; neighbors remain light, without fills.
     const night=mood.value,e=layer.emphasis;
     layer.material.color.setRGB((.392-.27*e)*(1-night)+(.69+.23*e)*night,(.408-.28*e)*(1-night)+(.70+.20*e)*night,(.373-.26*e)*(1-night)+(.65+.22*e)*night);
+    oliveGlobeColors.detail.copy(oliveGlobeColors.ink).lerp(oliveGlobeColors.paper,.28*(1-e));
+    layer.material.color.lerp(oliveGlobeColors.detail,mood.palette);
     layer.material.opacity=detailReady*(detail*.19+layer.emphasis*.76);
     layer.line.visible=layer.material.opacity>.002;
   }
@@ -939,8 +941,9 @@ $('three-canvas').addEventListener('wheel',interruptStoryGesture,{capture:true,p
 // Independent, persistent utility preferences; audio is never loaded without a source.
 function readPreference(key,fallback){try{return localStorage.getItem(key)||fallback;}catch{return fallback;}}
 function savePreference(key,value){try{localStorage.setItem(key,value);}catch{}}
-const preferences={sound:readPreference('sm-sound','off')==='on',theme:readPreference('sm-theme','light')==='dark'?'dark':'light',language:readPreference('sm-language','sk')==='en'?'en':'sk'};
-const mood={value:preferences.theme==='dark'?1:0};
+const preferences={sound:readPreference('sm-sound','off')==='on',theme:readPreference('sm-theme','light')==='dark'?'dark':'light',palette:readPreference('sm-palette','classic')==='olive'?'olive':'classic',language:readPreference('sm-language','sk')==='en'?'en':'sk'};
+const mood={value:preferences.theme==='dark'?1:0,palette:preferences.palette==='olive'?1:0};
+let oliveGlobeColors;
 const music=new Audio();music.loop=true;music.preload='none';music.crossOrigin='anonymous';music.volume=0;music.id='background-music';music.hidden=true;document.body.append(music);
 let musicContext,musicGain;
 let musicEligible=false,musicFailed=false,toastTimer;
@@ -968,18 +971,33 @@ function syncMusic(){
 function toast(key){clearTimeout(toastTimer);$('utility-toast').dataset.key=key;$('utility-toast').textContent=t(key);$('utility-toast').hidden=false;toastTimer=setTimeout(()=>{$('utility-toast').hidden=true;},3200);}
 function applyGlobeTheme(){
   if(!globeMaterial)return;
+  // Cache linear-space colours from the same CSS tokens used by the interface.
+  if(!oliveGlobeColors){
+    const css=getComputedStyle(document.documentElement);
+    oliveGlobeColors={olive:new THREE.Color(css.getPropertyValue('--olive').trim()),ivory:new THREE.Color(css.getPropertyValue('--ivory').trim()),paper:new THREE.Color(),ink:new THREE.Color(),detail:new THREE.Color()};
+  }
   const n=mood.value;
+  oliveGlobeColors.paper.copy(oliveGlobeColors.ivory).lerp(oliveGlobeColors.olive,n);
+  oliveGlobeColors.ink.copy(oliveGlobeColors.olive).lerp(oliveGlobeColors.ivory,n);
   globeMaterial.color.setRGB(.913*(1-n)+.014*n,.905*(1-n)+.016*n,.871*(1-n)+.014*n);
   overviewMaterial.color.setRGB(.127*(1-n)+.68*n,.138*(1-n)+.70*n,.114*(1-n)+.64*n);
   wireMaterial.color.setRGB(.27*(1-n)+.65*n,.28*(1-n)+.67*n,.26*(1-n)+.61*n);
-  for(const item of markerData)item.mesh?.material.color.setRGB(.019*(1-n)+.84*n,.02*(1-n)+.81*n,.018*(1-n)+.72*n);
+  globeMaterial.color.lerp(oliveGlobeColors.paper,mood.palette);
+  overviewMaterial.color.lerp(oliveGlobeColors.ink,mood.palette);
+  wireMaterial.color.lerp(oliveGlobeColors.ink,mood.palette);
+  for(const item of markerData)item.mesh?.material.color.setRGB(.019*(1-n)+.84*n,.02*(1-n)+.81*n,.018*(1-n)+.72*n).lerp(oliveGlobeColors.ink,mood.palette);
 }
 function applyMood(animate=true){
   document.documentElement.dataset.theme=preferences.theme;
+  document.documentElement.dataset.palette=preferences.palette;
   $('utility-mood').setAttribute('aria-pressed',String(preferences.theme==='dark'));
   $('utility-mood').setAttribute('aria-label',t(preferences.theme==='dark'?'light':'dark'));
   $('utility-mood').title=$('utility-mood').getAttribute('aria-label');
-  gsap.to(mood,{value:preferences.theme==='dark'?1:0,duration:animate?duration(.45):0,onUpdate:applyGlobeTheme});
+  $('utility-palette').setAttribute('aria-pressed',String(preferences.palette==='olive'));
+  $('utility-palette').setAttribute('aria-label',t(preferences.palette==='olive'?'paletteClassic':'paletteOlive'));
+  $('utility-palette').title=$('utility-palette').getAttribute('aria-label');
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content',getComputedStyle(document.documentElement).getPropertyValue('--paper').trim());
+  gsap.to(mood,{value:preferences.theme==='dark'?1:0,palette:preferences.palette==='olive'?1:0,duration:animate?duration(.5):0,overwrite:true,onUpdate:applyGlobeTheme});
 }
 function applyLanguage(){
   originMarkers?.refreshLanguage(t('originLabel'));
@@ -1015,6 +1033,7 @@ function applyLanguage(){
   for(const key of ['videoLoading','videoTap','videoError'])if(Object.values(config.ui).some(d=>d[key]===status.textContent)){status.textContent=t(key);break;}
   $('utility-language').textContent=preferences.language.toUpperCase();attr('utility-language','language');attr('utility-gallery','photos');attr('utility-controls','controls');
   $('utility-sound').setAttribute('aria-pressed',String(preferences.sound));attr('utility-sound',preferences.sound?'soundOn':'soundOff');attr('utility-mood',preferences.theme==='dark'?'light':'dark');
+  attr('utility-palette',preferences.palette==='olive'?'paletteClassic':'paletteOlive');
   if(!$('utility-toast').hidden)$('utility-toast').textContent=t($('utility-toast').dataset.key);
   $('journey-scene').setAttribute('aria-label','Journey — '+t('journey1'));
   $('transition-screen').setAttribute('aria-label',t('prepare'));
@@ -1030,6 +1049,7 @@ function applyLanguage(){
 $('utility-sound').onclick=()=>{preferences.sound=!preferences.sound;musicEligible=true;savePreference('sm-sound',preferences.sound?'on':'off');applyLanguage();syncMusic();if(!config.audio.backgroundMusic)toast('noMusic');};
 $('utility-gallery').onclick=()=>{if(config.gallery.url)window.open(config.gallery.url,'_blank','noopener,noreferrer');else toast('gallery');};
 $('utility-mood').onclick=()=>{preferences.theme=preferences.theme==='light'?'dark':'light';savePreference('sm-theme',preferences.theme);applyMood();};
+$('utility-palette').onclick=()=>{preferences.palette=preferences.palette==='classic'?'olive':'classic';savePreference('sm-palette',preferences.palette);applyMood();};
 $('utility-language').onclick=()=>{preferences.language=preferences.language==='sk'?'en':'sk';savePreference('sm-language',preferences.language);applyLanguage();};
 document.addEventListener('click',event=>{if(event.target.closest('#next-btn,#nav-journey,#nav-wedding,#story-play')){musicEligible=true;syncMusic();}},true);
 document.addEventListener('visibilitychange',syncMusic);

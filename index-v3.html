@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="sk">
 <head>
-<meta charset="UTF-8"><script>try{document.documentElement.dataset.theme=localStorage.getItem("sm-theme")==="dark"?"dark":"light";document.documentElement.lang=localStorage.getItem("sm-language")==="en"?"en":"sk"}catch{}</script><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#f5f4f0"><meta name="description" content="Náš spoločný príbeh pokračuje. Tešíme sa, že náš svadobný deň prežijete s nami.">
+<meta charset="UTF-8"><script>try{document.documentElement.dataset.theme=localStorage.getItem("sm-theme")==="dark"?"dark":"light";document.documentElement.dataset.palette=localStorage.getItem("sm-palette")==="olive"?"olive":"classic";document.documentElement.lang=localStorage.getItem("sm-language")==="en"?"en":"sk"}catch{}</script><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#f5f4f0"><meta name="description" content="Náš spoločný príbeh pokračuje. Tešíme sa, že náš svadobný deň prežijete s nami.">
 <title>Simona &amp; Martin — 30. 04. 2027</title>
 <link rel="canonical" href="https://samsvadba.github.io/svadba-3d/index-v3.html">
 <meta property="og:title" content="Simona &amp; Martin — 30. 04. 2027">
@@ -17,7 +17,7 @@
      og:image:width=1200, og:image:height=630, and og:image:alt. -->
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400&family=Allura&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-<style>html{--paper:#f5f4f0;--ink:#292a28}html[data-theme="dark"]{--paper:#20221f;--ink:#ece9df}body{margin:0;background:var(--paper);color:var(--ink)}#interactive-preloader{position:fixed;inset:0;z-index:100;background:var(--paper);display:grid;place-content:center}[hidden]{display:none!important}</style>
+<style>html{--paper:#f5f4f0;--ink:#292a28}html[data-theme="dark"]{--paper:#20221f;--ink:#ece9df}html[data-palette="olive"]{--paper:#F4EBDC;--ink:#303D29}html[data-palette="olive"][data-theme="dark"]{--paper:#303D29;--ink:#F4EBDC}body{margin:0;background:var(--paper);color:var(--ink)}#interactive-preloader{position:fixed;inset:0;z-index:100;background:var(--paper);display:grid;place-content:center}[hidden]{display:none!important}</style>
 </head>
 <body class="loading" data-state="loading">
 <div id="interactive-preloader" aria-label="Načítavanie"><span class="preloader-monogram">S & M</span><div id="loading-ring"><span id="preloader-percentage" role="status">0%</span></div><button id="pl-skip-btn">Preskočiť</button></div>
@@ -56,6 +56,7 @@
 <button id="utility-sound" aria-label="Zapnúť hudbu" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4Z"/><path class="sound-on" d="M15 8q5 4 0 8m3-11q8 7 0 14"/><path class="sound-off" d="m16 9 6 6m0-6-6 6"/></svg></button>
 <button id="utility-gallery" aria-label="Svadobné fotografie"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h16v16H5zM2 7v15h15M7 15l4-5 4 4 3-3 2 4"/><circle cx="16" cy="7" r="1"/></svg></button>
 <button id="utility-mood" aria-label="Prepnúť na tmavú náladu" aria-pressed="false"><svg class="moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 15A9 9 0 0 1 9 4a9 9 0 1 0 11 11Z"/></svg><svg class="sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 1v3m0 16v3M1 12h3m16 0h3M4 4l2 2m12 12 2 2M4 20l2-2M18 6l2-2"/></svg></button>
+<button id="utility-palette" type="button" aria-label="Prepnúť na paletu Olive &amp; Ivory" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 0 0 18h1a2 2 0 0 0 1.4-3.4 1.5 1.5 0 0 1 1.1-2.6H18a3 3 0 0 0 3-3 9 9 0 0 0-9-9Z"/><circle cx="7.5" cy="10" r="1"/><circle cx="10.5" cy="6.7" r="1"/><circle cx="15" cy="7.2" r="1"/></svg></button>
 <button id="utility-language" aria-label="Switch to English">SK</button>
 </div><p id="utility-toast" role="status" hidden></p>
 <p id="app-status" class="sr-only" role="status" aria-live="polite"></p>
