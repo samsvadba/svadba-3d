@@ -4,6 +4,7 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
+    "test:rsvp": "node rsvp-v3.test.cjs",
     "dev": "vite --configLoader native",
     "build": "vite build --configLoader native",
     "preview": "vite preview --configLoader native"
