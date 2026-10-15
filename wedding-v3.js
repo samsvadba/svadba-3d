@@ -30,7 +30,6 @@ export function createWedding(root, wedding, { t, gsap, reducedMotion }) {
       <div class="w-invitation-rule" aria-hidden="true"></div>
       <p class="w-invitation-date"><span>${copy('wInvitationDate')}</span><span class="w-invitation-time-separator" aria-hidden="true">·</span><span>${copy('wInvitationTime')}</span></p>
       <p class="w-invitation-place">${copy('wInvitationPlace')}</p>
-      <p class="w-invitation-meeting">${copy('wInvitationMeeting')}</p>
       <div class="w-invitation-actions">${jump('rsvp','wConfirm')}${jump('detail','wInformation')}</div>
     </div>
   </section>`;
@@ -41,6 +40,7 @@ export function createWedding(root, wedding, { t, gsap, reducedMotion }) {
         <div class="w-detail-head"><p class="w-eyebrow">${copy('wChapter')}</p><h2 tabindex="-1" class="brand-names">${names()}</h2><p class="w-date">30 · 04 · 2027</p><p class="w-intro">${copy('wWelcome')}</p></div>
         <div class="w-countdown" role="timer" aria-live="off" aria-label="${escape(t('wCountdown'))}">${['wDays','wHours','wMinutes','wSeconds'].map((key,i)=>`<div><span class="w-count-number" data-w-count="${i}">00</span><span class="w-count-label">${copy(key)}</span></div>`).join('')}</div><p class="w-day-arrived" hidden>${copy('wDayArrived')}</p>
         <div class="w-venues">${venue(wedding.ceremony,true)}${venue(wedding.reception,false)}</div>
+        <p class="w-intro">${copy('wArrivalShort')}</p>
         <div class="w-practical"><div><p class="w-eyebrow">${copy('wTransport')}</p><p>${copy('wTransportShort')}</p></div><div><p class="w-eyebrow">${copy('wLodging')}</p><p>${copy('wLodgingShort')}</p></div></div>
         <div class="w-detail-links">${jump('rsvp','wConfirm')}${jump('faq','wPractical')}</div>
         <p class="w-signature brand-names">${names()}</p>

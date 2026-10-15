@@ -89,7 +89,7 @@
 .w-faq-toggle[aria-expanded="true"] svg{transform:rotate(45deg)}
 .w-faq-answer{overflow:hidden}
 .w-faq-answer>div{padding:0 30px 23px 36px;font:400 12px/1.9 'DM Sans',sans-serif}
-.w-faq-answer p{opacity:.7}
+.w-faq-answer p{opacity:.7;white-space:pre-line;overflow-wrap:anywhere}
 .w-faq-answer .w-link{margin-right:20px;margin-top:8px;font-size:8px}
 .w-faq-signoff{text-align:center;font:italic 25px 'Cormorant Garamond',serif;margin:48px 0 0}
 .w-faq-signoff .w-signature{margin-top:16px}
@@ -179,7 +179,6 @@ html[data-palette="olive"] .w-input:-webkit-autofill{-webkit-text-fill-color:var
 .w-invitation-rule{width:34px;height:1px;background:var(--line);margin:12px 0}
 .w-invitation-date{font:400 clamp(22px,2.5vw,30px)/1.3 'Cormorant Garamond',serif;letter-spacing:.12em}
 .w-invitation-place{font:400 12px/1.7 'Cormorant Garamond',serif;letter-spacing:.08em;margin:5px 0 0}
-.w-invitation-meeting{font:400 9px/1.7 'DM Sans',sans-serif;letter-spacing:.03em;opacity:.5;margin:4px 0 0}
 .w-invitation-actions{display:flex;gap:30px;justify-content:center;flex-wrap:wrap;margin-top:15px}
 .w-invitation-actions .w-link:last-child{opacity:.6}
 @media(max-width:600px){.w-invitation-inner{padding:8px 0 24px}.w-monogram{transform:scale(.85);margin:-6px auto 0}.w-invitation-names{font-size:clamp(30px,8.5vw,40px)}.w-invitation-announcement{font-size:8px;letter-spacing:.09em;margin-top:6px}.w-invitation-rule{margin:10px 0}.w-invitation-actions{gap:4px 20px;margin-top:12px}.w-invitation-actions .w-link{font-size:8px;letter-spacing:.07em}}
