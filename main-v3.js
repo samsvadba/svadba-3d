@@ -17,6 +17,8 @@ const mobile = () => innerWidth < 768;
 const duration = (seconds) => reducedMotion.matches ? 0 : seconds;
 const base = import.meta.env.BASE_URL;
 const asset = (path) => `${base}${path}`;
+const lineartIntro = document.documentElement.dataset.intro === 'lineart';
+let introLineartPromise, introLineartStarted = false, introLineartPaths = [];
 const screens = ['intro-overlay', 'journey-scene', 'transition-screen', 'final-transition-screen', 'wedding-scene'];
 let weddingChapter;
 let originMarkers;
@@ -234,6 +236,17 @@ function setActiveNav(section) {
 
 function announce(text) { $('app-status').textContent = text; }
 
+function loadIntroLineart() {
+  // Keep the supplied artwork intact and out of the default video entry's download.
+  return introLineartPromise ??= import('./intro-lineart-v3.svg?raw').then(({ default: svg }) => {
+    const illustration = $('intro-lineart');
+    illustration.innerHTML = svg;
+    illustration.hidden = false;
+    introLineartPaths = [...illustration.querySelectorAll('path')];
+    return introLineartPaths;
+  });
+}
+
 function playIntroTextAnimations() {
   const request=killActiveSectionTransition();
   hideAllScreensImmediate();
@@ -251,7 +264,24 @@ function playIntroTextAnimations() {
     if(started||request!==revision||state!=='intro')return;
     started=true;tl.play();announce(t('introStatus'));
   };
-  if(intro.video){
+  if(lineartIntro){
+    loadIntroLineart().then(paths=>{
+      if(request!==revision||state!=='intro')return;
+      if(introLineartStarted||reducedMotion.matches){
+        gsap.set(paths,{strokeDashoffset:0,fillOpacity:1,strokeOpacity:0});
+      }else{
+        paths.forEach(path=>{
+          const length=path.getTotalLength();
+          gsap.set(path,{fillOpacity:0,strokeOpacity:1,strokeDasharray:length,strokeDashoffset:length});
+        });
+        // Draw once as the existing title fades in, then restore the exact filled path.
+        tl.call(()=>{introLineartStarted=true;},null,'-=.8')
+          .to(paths,{strokeDashoffset:0,duration:3,ease:'power1.inOut'},'<')
+          .to(paths,{fillOpacity:1,strokeOpacity:0,duration:.6},'-=.6');
+      }
+      startText();
+    }).catch(startText);
+  }else if(intro.video){
     const video=$('intro-video-bg');
     gsap.killTweensOf(video);gsap.set(video,{opacity:0});video.hidden=true;
     video.onplaying=()=>{
@@ -1137,6 +1167,11 @@ window.addEventListener('resize', () => {
   }
 });
 reducedMotion.addEventListener('change', () => {
+  if(reducedMotion.matches&&lineartIntro&&introLineartPaths.length){
+    gsap.killTweensOf(introLineartPaths);
+    gsap.set(introLineartPaths,{strokeDashoffset:0,fillOpacity:1,strokeOpacity:0});
+    introLineartStarted=true;
+  }
   if (controls) controls.autoRotate=state==='journey'&&!reducedMotion.matches;
   journeyMotion.spin=0;
   if(reducedMotion.matches && globeFlight) globeFlight.progress(1);
