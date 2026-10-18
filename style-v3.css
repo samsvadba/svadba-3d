@@ -99,6 +99,10 @@ body[data-state="loading"] #utility-controls,body[data-fullscreen-video] #utilit
 #destination-video-highlight svg{width:15px;height:15px;flex:none}
 #destination-video-highlight:hover,#destination-video-highlight:focus-visible{opacity:1}
 #destination-video-highlight:focus-visible,#destination-video-next:focus-visible{outline:1px solid currentColor;outline-offset:5px}
+#destination-instagram-copy{display:block;min-height:44px;padding:6px 0;color:inherit;font:400 9px/1.5 'DM Sans',sans-serif;letter-spacing:.025em;opacity:.75}
+#destination-instagram-copy:hover,#destination-instagram-copy:focus-visible{opacity:1}
+#destination-instagram-copy-help{max-width:320px;font:400 10px/1.6 'DM Sans',sans-serif;color:inherit;overflow-wrap:anywhere}
+#destination-instagram-url{display:block;width:100%;max-width:320px;margin-top:8px;padding:8px;background:var(--video-backdrop);color:var(--video-ink);border:1px solid currentColor;font:12px/1.5 'DM Sans',sans-serif}
 @media(min-width:768px){.destination-video-caption{max-width:55vw}}
 @media(max-width:767px){.destination-video-caption{bottom:calc(max(8dvh,env(safe-area-inset-bottom) + 24px) + 76px)}#destination-video-next{max-width:70vw}}
 
