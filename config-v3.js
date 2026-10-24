@@ -415,7 +415,7 @@ const config = {
   "GLOBE_RADIUS": 12,
   "intro": {
     "poster": null,
-    "video": "https://res.cloudinary.com/kxksv8hk/video/upload/eo_6.57,w_1080,q_auto,f_auto/IMG_5897"
+    "video": "https://res.cloudinary.com/kxksv8hk/video/upload/video_bez_napisu_iphone.mp4"
   },
   "wedding": {
     "couple": {
