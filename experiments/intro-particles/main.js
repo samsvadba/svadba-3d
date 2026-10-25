@@ -116,6 +116,8 @@ function updateLabels(p){
     o.label.style.transform=`translate3d(${x}px,${y}px,0)`;o.label.style.opacity=visible?alpha:0;
   }
   const reveal=smooth(.955,1,p),slots={left:[],right:[]};
+  const labelTop=height<560?80:140;
+  const labelBottom=Math.max(labelTop,Math.min(height-200,$('story-caption').getBoundingClientRect().top-52));
   $('destination-connectors').setAttribute('viewBox',`0 0 ${width} ${height}`);
   for(const c of cities){
     const point=globe.projectSurface(c.position);c.point=point;
@@ -126,10 +128,10 @@ function updateLabels(p){
   }
   for(const [side,list] of Object.entries(slots)){
     list.sort((a,b)=>b.point.facing-a.point.facing);
-    const max=Math.max(2,Math.min(6,Math.floor((height-300)/64)));
+    const max=Math.max(1,Math.min(6,1+Math.floor((labelBottom-labelTop)/64)));
     const visible=list.slice(0,max).sort((a,b)=>a.point.y-b.point.y);
     visible.forEach((c,i)=>{
-      const y=140+i*(height-340)/Math.max(1,visible.length-1),x=side==='left'?22:width-145;
+      const y=labelTop+i*(labelBottom-labelTop)/Math.max(1,visible.length-1),x=side==='left'?22:width-145;
       c.label.querySelector('.city-name').textContent=c.loc.names?.[preferences.language]||c.loc.name;
       c.label.querySelector('.city-subname').textContent=preferences.language==='en'?(c.loc.countryEn||c.loc.subname):c.loc.subname;
       c.label.dataset.side=side;c.label.style.transform=`translate3d(${x}px,${y-surfaceTop}px,0)`;c.label.style.opacity=reveal;c.label.style.visibility='visible';c.label.style.pointerEvents=interactive?'auto':'none';c.label.tabIndex=interactive?0:-1;
@@ -167,7 +169,7 @@ function renderStory(){
   }
   if(!interactive)cameraStory(progress);
   else if(!flight)globe.updateControls(Math.min(.04,(performance.now()-lastTime)/1000||1/60));
-  globe.camera.updateMatrixWorld();updateLabels(progress);updateCopy(progress);
+  globe.camera.updateMatrixWorld();updateCopy(progress);updateLabels(progress);
   globe.render(1-.9*smooth(.66,.77,progress)*(1-smooth(.91,.99,progress)));lastTime=performance.now();
 }
 function schedule(){if(!frame)frame=requestAnimationFrame(tick);}
