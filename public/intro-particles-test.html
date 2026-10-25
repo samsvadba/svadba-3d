@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="sk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#f5f4f0">
+<title>Simona &amp; Martin — 3D intro / test</title>
+<script>try{document.documentElement.dataset.theme=localStorage.getItem('sm-theme')==='dark'?'dark':'light';document.documentElement.dataset.palette=localStorage.getItem('sm-palette')==='olive'?'olive':'classic';document.documentElement.lang=localStorage.getItem('sm-language')==='en'?'en':'sk'}catch{}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400&family=Cormorant+Garamond:ital,wght@0,400;1,400&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+  <script type="module" crossorigin src="/svadba-3d/experiments/intro-particles/assets/intro-particles-test-BmEEz84S.js"></script>
+  <link rel="stylesheet" crossorigin href="/svadba-3d/experiments/intro-particles/assets/intro-particles-test-BC9rG01i.css">
+</head>
+<body class="particles-test">
+<main id="story-track" aria-label="Príbeh Simony a Martina">
+  <div id="story-stage">
+    <canvas id="story-canvas" aria-label="Zemeguľa"></canvas>
+    <div id="globe-interaction" aria-label="Interaktívny glóbus" tabindex="-1"><div id="destination-labels"></div></div>
+    <header id="story-header"><div id="story-monogram" aria-hidden="true"></div><span>30 · 04 · 2027</span></header>
+    <div id="origin-labels" aria-hidden="true"></div>
+    <svg id="destination-connectors" aria-hidden="true"></svg>
+    <div id="story-caption"><p id="stage-copy"></p><span id="stage-instruction"></span><button id="story-return" type="button" hidden>Späť k príbehu ↑</button></div>
+    <p id="story-loading" role="status">Načítavame glóbus…</p>
+    <div id="story-timeline"><label class="sr-only" for="story-progress">Priebeh príbehu</label><input id="story-progress" type="range" min="0" max="1000" step="1" value="0"><span id="story-stage-number" aria-hidden="true">01 / 07</span></div>
+    <div id="utility-controls" role="group" aria-label="Globálne ovládanie">
+      <button id="utility-mood" type="button" aria-label="Prepnúť na čiernu" aria-pressed="false"><svg class="moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 15A9 9 0 0 1 9 4a9 9 0 1 0 11 11Z"/></svg><svg class="sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 1v3m0 16v3M1 12h3m16 0h3M4 4l2 2m12 12 2 2M4 20l2-2M18 6l2-2"/></svg></button>
+      <button id="utility-palette" type="button" aria-label="Prepnúť na Olive" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 0 0 18h1a2 2 0 0 0 1.4-3.4 1.5 1.5 0 0 1 1.1-2.6H18a3 3 0 0 0 3-3 9 9 0 0 0-9-9Z"/><circle cx="7.5" cy="10" r="1"/><circle cx="10.5" cy="6.7" r="1"/><circle cx="15" cy="7.2" r="1"/></svg></button>
+      <button id="utility-language" type="button" aria-label="Switch to English">SK</button>
+    </div>
+  </div>
+</main>
+<noscript>Na interaktívny prototyp zapnite JavaScript. Produkčná stránka je na index-v3.html.</noscript>
+</body>
+</html>
