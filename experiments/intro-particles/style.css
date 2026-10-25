@@ -1,8 +1,9 @@
 @import '../../style-v3.css';
-html:has(body.particles-test){height:auto;overflow-x:clip;scroll-behavior:auto}
+html:has(body.particles-test){height:auto;overflow-x:clip;scroll-behavior:auto;scrollbar-width:none}
+html:has(body.particles-test)::-webkit-scrollbar{display:none}
 body.particles-test{height:auto;min-height:100svh;overflow-x:clip;overscroll-behavior-y:none;background:var(--paper);color:var(--ink)}
 .particles-test #story-track{height:calc(var(--story-height,100svh)*8);position:relative}
-.particles-test #story-stage{position:fixed;inset:0;height:100dvh;overflow:hidden;isolation:isolate;background:var(--paper);transition:background-color .5s,color .5s}
+.particles-test #story-stage{position:fixed;inset:0;height:100dvh;overflow:clip;isolation:isolate;background:var(--paper);transition:background-color .5s,color .5s}
 .particles-test #story-canvas{display:block;position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
 .particles-test #globe-interaction{position:absolute;inset:90px 0 155px;pointer-events:none;touch-action:pan-y;outline-offset:-8px}
 .particles-test[data-explore] #globe-interaction{pointer-events:auto;cursor:grab;touch-action:none}
