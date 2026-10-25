@@ -26,6 +26,7 @@ const cities=[];
 const direction=new THREE.Vector3(),startDirection=new THREE.Vector3(),homeDirection=new THREE.Vector3();
 const lookTarget=new THREE.Vector3(),merge=new THREE.Vector3(),basis=new THREE.Quaternion();
 const originVectors=[],particleColor=new THREE.Color();
+const markerView=new THREE.Vector3();
 const theme={paper:'',ink:'',dark:false,olive:false};
 const displayedTheme={paper:new THREE.Color(),ink:new THREE.Color(),dark:0,olive:0};
 let themeTween=null,themeReady=false;
@@ -100,11 +101,16 @@ function addMarkers(){
 
 function updateLabels(p){
   const surfaceTop=$('globe-interaction').getBoundingClientRect().top;
+  const sizeMarker=(mesh,radius)=>{
+    markerView.copy(mesh.position).applyMatrix4(globe.camera.matrixWorldInverse);
+    const worldPerPixel=2*Math.max(.01,-markerView.z)*Math.tan(THREE.MathUtils.degToRad(22.5))/height;
+    mesh.scale.setScalar(2.5*worldPerPixel/radius);
+  };
   const alpha=smooth(.18,.23,p)*(1-smooth(.34,.45,p));
   $('origin-labels').setAttribute('aria-hidden',String(alpha<.01));
   for(const [index,o] of origins.entries()){
     const point=globe.projectSurface(o.position),visible=alpha>.01&&point.visible;
-    o.mesh.material.opacity=visible?alpha:0;o.mesh.visible=visible;
+    o.mesh.material.opacity=visible?alpha:0;o.mesh.visible=visible;sizeMarker(o.mesh,.009);
     const x=THREE.MathUtils.clamp(point.x+(index?-34:34)+(index?-112:0),20,width-132);
     const y=THREE.MathUtils.clamp(point.y+(index?38:-70),100,height-230);
     o.label.style.transform=`translate3d(${x}px,${y}px,0)`;o.label.style.opacity=visible?alpha:0;
@@ -113,7 +119,7 @@ function updateLabels(p){
   $('destination-connectors').setAttribute('viewBox',`0 0 ${width} ${height}`);
   for(const c of cities){
     const point=globe.projectSurface(c.position);c.point=point;
-    c.mesh.visible=reveal>.01&&point.visible;c.mesh.material.opacity=reveal;
+    c.mesh.visible=reveal>.01&&point.visible;c.mesh.material.opacity=reveal;sizeMarker(c.mesh,.045);
     c.label.style.visibility='hidden';c.label.style.pointerEvents='none';c.label.tabIndex=-1;c.line.style.opacity=0;
     if(!point.visible||reveal<.01||point.facing<.12)continue;
     c.side=point.x<width/2?'left':'right';slots[c.side].push(c);
@@ -143,7 +149,7 @@ function cameraStory(p){
   globe.camera.lookAt(lookTarget);globe.camera.updateMatrixWorld();
   // Every point on the camera path remains outside the Earth, including reversal.
   const depth=overview-(globe.radius+8),worldHeight=2*depth*Math.tan(THREE.MathUtils.degToRad(22.5));
-  const scale=Math.min(worldHeight*(width/height)*.76/2.275,worldHeight*.61/2.211);
+  const scale=Math.min(worldHeight*(width/height)*.76/2.275,worldHeight*(height<560?.51:.61)/2.211);
   merge.copy(homeDirection).multiplyScalar(globe.radius+8);
   basis.copy(globe.camera.quaternion);
   fx.update({progress:p,origins:originVectors,merge,heartScale:scale,color:particleColor,dark:theme.dark?1:0,basis});
@@ -161,7 +167,8 @@ function renderStory(){
   }
   if(!interactive)cameraStory(progress);
   else if(!flight)globe.updateControls(Math.min(.04,(performance.now()-lastTime)/1000||1/60));
-  globe.camera.updateMatrixWorld();updateLabels(progress);updateCopy(progress);globe.render();lastTime=performance.now();
+  globe.camera.updateMatrixWorld();updateLabels(progress);updateCopy(progress);
+  globe.render(1-.9*smooth(.66,.77,progress)*(1-smooth(.91,.99,progress)));lastTime=performance.now();
 }
 function schedule(){if(!frame)frame=requestAnimationFrame(tick);}
 function tick(){frame=0;if(!globe||contextLost)return;if(dirty||interactive||themeFrame>performance.now()){dirty=false;renderStory();}if(interactive||themeFrame>performance.now())schedule();}
@@ -208,6 +215,6 @@ let resizeFrame=0;
 window.addEventListener('resize',()=>{cancelAnimationFrame(resizeFrame);resizeFrame=requestAnimationFrame(()=>{width=innerWidth;height=innerHeight;globe?.resize(width,height);dirty=true;ScrollTrigger.refresh();schedule();});},{passive:true});
 window.addEventListener('orientationchange',()=>{root.style.setProperty('--story-height',innerHeight+'px');},{passive:true});
 document.addEventListener('visibilitychange',()=>{if(document.hidden){cancelAnimationFrame(frame);frame=0;}else{dirty=true;schedule();}});
-window.addEventListener('pagehide',()=>{flight?.kill();cancelAnimationFrame(frame);frame=0;});
+window.addEventListener('pagehide',()=>{flight?.kill();flight=null;if(interactive)globe?.setInteractive(true);cancelAnimationFrame(frame);frame=0;});
 window.addEventListener('pageshow',()=>{dirty=true;ScrollTrigger.refresh();schedule();});
 language();init();

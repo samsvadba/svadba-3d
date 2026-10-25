@@ -84,13 +84,13 @@ const particleVertex = /* glsl */ `
     vec4 viewPosition = modelViewMatrix * vec4(worldPosition, 1.0);
     gl_Position = projectionMatrix * viewPosition;
 
-    float size = mix(0.015, 0.038, aSeed.z) * (uScale / 6.0);
+    float size = mix(0.025, 0.055, aSeed.z) * (uScale / 6.0);
     float sparkle = 0.76 + 0.24 * pow(0.5 + 0.5 * sin(driftPhase * 3.7), 6.0);
     gl_PointSize = clamp(size * uProjectionScale / max(0.5, -viewPosition.z),
-                         0.7 * uPixelRatio, 3.2 * uPixelRatio);
+                         1.5 * uPixelRatio, 3.2 * uPixelRatio);
     gl_PointSize *= mix(1.0, 0.55, dissolve);
     vAlpha = smoothPhase(0.592, 0.605) * (1.0 - dissolve)
-             * mix(0.38, 0.95, aSeed.y) * sparkle;
+             * mix(0.68, 1.0, aSeed.y) * sparkle;
     vSoftness = 0.0;
   }
 `;

@@ -49,6 +49,7 @@ function boundaryGeometry(rings) {
 export async function createGlobe({ canvas, surface = canvas, onInteraction = () => {} }) {
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(45, innerWidth / innerHeight, .1, 1000);
+  applyFraming(innerWidth, innerHeight);
   camera.position.copy(latLonToVec3(30, 15, overviewDistance()));
   camera.lookAt(0, 0, 0);
   const renderer = new THREE.WebGLRenderer({
@@ -144,12 +145,17 @@ export async function createGlobe({ canvas, surface = canvas, onInteraction = ()
     return detailPromise;
   }
 
+  function applyFraming(viewWidth, viewHeight) {
+    const offsetY = viewWidth >= 768 ? viewHeight * (viewHeight < 560 ? .18 : .12) : 0;
+    camera.setViewOffset(viewWidth, viewHeight, 0, offsetY, viewWidth, viewHeight);
+  }
+
   function resize(nextWidth, nextHeight) {
     width = Math.max(1, nextWidth); height = Math.max(1, nextHeight);
     renderer.setPixelRatio(Math.min(devicePixelRatio || 1, width < 768 ? 1.5 : 2));
     renderer.setSize(width, height, false);
     camera.aspect = width / height;
-    camera.updateProjectionMatrix();
+    applyFraming(width, height);
     controls.maxDistance = overviewDistance(width, height) * 1.3;
   }
 
@@ -191,15 +197,16 @@ export async function createGlobe({ canvas, surface = canvas, onInteraction = ()
     };
   }
 
-  function render() {
+  function render(visibility = 1) {
     camera.updateMatrixWorld(); group.updateMatrixWorld(true);
     const detail = smoothstep((36 - camera.position.length()) / 18, 0, 1);
     if (detail > 0 && !detailPromise) ensureDetail();
     const mix = detailLayers.length ? detail : 0;
-    overviewMaterial.opacity = .26 * (1 - mix * .86);
-    wireMaterial.opacity = .08 * (1 - detail * .94);
+    const geographyVisibility = clamp(visibility, 0, 1);
+    overviewMaterial.opacity = .26 * (1 - mix * .86) * geographyVisibility;
+    wireMaterial.opacity = .08 * (1 - detail * .94) * geographyVisibility;
     for (const layer of detailLayers) {
-      layer.material.opacity = detail * .19;
+      layer.material.opacity = detail * .19 * geographyVisibility;
       layer.line.visible = layer.material.opacity > .002;
     }
     renderer.render(scene, camera);
