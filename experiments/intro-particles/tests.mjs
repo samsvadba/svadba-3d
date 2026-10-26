@@ -67,30 +67,61 @@ for (const count of [8000, 16000, 24000]) {
   }
 
   const heart = geometry.getAttribute('aHeart');
+  const heartMeta = geometry.getAttribute('aHeartMeta');
+  assert.ok(heartMeta && heartMeta.itemSize === 3, 'Heart populations need their own GPU metadata');
   const box = new THREE.Box3().setFromBufferAttribute(heart);
   const size = box.getSize(new THREE.Vector3());
-  assert.ok(size.x > 2 && size.x <= HEART_BOUNDS.width);
-  assert.ok(size.y > 1.70 && size.y < 1.80 && size.y <= HEART_BOUNDS.height);
-  assert.ok(size.x / size.y > 1.13 && size.x / size.y < 1.22, 'Expected the broader reference-heart proportions');
-  assert.ok(size.z > 1.2 && size.z <= HEART_BOUNDS.depth, 'Heart is flat or exceeds framing bounds');
+  assert.ok(size.x >= 1.98 && size.x <= HEART_BOUNDS.width);
+  assert.ok(size.y > 2.10 && size.y <= HEART_BOUNDS.height, 'Heart lost its elongated silhouette or exceeds existing framing');
+  assert.ok(size.z > .18 && size.z <= .28, 'Heart should have shallow 2.5D depth, not the former inflated volume');
+  const groups = [[], [], []], contourBins = new Array(256);
   let leftLobe = -Infinity, rightLobe = -Infinity, cleft = -Infinity;
-  let lowTip = 0, interior = 0, front = 0, back = 0;
+  let lowTip = 0, centralInterior = 0, front = 0, back = 0;
   for (let i = 0; i < count; i += 1) {
     const x = heart.getX(i), y = heart.getY(i), z = heart.getZ(i);
-    if (Math.abs(z) < .12) {
+    const category = heartMeta.getX(i), seed = heartMeta.getY(i), arc = heartMeta.getZ(i);
+    assert.ok(Number.isInteger(category) && category >= 0 && category <= 2, 'Unknown heart population');
+    assert.ok(seed >= 0 && seed <= 1 && arc >= 0 && arc <= 1, 'Heart metadata outside normalized range');
+    assert.ok(Math.abs(z) <= .14, 'Heart particle escapes its shallow depth envelope');
+    groups[category].push([x, y, z]);
+    if (category === 0) {
       if (x < -.25 && x > -.85) leftLobe = Math.max(leftLobe, y);
       if (x > .25 && x < .85) rightLobe = Math.max(rightLobe, y);
       if (Math.abs(x) < .055 && y > 0) cleft = Math.max(cleft, y);
+      if (Math.abs(x) < .16 && y < -.98) lowTip += 1;
+      const bin = Math.min(255, Math.floor(arc * 256));
+      contourBins[bin] ||= [x, y];
     }
-    if (Math.abs(x) < .16 && y < -.84) lowTip += 1;
-    if (Math.hypot(x, y, z) < .35) interior += 1;
-    if (z > .30) front += 1;
-    if (z < -.30) back += 1;
+    if (category === 1) {
+      assert.ok(Math.abs(z) <= .075, 'Interior is too thick for an airy 2.5D heart');
+      if (Math.hypot(x, y) < .25) centralInterior += 1;
+    }
+    if (z > .035) front += 1;
+    if (z < -.035) back += 1;
   }
-  assert.ok(leftLobe > .80 && rightLobe > .80, 'Rounded upper lobes are missing');
-  assert.ok(cleft < leftLobe - .18 && cleft < rightLobe - .18, 'Middle cleft is not defined');
-  assert.ok(lowTip > 5 && interior > 4, 'Expected a defined tip and genuine interior particles');
-  assert.ok(front > count * .15 && back > count * .15, 'Heart has no front/back depth');
+  assert.equal(groups[0].length, Math.floor(count * .60), 'Contour must contain 60% of particles');
+  assert.equal(groups[1].length, Math.floor(count * .25), 'Airy interior must contain 25% of particles');
+  assert.equal(groups[2].length, count - groups[0].length - groups[1].length, 'Ambient population must contain the remaining 15%');
+  assert.ok(leftLobe > 1.01 && rightLobe > 1.01, 'Rounded upper lobes are missing');
+  assert.ok(cleft < leftLobe - .36 && cleft < rightLobe - .36, 'The narrow central cleft is not defined');
+  assert.ok(lowTip > count * .003, 'The elongated lower tip is missing');
+  assert.ok(centralInterior > count * .003 && centralInterior < count * .04, 'Interior became empty or a dense central blob');
+  assert.ok(front > count * .15 && back > count * .15, 'Shallow heart needs particles on both sides of its depth plane');
+  const contour = contourBins.filter(Boolean);
+  assert.ok(contour.length > 248, 'Contour has visible gaps along its perimeter');
+  const inside = ([x, y]) => {
+    let result = false;
+    for (let i = 0, j = contour.length - 1; i < contour.length; j = i++) {
+      const a = contour[i], b = contour[j];
+      if ((a[1] > y) !== (b[1] > y) && x < (b[0] - a[0]) * (y - a[1]) / (b[1] - a[1]) + a[0]) result = !result;
+    }
+    return result;
+  };
+  assert.ok(groups[1].filter(inside).length > groups[1].length * .93, 'Interior particles are not contained by the heart silhouette');
+  assert.ok(groups[2].filter(point => !inside(point)).length > groups[2].length * .70, 'Ambient particles collapse into another filled heart');
+  const ambientSides = [0, 0, 0, 0];
+  for (const [x, y] of groups[2]) ambientSides[(y >= 0 ? 2 : 0) + (x >= 0 ? 1 : 0)] += 1;
+  assert.ok(ambientSides.every(total => total > groups[2].length * .10), 'Ambient particles cluster in only one part of the silhouette');
   effect.dispose();
   assert.equal(effect.group.children.length, 0);
 }
@@ -208,7 +239,8 @@ for (const [width, height] of viewports) {
 }
 
 effect.dispose(); sourceGeometry.dispose();
-console.log('PASS — 8,000 / 16,000 / 24,000 finite GPU particles; actual country-border formation; broader reference-heart lobes, cleft, tip and 3D interior.');
+console.log('PASS — 8,000 / 16,000 / 24,000 finite GPU particles; actual country-border formation; 60/25/15 contour, airy interior and ambient heart populations.');
+console.log('PASS — shallow 2.5D silhouette, rounded lobes, narrow cleft, elongated tip, continuous outline and distributed exterior particles.');
 console.log('PASS — stable geometries/attributes; no independent clock; 1,001 forward/backward states identical across five viewports.');
 console.log(`PASS — origins ${separationKm.toFixed(2)} km apart; minimum camera radius ${minimumCamera.toFixed(3)}; minimum star radius ${minimumStarRadius.toFixed(3)}.`);
 console.log(`PASS — star depth ≥${minimumStarDepth.toFixed(2)}, edge clearance ≥${edgeMargin.toFixed(1)} px; fixed trajectory basis; clean final globe handoff.`);

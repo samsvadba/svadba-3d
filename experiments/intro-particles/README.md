@@ -20,15 +20,20 @@ routes. Scroll outside the globe surface, or use replay, to leave free explorati
 Reduced motion opens this final navigation immediately; replay is an explicit opt-in.
 
 The particle shaders are original code: one shared GPU point cloud morphs between
-geographic formation, seeded explosion and parametric volumetric heart coordinates.
-The rounded heart combines a Bézier profile with a shell/interior loft. A second
+geographic formation, seeded explosion and a layered 2.5D heart silhouette.
+The heart uses a symmetric Bézier outline with a narrow cleft and extended tip;
+60% of its points follow shallow contour layers, 25% form an airy interior and
+15% sit outside the silhouette. Depth stays within ±0.13 local units. A second
 point batch renders star cores/trails; a small plane renders the merger impulse.
-Pulse, yaw and the traveling light wave are progress-based, so pausing freezes them
+Pulse, a contour light wave, shallow depth ripples and a 7-degree turn back to the
+front are progress-based, so pausing freezes them
 and backward seeking reverses them. There is no accumulating physics simulation.
 16,000 points are used on mobile, 8,000 on constrained devices, 24,000 on desktop.
 Star trails use a separate, smaller budget: they grow with traveled distance after
 liftoff, instead of stacking the entire tail into one close-up particle blot.
 The reference repository had no license, so none of its source was copied.
+Heart generation uses its own seeded random stream while preserving the approved
+formation, explosion and star attributes exactly. The camera framing is unchanged.
 
 ## Build without changing production configuration
 

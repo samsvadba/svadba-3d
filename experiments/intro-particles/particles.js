@@ -11,14 +11,21 @@ function randomSequence(seed) {
   };
 }
 
-function heartProfile() {
-  // Broad rounded lobes and sweeping sides follow the supplied heart references.
-  // Cubic tangents meet smoothly; the bottom tip remains deliberately pointed.
+function advanceLegacyHeartSeed(random) {
+  // Keep every existing formation/burst/star sample byte-identical. The former
+  // balloon loft consumed three draws, plus a fourth for its interior points.
+  random(); random();
+  if (random() < .16) random();
+}
+
+function heartProfile(count) {
+  // A deliberate 2.5D redraw: rounded lobes, a narrow V cleft and flowing sides
+  // tapering into a slender tip. Only the cleft and tip are intentional cusps.
   const left = [
-    [[0, .50], [-.12, .50], [-.32, .82], [-.54, .82]],
-    [[-.54, .82], [-.76, .82], [-1.02, .60], [-1.02, .35]],
-    [[-1.02, .35], [-1.02, .10], [-.84, -.12], [-.64, -.30]],
-    [[-.64, -.30], [-.44, -.48], [-.12, -.76], [0, -.92]],
+    [[0, .48], [-.12, .78], [-.29, 1.02], [-.51, 1.02]],
+    [[-.51, 1.02], [-.73, 1.02], [-1, .80], [-1, .48]],
+    [[-1, .48], [-1, .16], [-.82, -.10], [-.61, -.34]],
+    [[-.61, -.34], [-.40, -.58], [-.11, -.92], [0, -1.12]],
   ];
   const curves = [...left, ...left.slice().reverse().map(curve => curve.slice().reverse().map(([x, y]) => [-x, y]))];
   const points = [], lengths = [0];
@@ -38,20 +45,46 @@ function heartProfile() {
   const last = points[points.length - 1];
   total += Math.hypot(points[0][0] - last[0], points[0][1] - last[1]);
   points.push(points[0]); lengths.push(total);
-  return random => {
-    const distance = random() * total;
+  const contourCount = Math.floor(count * .60);
+  const interiorCount = Math.floor(count * .25);
+  return (random, index) => {
+    const category = index < contourCount ? 0 : index < contourCount + interiorCount ? 1 : 2;
+    const groupStart = category === 0 ? 0 : category === 1 ? contourCount : contourCount + interiorCount;
+    const groupCount = category === 0 ? contourCount : category === 1 ? interiorCount : count - contourCount - interiorCount;
+    const contrast = random();
+    const arc = (index - groupStart + random() * .96) / groupCount;
+    const distance = arc * total;
     let low = 0, high = lengths.length - 1;
     while (low + 1 < high) {
       const middle = (low + high) >> 1;
       if (lengths[middle] < distance) low = middle; else high = middle;
     }
     const mix = (distance - lengths[low]) / Math.max(.00001, lengths[high] - lengths[low]);
-    const x = THREE.MathUtils.lerp(points[low][0], points[high][0], mix);
-    const y = THREE.MathUtils.lerp(points[low][1], points[high][1], mix);
-    const depth = random() * 2 - 1;
-    const crossSection = Math.sqrt(1 - depth * depth);
-    const volume = random() < .16 ? Math.pow(random(), 1 / 3) * .94 : 1;
-    return [x * crossSection * volume, (y * crossSection + .045) * volume, depth * .62 * volume];
+    let x = THREE.MathUtils.lerp(points[low][0], points[high][0], mix);
+    let y = THREE.MathUtils.lerp(points[low][1], points[high][1], mix) + .05;
+    const dx = points[high][0] - points[low][0], dy = points[high][1] - points[low][1];
+    const normalLength = Math.max(.00001, Math.hypot(dx, dy));
+    const nx = dy / normalLength, ny = -dx / normalLength;
+    let z;
+    if (category === 0) {
+      const layer = Math.floor(random() * 5) - 2;
+      const offset = (random() * 2 - 1) * .018 - Math.abs(layer) * .0015;
+      x += nx * offset; y += ny * offset;
+      z = layer * .055 + (random() * 2 - 1) * .008;
+    } else if (category === 1) {
+      const inward = Math.sqrt(random()) * .925;
+      x *= inward; y = (y - .05) * inward + .05;
+      z = (random() * 2 - 1) * .07;
+    } else {
+      // An airy outside population, constrained to the unchanged camera envelope.
+      const xRoom = nx > 0 ? (1.038 - x) / nx : nx < 0 ? (-1.038 - x) / nx : Infinity;
+      const yRoom = ny > 0 ? (1.115 - y) / ny : ny < 0 ? (-1.115 - y) / ny : Infinity;
+      const offset = Math.min(.022 + Math.pow(random(), 1.4) * .13, Math.min(xRoom, yRoom) * .85);
+      x += nx * offset; y += ny * offset;
+      z = (random() * 2 - 1) * .13;
+    }
+    // x: contour/interior/ambient; y: individual size/contrast; z: contour arc.
+    return { position: [x, y, z], meta: [category, contrast, arc] };
   };
 }
 
@@ -97,6 +130,7 @@ const sharedVertex = /* glsl */ `
   uniform float uFormationRotation;
   varying float vAlpha;
   varying float vSoftness;
+  varying vec2 vHeartStyle;
   float phase(float start, float end) {
     return clamp((uProgress - start) / (end - start), 0.0, 1.0);
   }
@@ -109,6 +143,7 @@ const sharedVertex = /* glsl */ `
 const particleVertex = /* glsl */ `
   ${sharedVertex}
   attribute vec3 aHeart;
+  attribute vec3 aHeartMeta;
   attribute vec3 aExplosion;
   attribute vec3 aSeed;
   attribute vec3 aFormation;
@@ -127,17 +162,24 @@ const particleVertex = /* glsl */ `
 
     float hold = phase(0.85, 0.95);
     float heartbeat = pow(max(0.0, sin(hold * 12.5663706)), 3.0);
-    float pulse = 1.0 + heartbeat * 0.026;
-    float angle = -0.20 + smoothPhase(0.80, 0.95) * 0.36;
+    float pulse = 1.0 + heartbeat * 0.018;
+    // A shallow side-to-side reveal returns fully front-facing before dissolution.
+    float angle = sin(hold * 3.14159265) * 0.12217305;
     mat3 turn = mat3(cos(angle), 0.0, -sin(angle),
                      0.0, 1.0, 0.0,
                      sin(angle), 0.0, cos(angle));
-    vec3 heart = turn * aHeart * uScale * pulse;
-    float wavePosition = mix(-1.35, 1.25, hold);
-    float waveDistance = (aHeart.y - wavePosition) * 9.0;
-    float lightWave = exp(-waveDistance * waveDistance)
-                      * smoothPhase(0.84, 0.86) * (1.0 - dissolve);
-    heart += normalize(aHeart + vec3(0.001)) * lightWave * uScale * 0.007;
+    float holdEnvelope = sin(hold * 3.14159265);
+    vec3 heartPoint = aHeart;
+    heartPoint.z += sin(aHeartMeta.z * 18.8495559 + hold * 6.2831853)
+                    * holdEnvelope * 0.007;
+    vec3 heart = turn * heartPoint * uScale * pulse;
+    float contour = 1.0 - step(0.5, aHeartMeta.x);
+    float interior = step(0.5, aHeartMeta.x) * (1.0 - step(1.5, aHeartMeta.x));
+    float arcDistance = abs(aHeartMeta.z - hold);
+    arcDistance = min(arcDistance, 1.0 - arcDistance);
+    float waveDistance = arcDistance * 42.0;
+    float lightWave = exp(-waveDistance * waveDistance) * holdEnvelope
+                      * gather * (1.0 - dissolve) * (0.12 + contour * 0.88);
     vec3 localPosition = mix(flight, heart, gather);
     localPosition += (aExplosion * 1.5 + aHeart * 0.25)
                      * dissolve * dissolve * uScale;
@@ -172,6 +214,26 @@ const particleVertex = /* glsl */ `
     vAlpha = (smoothPhase(0.638, 0.652) * (1.0 - dissolve)
              + formationAlpha) * mix(0.58, 1.0, aSeed.y)
              * sparkle * (0.88 + lightWave * 0.35);
+    float brokenArc = sin(aHeartMeta.z * 106.81415
+                          + sin(aHeartMeta.z * 31.415927) * 0.7);
+    float contourBreak = 0.08 + 0.92 * smoothstep(-0.75, -0.20, brokenArc);
+    float contrast = aHeartMeta.y;
+    float contourAlpha = (0.38 + 0.68 * pow(contrast, 0.65)) * contourBreak;
+    float insideAlpha = 0.25 + 0.40 * pow(contrast, 1.2);
+    float outsideAlpha = 0.08 + 0.22 * contrast * contrast;
+    float heartAlpha = contour * contourAlpha + interior * insideAlpha
+                       + (1.0 - contour - interior) * outsideAlpha;
+    vAlpha *= mix(1.0, heartAlpha * (1.0 + lightWave * 0.45), gather);
+    float haloSelection = contour * step(0.96, contrast);
+    float heartSize = contour * mix(0.80, 1.55, pow(contrast, 1.8))
+                     + interior * mix(0.72, 1.02, contrast * contrast)
+                     + (1.0 - contour - interior) * mix(0.48, 0.83, contrast);
+    float minimumSize = (contour * 0.70 + interior * 0.65
+                         + (1.0 - contour - interior) * 0.55) * uPixelRatio;
+    float fineSize = clamp(gl_PointSize * heartSize, minimumSize, 2.3 * uPixelRatio);
+    fineSize = min(fineSize + haloSelection * uPixelRatio * 0.35, 2.4 * uPixelRatio);
+    gl_PointSize = mix(gl_PointSize, fineSize, gather);
+    vHeartStyle = vec2(gather, haloSelection * 0.55);
     vSoftness = 0.0;
   }
 `;
@@ -255,6 +317,7 @@ const starVertex = /* glsl */ `
                                        * pow(1.0 - aTail, 1.6) * 0.5
                                       : (aKind > 1.5 ? uStarHaloOpacity : 0.92));
     vSoftness = aKind > 1.5 ? 1.0 : 0.0;
+    vHeartStyle = vec2(0.0);
   }
 `;
 
@@ -263,6 +326,7 @@ const pointFragment = /* glsl */ `
   uniform float uDark;
   varying float vAlpha;
   varying float vSoftness;
+  varying vec2 vHeartStyle;
   void main() {
     float radius = length(gl_PointCoord - vec2(0.5)) * 2.0;
     if (radius > 1.0 || vAlpha < 0.001) discard;
@@ -270,6 +334,13 @@ const pointFragment = /* glsl */ `
     float halo = exp(-radius * radius * 5.5) * (1.0 - smoothstep(0.75, 1.0, radius));
     float alpha = mix(disc, halo, vSoftness) * vAlpha;
     alpha *= mix(0.82, 1.0, uDark);
+    if (vHeartStyle.x > 0.0) {
+      float fineDisc = 1.0 - smoothstep(0.10, 0.80, radius);
+      float tinyHalo = exp(-radius * radius * 6.5)
+                       * (1.0 - smoothstep(0.78, 1.0, radius));
+      float heartProfile = mix(fineDisc, tinyHalo, vHeartStyle.y);
+      alpha = mix(alpha, heartProfile * vAlpha * mix(1.08, 1.0, uDark), vHeartStyle.x);
+    }
     gl_FragColor = vec4(uColor, alpha);
     #include <tonemapping_fragment>
     #include <colorspace_fragment>
@@ -344,13 +415,18 @@ export function createParticles({ count = 10000, mobile = false, formationPositi
   };
 
   const heart = new Float32Array(particleCount * 3);
+  const heartMeta = new Float32Array(particleCount * 3);
   const explosion = new Float32Array(particleCount * 3);
   const seeds = new Float32Array(particleCount * 3);
   const scatter = new Float32Array(particleCount * 3);
   const formation = geographicSamples(formationPositions, particleCount, random);
-  const sampleHeart = heartProfile();
+  const sampleHeart = heartProfile(particleCount);
+  const heartRandom = randomSequence(0x48454152);
   for (let i = 0; i < particleCount; i += 1) {
-    heart.set(sampleHeart(random), i * 3);
+    advanceLegacyHeartSeed(random);
+    const heartSample = sampleHeart(heartRandom, i);
+    heart.set(heartSample.position, i * 3);
+    heartMeta.set(heartSample.meta, i * 3);
     const z = random() * 2 - 1;
     const angle = random() * Math.PI * 2;
     const ring = Math.sqrt(1 - z * z);
@@ -362,6 +438,7 @@ export function createParticles({ count = 10000, mobile = false, formationPositi
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(particleCount * 3), 3));
   geometry.setAttribute('aHeart', new THREE.BufferAttribute(heart, 3));
+  geometry.setAttribute('aHeartMeta', new THREE.BufferAttribute(heartMeta, 3));
   geometry.setAttribute('aExplosion', new THREE.BufferAttribute(explosion, 3));
   geometry.setAttribute('aSeed', new THREE.BufferAttribute(seeds, 3));
   geometry.setAttribute('aFormation', new THREE.BufferAttribute(formation.result, 3));
