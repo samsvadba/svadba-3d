@@ -132,9 +132,9 @@ const particleVertex = /* glsl */ `
     vec3 worldPosition = uMerge + uBasis * localPosition;
     float formationAlpha = 0.0;
     if (uProgress < 0.18) {
-      float stagger = aSeed.x * 0.022;
-      float arrival = smoothPhase(0.008 + stagger, 0.125 + stagger);
-      float spin = (1.0 - arrival) * (1.05 + aSeed.y * 0.35);
+      float stagger = aSeed.x * 0.012;
+      float arrival = smoothPhase(0.008 + stagger, 0.09 + stagger);
+      float spin = (1.0 - arrival) * (0.12 + aSeed.y * 0.10);
       mat3 orbit = mat3(cos(spin), 0.0, -sin(spin),
                         0.0, 1.0, 0.0,
                         sin(spin), 0.0, cos(spin));
@@ -146,7 +146,10 @@ const particleVertex = /* glsl */ `
       worldPosition = mat3(formationCos, 0.0, -formationSin,
                            0.0, 1.0, 0.0,
                            formationSin, 0.0, formationCos) * worldPosition;
-      formationAlpha = smoothPhase(0.0, 0.012) * (1.0 - smoothPhase(0.13, 0.16));
+      // Already visible on the very first GPU frame; the parser-time cloud
+      // crossfades into this same opening, rather than a blank loading screen.
+      formationAlpha = (0.82 + 0.18 * smoothPhase(0.0, 0.012))
+                       * (1.0 - smoothPhase(0.105, 0.125));
     }
     vec4 viewPosition = modelViewMatrix * vec4(worldPosition, 1.0);
     gl_Position = projectionMatrix * viewPosition;
@@ -155,7 +158,7 @@ const particleVertex = /* glsl */ `
     if (uProgress < 0.18) size = mix(0.018, 0.039, aSeed.z);
     float sparkle = 0.76 + 0.24 * pow(0.5 + 0.5 * sin(driftPhase * 3.7), 6.0);
     gl_PointSize = clamp(size * uProjectionScale / max(0.5, -viewPosition.z),
-                         0.95 * uPixelRatio, 2.6 * uPixelRatio);
+                         (uProgress < 0.18 ? 1.1 : 0.95) * uPixelRatio, 2.6 * uPixelRatio);
     gl_PointSize *= mix(1.0, 0.55, dissolve);
     vAlpha = (smoothPhase(0.638, 0.652) * (1.0 - dissolve)
              + formationAlpha) * mix(0.58, 1.0, aSeed.y)
@@ -297,7 +300,10 @@ const flashFragment = /* glsl */ `
 
 /** Isolated, deterministic GPU effect for intro-particles-test.html. */
 export function createParticles({ count = 10000, mobile = false, formationPositions } = {}) {
-  const particleCount = Math.max(3000, Math.min(45000, Math.round(count)));
+  const particleCount = Math.max(3000, Math.min(60000, Math.round(count)));
+  // Extra points belong only to the opening. Keep the approved explosion and
+  // heart budgets unchanged after the globe has formed.
+  const burstCount = Math.min(particleCount, particleCount <= 16000 ? 12000 : mobile ? 30000 : 45000);
   const random = randomSequence(0x534d2027);
   const group = new THREE.Group();
   group.name = 'intro-story-particles';
@@ -338,7 +344,7 @@ export function createParticles({ count = 10000, mobile = false, formationPositi
   const heartSeeds = new Float32Array(particleCount * 3);
   const heartNormals = new Float32Array(particleCount * 4);
   const heartActive = new Float32Array(particleCount);
-  const heartCount = Math.min(particleCount, particleCount <= 12000 ? 10000 : mobile ? 22000 : 33000);
+  const heartCount = Math.min(particleCount, particleCount <= 16000 ? 10000 : mobile ? 22000 : 33000);
   const explosion = new Float32Array(particleCount * 3);
   const seeds = new Float32Array(particleCount * 3);
   const scatter = new Float32Array(particleCount * 3);
@@ -513,7 +519,8 @@ export function createParticles({ count = 10000, mobile = false, formationPositi
       forward.set(0, 0, 1).applyQuaternion(starBasis);
       configureCurve(origins[0], 1, uniforms.uAnchorA.value, uniforms.uControlAA.value, uniforms.uControlAB.value, heartScale);
       configureCurve(origins[1], -1, uniforms.uAnchorB.value, uniforms.uControlBA.value, uniforms.uControlBB.value, heartScale);
-      particles.visible = (formation.available && p < .161) || (p > .637 && p < .991);
+      geometry.setDrawRange(0, p < .18 ? particleCount : burstCount);
+      particles.visible = (formation.available && p < .126) || (p > .637 && p < .991);
       stars.visible = p > .366 && p < .661;
       flash.visible = p > .638 && p < .690;
       flash.position.copy(merge);

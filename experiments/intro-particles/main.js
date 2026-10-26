@@ -35,6 +35,11 @@ const markerView=new THREE.Vector3();
 const theme={paper:'',ink:'',dark:false,olive:false};
 const displayedTheme={paper:new THREE.Color(),ink:new THREE.Color(),dark:0,olive:0};
 let themeTween=null,themeReady=false;
+let startupCloudVisible=true;
+function dismissStartupCloud(){
+  if(!startupCloudVisible)return;
+  startupCloudVisible=false;window.dispatchEvent(new Event('intro-particles:first-frame'));
+}
 $('story-monogram').innerHTML=monogram;
 
 function save(){try{for(const [k,v] of Object.entries(preferences))localStorage.setItem('sm-'+k,v);}catch{}}
@@ -184,7 +189,7 @@ function cameraStory(p){
 }
 
 function renderStory(){
-  if(!globe||contextLost)return;
+  if(!globe||!fx||!choreography||contextLost)return;
   const nextInteractive=progress>=.999999;
   if(nextInteractive!==interactive){
     if(nextInteractive)cameraStory(progress);
@@ -195,7 +200,7 @@ function renderStory(){
   if(interactive&&!flight)globe.updateControls(Math.min(.04,(performance.now()-lastTime)/1000||1/60));
   cameraStory(progress);
   globe.camera.updateMatrixWorld();updateCopy(progress);updateLabels(progress);
-  globe.render(pose.geographyOpacity,pose.originFocus);lastTime=performance.now();
+  globe.render(pose.geographyOpacity,pose.originFocus);dismissStartupCloud();lastTime=performance.now();
 }
 function schedule(){if(!frame&&!suspensions.size)frame=requestAnimationFrame(tick);}
 function tick(){frame=0;if(!globe||contextLost||suspensions.size)return;if(dirty||interactive||themeFrame>performance.now()){dirty=false;renderStory();}if(interactive||themeFrame>performance.now())schedule();}
@@ -291,7 +296,7 @@ async function init(){
     globe=await createGlobe({canvas:$('story-canvas'),surface:$('globe-interaction'),onInteraction:()=>{flight?.kill();flight=null;dirty=true;schedule();}});
     bindGlobeInput($('globe-interaction'),{canInteract:()=>interactive&&!flight,canTap:()=>interactive&&!flight,onInteract:()=>{},onTap:target=>target?.click()});
     const weak=(navigator.deviceMemory||4)<=2||(navigator.hardwareConcurrency||4)<=2;
-    fx=createParticles({count:weak?12000:width<768?30000:45000,mobile:width<768,formationPositions:globe.getFormationPositions()});globe.scene.add(fx.group);
+    fx=createParticles({count:weak?16000:width<768?42000:60000,mobile:width<768,formationPositions:globe.getFormationPositions()});globe.scene.add(fx.group);
     globe.globeMaterial.transparent=true;
     homeDirection.copy(globe.latLonToVec3((origins[0].lat+origins[1].lat)/2,(origins[0].lon+origins[1].lon)/2,1));
     startDirection.copy(globe.latLonToVec3(30,15,1));
@@ -325,6 +330,7 @@ async function init(){
     if(suspensions.size)playback.suspend();
     dirty=true;schedule();
   }catch(error){
+    dismissStartupCloud();
     mode='complete';updateCopy(1);$('story-replay').disabled=true;
     $('story-loading').hidden=false;$('story-loading').textContent=copy[preferences.language].error;
     console.error('Isolated intro prototype:',error);

@@ -4,18 +4,21 @@ Open `intro-particles-test.html`. Production V3 is not imported or initialized.
 The prototype reads the existing configuration, geography, typography, monogram,
 input helper and theme tokens. Its Three.js scene, camera and controls are separate.
 
-One 34-second GSAP timeline starts after the scene and shaders are ready. `pacing.js`
-smoothly compresses the opening formation to about 2.7 seconds and brings the
-approach forward; manual scrolling samples the identical reversible score. A first
+One 39-second GSAP timeline starts after the scene and shaders are ready. `pacing.js`
+separates a 2.4-second cloud formation from six seconds of visible globe rotation.
+The later narrative cue durations are preserved, shifted five seconds later;
+manual scrolling samples the identical reversible score. A first
 scene click/touch pauses exactly at its current progress; that entire initiating
 gesture is consumed. Further native scroll/pan seeks forward/backward through the
 same timeline. The manual instruction and accessible progress range appear only
 when paused. The utility Play control resumes, without restarting the score.
 Background tabs and WebGL context loss suspend playback without changing progress.
 
-The opening GPU cloud gathers onto the actual existing country borders, with two
-shared axial turns (720 degrees) on the cloud and globe. Its angular speed decreases
-continuously, reaching zero velocity and acceleration before the unchanged approach.
+The opening GPU cloud gathers onto the actual existing country borders without
+consuming any of the globe's turns. Once the globe is fully visible, two shared
+axial turns (720 degrees) ease in over six seconds and gradually settle to zero
+velocity and acceleration before the unchanged approach. Peak speed stays below
+half a turn per second. The startup already shows particles, without a loading label.
 Slovakia is highlighted using only its existing geographic contour; there is no
 surface fill. Editorial origin labels stay outside its projected boundary, with
 the names above their towns. After a shorter hold, the camera retreats while one star arcs upward and
@@ -41,8 +44,9 @@ Z ×0.86 retains depth, with a 0.042-unit cleft and 0.016-unit tip correction.
 The resulting width/height ratio is about 1.08, inside the unchanged camera framing.
 The heart uses 10,000 points on constrained devices,
 22,000 on mobile and 33,000 on desktop. A slow 25-degree spatial turn and gentle
-1.8% breathing reveal the original volume. Formation/explosion use adaptive
-12,000 / 30,000 / 45,000 points; the impact briefly swirls the same particles into
+1.8% breathing reveal the original volume. Formation uses adaptive
+16,000 / 42,000 / 60,000 points, while explosion retains its existing
+12,000 / 30,000 / 45,000 budget; the impact briefly swirls the same particles into
 clouds before they gather. No new effect layer or solid heart mesh is introduced.
 A second point batch renders brighter star cores/trails; a small plane renders
 the merger impulse.

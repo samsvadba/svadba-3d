@@ -56,8 +56,14 @@ assert.ok(separationKm > 20 && separationKm < 35);
 assert.deepEqual(STORY_PHASES.stars, [.37, .64]);
 assert.deepEqual(STORY_PHASES.gather, [.735, .85]);
 
-assert.equal(STORY_DURATION, 34);
-for (const [position, score] of [[0,0],[.08,.15],[.10,.18],[.19,.30],[.23,.37],[.80,.85],[1,1]]) assert.ok(Math.abs(toStoryProgress(position)-score)<1e-10);
+assert.equal(STORY_DURATION, 39);
+for (const [seconds, score] of [[0,0],[2.4,.105],[8.4,.18],[11.46,.30],[12.82,.37],[32.2,.85],[39,1]]) {
+  assert.ok(Math.abs(toStoryProgress(seconds/STORY_DURATION)-score)<1e-10);
+}
+// Only the opening receives extra time; later narrative cues keep their durations.
+for (const [oldSeconds, score] of [[3.4,.18],[6.46,.30],[7.82,.37],[9.18,.39],[19.04,.64],[22.78,.74],[27.2,.85],[32.3,.95],[33.66,.99]]) {
+  assert.ok(Math.abs(toStoryProgress((oldSeconds+5)/STORY_DURATION)-score)<1e-10);
+}
 let previousScore = -1;
 for (let i=0;i<=10000;i++) { const score=toStoryProgress(i/10000); assert.ok(score>=previousScore && score>=0 && score<=1); previousScore=score; }
 const detail = JSON.parse(await readFile(new URL('../../geography-detail-v3.json', import.meta.url), 'utf8'));
@@ -65,8 +71,8 @@ const slovakia = detail.features.find(feature=>feature.iso==='SVK');
 assert.ok(slovakia && slovakia.rings[0].length>100, 'Slovakia must use existing geographic data');
 assert.ok(!/countryFillGeometry|originFill/.test(globeSource), 'Slovakia must have an outline only, without a surface fill');
 
-for (const count of [12000, 30000, 45000]) {
-  const effect = createParticles({ count, mobile: count < 45000, formationPositions });
+for (const count of [16000, 42000, 60000]) {
+  const effect = createParticles({ count, mobile: count < 60000, formationPositions });
   const geometry = effect.group.children[0].geometry;
   for (const object of effect.group.children) {
     for (const [name, attribute] of Object.entries(object.geometry.attributes)) {
@@ -90,7 +96,7 @@ for (const count of [12000, 30000, 45000]) {
   const heartNormals = geometry.getAttribute('aHeartNormal');
   assert.equal(heartNormals.itemSize, 4, 'Heart rim must use an existing shell normal and classification');
   const active = geometry.getAttribute('aHeartActive');
-  const expectedCount = count <= 12000 ? 10000 : count < 45000 ? 22000 : 33000;
+  const expectedCount = count <= 16000 ? 10000 : count < 60000 ? 22000 : 33000;
   assert.equal([...active.array].filter(Boolean).length, expectedCount, 'Adaptive heart density changed');
   assert.ok(!geometry.hasAttribute('aHeartMeta'), 'Later contour/cloud categories remain');
   assert.equal(effect.group.children[0].material.fragmentShader, originalPointFragment);
@@ -126,11 +132,17 @@ for (const count of [12000, 30000, 45000]) {
   assert.ok(size.y > 1.85 && size.y < 1.96, 'The four-percent height restoration changed');
   assert.ok(size.z > 1.10 && size.z <= HEART_BOUNDS.depth, 'Original spatial volume was replaced by a flat or shallow cloud');
   assert.ok(size.x / size.y > 1.04 && size.x / size.y < 1.14, 'Heart lost its balanced proportions');
+  const burstBudget=count<=16000?12000:count<60000?30000:45000;
+  for (const progress of [0,.105,.179,.18,.64,.90,1,.05]) {
+    effect.update({progress,origins,merge:new THREE.Vector3(0,0,20),color:new THREE.Color('#303D29')});
+    assert.equal(geometry.drawRange.start,0);
+    assert.equal(geometry.drawRange.count,progress<.18?count:burstBudget,'Extra formation points leak into the unchanged explosion/heart budget');
+  }
   effect.dispose();
   assert.equal(effect.group.children.length, 0);
 }
 
-const effect = createParticles({ count: 30000, mobile: true, formationPositions });
+const effect = createParticles({ count: 42000, mobile: true, formationPositions });
 const snapshots = effect.group.children.map(object => ({
   uuid: object.geometry.uuid,
   attributes: Object.fromEntries(Object.entries(object.geometry.attributes).map(([name, attribute]) => [name, attribute.array])),
@@ -138,16 +150,25 @@ const snapshots = effect.group.children.map(object => ({
 const homeDirection = latLonToVec3((config.origins[0].lat + config.origins[1].lat) / 2, (config.origins[0].lon + config.origins[1].lon) / 2, 1);
 const startDirection = latLonToVec3(30, 15, 1);
 const choreography = createChoreography({ homeDirection, startDirection, radius });
-let previousSpinStep = Infinity;
-let previousSpinAngle = choreography.sample(0, { width: 390, height: 844, overviewDistance }).formationRotation;
-for (let i = 1; i <= 1000; i += 1) {
-  const angle = choreography.sample(i / 1000 * .18, { width: 390, height: 844, overviewDistance }).formationRotation;
-  const step = angle - previousSpinAngle;
-  assert.ok(step >= 0 && step <= previousSpinStep + 1e-12, 'Opening spin must continuously decelerate');
-  previousSpinStep = step;
-  previousSpinAngle = angle;
+for (let i = 0; i <= 100; i += 1) {
+  const pose = choreography.sample(i / 100 * .105, { width: 390, height: 844, overviewDistance });
+  assert.equal(pose.formationRotation, -Math.PI*4, 'Visible turns are consumed while the globe is still forming');
 }
-assert.ok(previousSpinStep < 1e-7, 'Opening spin stops abruptly');
+assert.equal(choreography.sample(.105, { width:390,height:844,overviewDistance }).globeReveal,1, 'The globe must be fully visible before its two turns');
+let previousSpinAngle = -Math.PI*4, greatestSpinSpeed = 0, firstSpinSpeed = 0, finalSpinSpeed = 0;
+for (let i = 1; i <= 6000; i += 1) {
+  const seconds = 2.4+i/1000;
+  const angle = choreography.sample(toStoryProgress(seconds/STORY_DURATION), { width:390,height:844,overviewDistance }).formationRotation;
+  const speed = (angle-previousSpinAngle)*1000;
+  assert.ok(speed>=-1e-8, 'Opening spin reverses');
+  if (i===1) firstSpinSpeed=speed;
+  if (i===6000) finalSpinSpeed=speed;
+  greatestSpinSpeed=Math.max(greatestSpinSpeed,speed);
+  previousSpinAngle=angle;
+}
+assert.ok(Math.abs(previousSpinAngle)<1e-10, 'Two visible turns did not finish before approach');
+assert.ok(greatestSpinSpeed<Math.PI, 'The visible two-turn spin exceeds half a turn per second');
+assert.ok(firstSpinSpeed<.0001 && finalSpinSpeed<.0001, 'Visible spin starts or stops abruptly');
 const color = new THREE.Color('#303D29');
 const star = new THREE.Vector3(), projected = new THREE.Vector3();
 const earthCenter = new THREE.Vector3();
@@ -263,10 +284,10 @@ for (const [width, height] of viewports) {
 }
 
 effect.dispose(); sourceGeometry.dispose();
-console.log('PASS — finite 12k / 30k / 45k GPU points; denser 10k / 22k / 33k hearts retain original sampler/sprite and seeded appearance.');
+console.log('PASS — finite 16k / 42k / 60k formation points; unchanged 10k / 22k / 33k hearts retain original sampler/sprite and seeded appearance.');
 console.log('PASS — 2f7b1ed sampler/sprite checksum preserved with four-percent taller balanced spatial heart proportions; opposite star arcs stay clear until their impact.');
 console.log('PASS — stable geometries/attributes; no independent clock; 1,001 forward/backward states identical across five viewports.');
 console.log(`PASS — origins ${separationKm.toFixed(2)} km apart; minimum camera radius ${minimumCamera.toFixed(3)}; minimum star radius ${minimumStarRadius.toFixed(3)}.`);
 console.log(`PASS — star depth ≥${minimumStarDepth.toFixed(2)}, edge clearance ≥${edgeMargin.toFixed(1)} px; fixed trajectory basis; clean final globe handoff.`);
 console.log(`PASS — distinct star cores remain ≥${minimumSeparateCores.toFixed(1)} px apart through p=.61, without crossing before the p=.64 merger.`);
-console.log('PASS — unchanged pacing, synchronized 720° formation spin with continuous deceleration, Slovakia outline only, clean liftoff and narrow wakes.');
+console.log(`PASS — 2.4-second formation, then six visible seconds for 720° with smooth start/stop (peak ${(greatestSpinSpeed/(2*Math.PI)).toFixed(3)} turns/s); downstream cues shifted +5s only.`);
