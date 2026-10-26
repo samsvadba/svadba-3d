@@ -51,6 +51,7 @@ export function createChoreography({ homeDirection, startDirection, radius = 12 
     formationProgress: 0,
     formationRotation: 0,
     originReveal: 0,
+    originFocus: 0,
     finalReveal: 0,
     travel: 0,
   };
@@ -106,8 +107,9 @@ export function createChoreography({ homeDirection, startDirection, radius = 12 
     pose.formationProgress = smooth(0, .15, p);
     // The geography and its forming cloud share one axial turn, settling before
     // the camera approaches the fixed geographic origins. Fully reversible.
-    pose.formationRotation = -Math.PI * 1.25 * (1 - smoother(0, .18, p));
+    pose.formationRotation = -Math.PI * 2 * (1 - smoother(0, .18, p));
     pose.originReveal = smooth(.275, .30, p) * (1 - smooth(.39, .45, p));
+    pose.originFocus = smooth(.21, .29, p) * (1 - smooth(.43, .50, p));
     pose.finalReveal = smooth(.99, 1, p);
     pose.travel = smooth(.37, .64, p);
     return pose;

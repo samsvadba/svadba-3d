@@ -98,13 +98,20 @@ const particleVertex = /* glsl */ `
     flight += vec3(sin(driftPhase), cos(driftPhase * 0.83),
                    sin(driftPhase * 0.71)) * sin(burst * 3.14159265)
                    * uScale * 0.11;
+    // A brief three-dimensional swirl expands out of the impact and settles
+    // before gathering. It uses these same particles, not an extra effect layer.
+    float cloud = sin(burst * 3.14159265) * (1.0 - gather);
+    float cloudAngle = aSeed.x * 6.2831853 + burst * (3.4 + aSeed.y * 2.0);
+    flight += vec3(cos(cloudAngle), sin(cloudAngle), sin(cloudAngle * 0.73 + aSeed.z * 6.2831853))
+              * cloud * uScale * (0.08 + aSeed.z * 0.12);
 
     // Original heart orientation; the current gather/dissolve timing stays intact.
-    float angle = -0.17 + smoothPhase(0.76, 0.9) * 0.26;
+    float angle = -0.22 + smoothPhase(0.78, 0.95) * 0.44;
     mat3 turn = mat3(cos(angle), 0.0, -sin(angle),
                      0.0, 1.0, 0.0,
                      sin(angle), 0.0, cos(angle));
-    vec3 heart = turn * aHeart * uScale;
+    float breath = 1.0 + 0.018 * sin(phase(0.85, 0.95) * 3.14159265);
+    vec3 heart = turn * aHeart * uScale * breath;
     vec3 localPosition = mix(flight, heart, gather);
     localPosition += (aExplosion * 1.5 + aHeart * 0.25)
                      * dissolve * dissolve * uScale;
@@ -194,15 +201,15 @@ const starVertex = /* glsl */ `
     position += outward * (lift - 1.45) * inverse * inverse * inverse;
     float curveWave = sin(t * 3.14159265);
     float envelope = curveWave * curveWave;
-    float angle = t * (side > 0.0 ? 6.9 : 5.3) + side * 0.7;
-    position += (right * cos(angle) * side + up * sin(angle) * 0.72)
+    float angle = t * (side > 0.0 ? 9.5 : 8.3) + side * 0.7;
+    position += (right * cos(angle) * side + up * sin(angle) * side * 0.72)
                 * envelope * uScale * 0.13;
     position += forward * sin(t * 6.2831853) * envelope * uScale * 0.075;
     // Once the camera is well clear, lift the arcs beyond Earth's silhouette.
     // This late loft cannot push a star through the close-up camera.
     float loftPhase = clamp((progress - 0.50) / 0.14, 0.0, 1.0);
     float loft = sin(loftPhase * 3.14159265);
-    position += up * uScale * (side > 0.0 ? 0.75 : 0.62) * loft * loft;
+    position += up * uScale * side * (side > 0.0 ? 0.72 : 0.80) * loft * loft;
     // Keep the two cores legible as separate stars through their high arc;
     // converge only for the intentional merger, rather than crossing early.
     float separation = smoothstep(0.50, 0.54, progress)
@@ -222,7 +229,7 @@ const starVertex = /* glsl */ `
     pointPosition += uStarBasis * orbit * spread * aSeed.z * (aKind < 0.5 ? 1.0 : 0.0);
     vec4 viewPosition = modelViewMatrix * vec4(pointPosition, 1.0);
     gl_Position = projectionMatrix * viewPosition;
-    float size = aKind > 1.5 ? 0.42 : (aKind > 0.5 ? 0.10 : 0.017);
+    float size = aKind > 1.5 ? 0.65 : (aKind > 0.5 ? 0.16 : 0.020);
     size *= clamp(uScale / 6.0, 0.8, 2.0);
     float maxSize = aKind > 1.5 ? uStarHaloLimit : (aKind > 0.5 ? uStarCoreLimit : uStarGrainLimit);
     gl_PointSize = clamp(size * uProjectionScale / max(0.5, -viewPosition.z),
@@ -231,7 +238,7 @@ const starVertex = /* glsl */ `
     float vanish = 1.0 - smoothPhase(0.638, 0.66);
     float tailVisible = smoothstep(0.388, 0.41, uProgress - tailDelay);
     vAlpha = appear * vanish * (aKind < 0.5 ? tailVisible * uTrailReveal
-                                       * pow(1.0 - aTail, 1.6) * 0.5
+                                       * pow(1.0 - aTail, 1.6) * 0.65
                                       : (aKind > 1.5 ? uStarHaloOpacity : 0.92));
     vSoftness = aKind > 1.5 ? 1.0 : 0.0;
   }
@@ -269,7 +276,7 @@ const flashFragment = /* glsl */ `
 
 /** Isolated, deterministic GPU effect for intro-particles-test.html. */
 export function createParticles({ count = 10000, mobile = false, formationPositions } = {}) {
-  const particleCount = Math.max(3000, Math.min(24000, Math.round(count)));
+  const particleCount = Math.max(3000, Math.min(36000, Math.round(count)));
   const random = randomSequence(0x534d2027);
   const group = new THREE.Group();
   group.name = 'intro-story-particles';
@@ -309,7 +316,7 @@ export function createParticles({ count = 10000, mobile = false, formationPositi
   const heart = new Float32Array(particleCount * 3);
   const heartSeeds = new Float32Array(particleCount * 3);
   const heartActive = new Float32Array(particleCount);
-  const heartCount = Math.min(particleCount, particleCount <= 8000 ? 5200 : mobile ? 9000 : 14000);
+  const heartCount = Math.min(particleCount, particleCount <= 10000 ? 9000 : mobile ? 20000 : 30000);
   const explosion = new Float32Array(particleCount * 3);
   const seeds = new Float32Array(particleCount * 3);
   const scatter = new Float32Array(particleCount * 3);
@@ -357,7 +364,7 @@ export function createParticles({ count = 10000, mobile = false, formationPositi
   particles.renderOrder = 4;
   group.add(particles);
 
-  const grainsPerStar = mobile ? 320 : 420;
+  const grainsPerStar = mobile ? 450 : 650;
   const starCount = (grainsPerStar + 2) * 2;
   const starGeometry = new THREE.BufferGeometry();
   const starSides = new Float32Array(starCount);
@@ -415,10 +422,10 @@ export function createParticles({ count = 10000, mobile = false, formationPositi
     anchor.copy(origin).addScaledVector(normal, 1.45);
     controlA.copy(anchor).addScaledVector(forward, side > 0 ? 2.8 : 3.6)
       .addScaledVector(right, side * heartScale * (side > 0 ? .62 : .49))
-      .addScaledVector(up, heartScale * (side > 0 ? .42 : .62));
+      .addScaledVector(up, heartScale * side * (side > 0 ? .48 : .44));
     controlB.copy(uniforms.uMerge.value).addScaledVector(forward, 1.8)
       .addScaledVector(right, -side * heartScale * .22)
-      .addScaledVector(up, heartScale * (side > 0 ? .30 : .39));
+      .addScaledVector(up, heartScale * side * .32);
   }
 
   // Read-only numerical sampler of the same controls and curve used by GLSL.
@@ -440,12 +447,12 @@ export function createParticles({ count = 10000, mobile = false, formationPositi
     normal.copy(origin).normalize();
     target.addScaledVector(normal, (lift - 1.45) * inverse ** 3);
     const envelope = Math.sin(t * Math.PI) ** 2;
-    const angle = t * (side > 0 ? 6.9 : 5.3) + side * .7;
+    const angle = t * (side > 0 ? 9.5 : 8.3) + side * .7;
     target.addScaledVector(right, Math.cos(angle) * side * envelope * uniforms.uScale.value * .13)
-      .addScaledVector(up, Math.sin(angle) * .72 * envelope * uniforms.uScale.value * .13)
+      .addScaledVector(up, Math.sin(angle) * side * .72 * envelope * uniforms.uScale.value * .13)
       .addScaledVector(forward, Math.sin(t * Math.PI * 2) * envelope * uniforms.uScale.value * .075);
     const loft = Math.sin(THREE.MathUtils.clamp((progress - .50) / .14, 0, 1) * Math.PI);
-    target.addScaledVector(up, uniforms.uScale.value * (side > 0 ? .75 : .62) * loft * loft);
+    target.addScaledVector(up, uniforms.uScale.value * side * (side > 0 ? .72 : .80) * loft * loft);
     const separation = THREE.MathUtils.smoothstep(progress, .50, .54)
       * (1 - THREE.MathUtils.smoothstep(progress, .605, .64));
     target.addScaledVector(right, side * uniforms.uScale.value * .22 * separation);
@@ -468,10 +475,10 @@ export function createParticles({ count = 10000, mobile = false, formationPositi
       const retreat = THREE.MathUtils.smoothstep(p, .41, .50);
       uniforms.uTrailReveal.value = THREE.MathUtils.smoothstep(p, .415, .465);
       uniforms.uTrailSpread.value = THREE.MathUtils.lerp(.012, .030, retreat);
-      uniforms.uStarCoreLimit.value = THREE.MathUtils.lerp(3.6, 5.2, retreat);
-      uniforms.uStarHaloLimit.value = THREE.MathUtils.lerp(11, 19, retreat);
-      uniforms.uStarGrainLimit.value = THREE.MathUtils.lerp(1.1, 2.0, retreat);
-      uniforms.uStarHaloOpacity.value = THREE.MathUtils.lerp(.09, .18, retreat);
+      uniforms.uStarCoreLimit.value = THREE.MathUtils.lerp(4.6, 7.2, retreat);
+      uniforms.uStarHaloLimit.value = THREE.MathUtils.lerp(14, 26, retreat);
+      uniforms.uStarGrainLimit.value = THREE.MathUtils.lerp(1.4, 2.4, retreat);
+      uniforms.uStarHaloOpacity.value = THREE.MathUtils.lerp(.12, .23, retreat);
       basisMatrix4.makeRotationFromQuaternion(basis);
       uniforms.uBasis.value.setFromMatrix4(basisMatrix4);
       starBasisMatrix4.makeRotationFromQuaternion(starBasis);

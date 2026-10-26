@@ -8,6 +8,7 @@ import * as THREE from 'three';
 import config from '../../config-v3.js';
 import { createParticles, HEART_BOUNDS } from './particles.js';
 import { createChoreography, STORY_PHASES } from './choreography.js';
+import { toStoryProgress, STORY_DURATION } from './pacing.js';
 
 const globeSource = await readFile(new URL('./globe.js', import.meta.url), 'utf8');
 const countries = JSON.parse(await readFile(new URL('../../countries-v3.json', import.meta.url), 'utf8'));
@@ -55,8 +56,20 @@ assert.ok(separationKm > 20 && separationKm < 35);
 assert.deepEqual(STORY_PHASES.stars, [.37, .64]);
 assert.deepEqual(STORY_PHASES.gather, [.735, .85]);
 
-for (const count of [8000, 16000, 24000]) {
-  const effect = createParticles({ count, mobile: count < 24000, formationPositions });
+assert.equal(STORY_DURATION, 34);
+for (const [position, score] of [[0,0],[.08,.15],[.10,.18],[.19,.30],[.23,.37],[.80,.85],[1,1]]) assert.ok(Math.abs(toStoryProgress(position)-score)<1e-10);
+let previousScore = -1;
+for (let i=0;i<=10000;i++) { const score=toStoryProgress(i/10000); assert.ok(score>=previousScore && score>=0 && score<=1); previousScore=score; }
+const detail = JSON.parse(await readFile(new URL('../../geography-detail-v3.json', import.meta.url), 'utf8'));
+const slovakia = detail.features.find(feature=>feature.iso==='SVK');
+assert.ok(slovakia && slovakia.rings[0].length>100, 'Slovakia must use existing geographic data');
+const fillGeometry = new Function('THREE','RADIUS','latLonToVec3',`return (${functionSource(globeSource,'countryFillGeometry')});`)(THREE,radius,latLonToVec3)(slovakia.rings);
+const fillPosition=fillGeometry.getAttribute('position'), fillPoint=new THREE.Vector3(), triangle=new THREE.Vector3();
+for(let i=0;i<fillGeometry.index.count;i+=3){triangle.set(0,0,0);for(let j=0;j<3;j++)triangle.add(fillPoint.fromBufferAttribute(fillPosition,fillGeometry.index.getX(i+j)));triangle.multiplyScalar(1/3);assert.ok(triangle.length()>radius,'Slovakia fill sinks under globe');}
+fillGeometry.dispose();
+
+for (const count of [10000, 24000, 36000]) {
+  const effect = createParticles({ count, mobile: count < 36000, formationPositions });
   const geometry = effect.group.children[0].geometry;
   for (const object of effect.group.children) {
     for (const [name, attribute] of Object.entries(object.geometry.attributes)) {
@@ -78,8 +91,8 @@ for (const count of [8000, 16000, 24000]) {
   const heart = geometry.getAttribute('aHeart');
   const heartSeeds = geometry.getAttribute('aHeartSeed');
   const active = geometry.getAttribute('aHeartActive');
-  const expectedCount = count <= 8000 ? 5200 : count < 24000 ? 9000 : 14000;
-  assert.equal([...active.array].filter(Boolean).length, expectedCount, 'First-prototype heart density changed');
+  const expectedCount = count <= 10000 ? 9000 : count < 36000 ? 20000 : 30000;
+  assert.equal([...active.array].filter(Boolean).length, expectedCount, 'Adaptive heart density changed');
   assert.ok(!geometry.hasAttribute('aHeartMeta'), 'Later contour/cloud categories remain');
   assert.equal(effect.group.children[0].material.fragmentShader, originalPointFragment);
   assert.ok(!/lightWave|heartbeat|bodyWave|cloudStructure|glint/.test(effect.group.children[0].material.vertexShader), 'Later heart effects remain');
@@ -112,7 +125,7 @@ for (const count of [8000, 16000, 24000]) {
   assert.equal(effect.group.children.length, 0);
 }
 
-const effect = createParticles({ count: 16000, mobile: true, formationPositions });
+const effect = createParticles({ count: 24000, mobile: true, formationPositions });
 const snapshots = effect.group.children.map(object => ({
   uuid: object.geometry.uuid,
   attributes: Object.fromEntries(Object.entries(object.geometry.attributes).map(([name, attribute]) => [name, attribute.array])),
@@ -135,7 +148,7 @@ function snapshot(camera, pose) {
     uniforms.uProgress.value, uniforms.uScale.value, uniforms.uFormationRotation.value,
     uniforms.uTrailReveal.value, uniforms.uTrailSpread.value, uniforms.uStarCoreLimit.value,
     uniforms.uStarHaloLimit.value, uniforms.uStarGrainLimit.value, uniforms.uStarHaloOpacity.value,
-    pose.globeOpacity, pose.geographyOpacity,
+    pose.globeOpacity, pose.geographyOpacity, pose.originFocus,
     ...effect.group.children.map(object => Number(object.visible))];
 }
 
@@ -145,6 +158,8 @@ for (const [width, height] of viewports) {
   const fixedBasis = choreography.sample(0, { width, height, overviewDistance }).basis.toArray();
   const states = [];
   let greatestSilhouetteExcursion = 0;
+  const excursions = [0,0];
+  const flightUp = new THREE.Vector3(0,1,0).applyQuaternion(new THREE.Quaternion().fromArray(fixedBasis));
   let previousFormationRotation = -Infinity;
   const evaluate = progress => {
     const pose = choreography.sample(progress, { width, height, overviewDistance, heartBounds: HEART_BOUNDS });
@@ -164,13 +179,13 @@ for (const [width, height] of viewports) {
     assert.ok(Math.abs(uniforms.uFormationRotation.value - pose.formationRotation) < 1e-12, 'Geography and particle formation have different axes');
     assert.ok(pose.formationRotation >= previousFormationRotation, 'Formation spin reverses during settling');
     previousFormationRotation = pose.formationRotation;
-    if (progress === 0) assert.equal(pose.formationRotation, -Math.PI * 1.25);
+    if (progress === 0) assert.equal(pose.formationRotation, -Math.PI * 2);
     if (progress >= .18) assert.ok(Math.abs(pose.formationRotation) < 1e-12, 'Formation rotation leaks into geographic coordinates');
     assert.ok(uniforms.uTrailSpread.value <= .030, 'Trail width scales into a close-up particle cloud');
     if (progress >= .367 && progress <= .415) {
       assert.equal(uniforms.uTrailReveal.value, 0, 'Stationary origin renders a cluster of delayed tail particles');
-      assert.ok(uniforms.uStarCoreLimit.value < 3.7, 'Close-up star core is oversized');
-      assert.ok(uniforms.uStarHaloLimit.value < 11.2 && uniforms.uStarHaloOpacity.value < .10, 'Close-up halo is too heavy');
+      assert.ok(uniforms.uStarCoreLimit.value < 4.8, 'Close-up star core is oversized');
+      assert.ok(uniforms.uStarHaloLimit.value < 14.5 && uniforms.uStarHaloOpacity.value < .13, 'Close-up halo is too heavy');
     }
     if (progress >= .465) assert.equal(uniforms.uTrailReveal.value, 1, 'Moving stars should reveal their wake');
     for (const [index, object] of effect.group.children.entries()) {
@@ -196,6 +211,11 @@ for (const [width, height] of viewports) {
           const projectedDistance = Math.hypot((projected.x - earthCenter.x) * width / 2, (projected.y - earthCenter.y) * height / 2);
           const projectedEarthRadius = radius / Math.sqrt(cameraRadius * cameraRadius - radius * radius) * height * camera.projectionMatrix.elements[5] / 2;
           greatestSilhouetteExcursion = Math.max(greatestSilhouetteExcursion, projectedDistance / projectedEarthRadius);
+          excursions[index] = Math.max(excursions[index], projectedDistance / projectedEarthRadius);
+        }
+        if (progress === .55) {
+          const signedHeight = star.clone().sub(pose.merge).dot(flightUp) / pose.heartScale;
+          assert.ok(index === 0 ? signedHeight > .3 : signedHeight < -.3, 'Stars must fly in opposite vertical directions');
         }
       }
       if (progress >= .50 && progress < .638) {
@@ -212,23 +232,26 @@ for (const [width, height] of viewports) {
     states.push(snapshot(camera, pose));
   }
   assert.ok(greatestSilhouetteExcursion > 1.04, `Flight never visibly clears Earth at ${width}×${height}`);
+  assert.ok(excursions.every(value=>value>1.02), `Both stars must visibly clear the globe at ${width}×${height}: ${excursions}`);
   for (let i = 1000; i >= 0; i -= 1) assert.deepEqual(snapshot(camera, evaluate(i / 1000)), states[i], `Not reversible at p=${i / 1000}`);
   for (let index = 0; index < 2; index += 1) {
     const pose = evaluate(.37);
     assert.ok(effect.sampleStarPath(.37, index, star).distanceTo(origins[index]) < 1e-10);
     assert.ok(effect.sampleStarPath(.64, index, star).distanceTo(pose.merge) < 1e-10);
   }
+  assert.equal(choreography.sample(.30,{width,height,overviewDistance}).originFocus,1);
   const final = evaluate(1);
+  assert.equal(final.originFocus,0);
   assert.equal(final.finalReveal, 1); assert.equal(final.globeOpacity, 1); assert.equal(final.geographyOpacity, 1);
   assert.ok(effect.group.children.every(object => !object.visible), 'Particles remain at final handoff');
   assert.ok(Math.abs(camera.position.length() - overviewDistance(width, height)) < 1e-9);
 }
 
 effect.dispose(); sourceGeometry.dispose();
-console.log('PASS — finite GPU particles, original 5,200 / 9,000 / 14,000 heart density, original random samples and size/brightness seeds.');
-console.log('PASS — 2f7b1ed sampler/sprite checksum, original shell/interior volume, restrained geometry-only proportions; no later cloud or light-wave effects.');
+console.log('PASS — finite 10k / 24k / 36k GPU points; denser 9k / 20k / 30k hearts retain original sampler/sprite and seeded appearance.');
+console.log('PASS — 2f7b1ed sampler/sprite checksum and spatial heart proportions preserved; opposite star arcs stay clear until their impact.');
 console.log('PASS — stable geometries/attributes; no independent clock; 1,001 forward/backward states identical across five viewports.');
 console.log(`PASS — origins ${separationKm.toFixed(2)} km apart; minimum camera radius ${minimumCamera.toFixed(3)}; minimum star radius ${minimumStarRadius.toFixed(3)}.`);
 console.log(`PASS — star depth ≥${minimumStarDepth.toFixed(2)}, edge clearance ≥${edgeMargin.toFixed(1)} px; fixed trajectory basis; clean final globe handoff.`);
 console.log(`PASS — distinct star cores remain ≥${minimumSeparateCores.toFixed(1)} px apart through p=.61, without crossing before the p=.64 merger.`);
-console.log('PASS — synchronized 225° formation spin settles to identity; clean two-core liftoff, no stationary trail cloud, restrained halo and narrow world-space wake.');
+console.log('PASS — faster monotone pacing, synchronized 360° formation spin, Slovakia focus/fill, clean liftoff and narrow wakes.');

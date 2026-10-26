@@ -8,6 +8,7 @@ import { createGlobe } from './globe.js';
 import { createParticles, HEART_BOUNDS } from './particles.js';
 import { createChoreography } from './choreography.js';
 import { createPlayback } from './playback.js';
+import { toStoryProgress, STORY_DURATION } from './pacing.js';
 import './style.css';
 
 gsap.registerPlugin(ScrollTrigger);
@@ -78,7 +79,7 @@ $('utility-language').onclick=()=>{preferences.language=preferences.language==='
 
 function stageIndex(p){return p<.18?0:p<.37?1:p<.54?2:p<.64?3:p<.735?4:p<.99?5:6;}
 function updateCopy(p){
-  const stage=stageIndex(p),d=copy[preferences.language];
+  const stage=stageIndex(toStoryProgress(p)),d=copy[preferences.language];
   if(stage!==lastStage){$('story-stage-number').textContent=String(stage+1).padStart(2,'0')+' / 07';lastStage=stage;}
   document.body.dataset.mode=mode;
   $('stage-instruction').textContent=d.manual;
@@ -100,7 +101,7 @@ function addMarkers(){
     o.mesh=new THREE.Mesh(new THREE.SphereGeometry(.009,12,8),new THREE.MeshBasicMaterial({color:globe.markerColor,transparent:true,opacity:0,depthTest:true}));
     o.mesh.position.copy(o.position);globe.scene.add(o.mesh);
     o.label=document.createElement('div');o.label.className='origin-label';o.label.dataset.side=index?'left':'right';
-    const strong=document.createElement('strong'),small=document.createElement('span');strong.textContent=o.name;small.textContent=o.person;o.label.append(strong,small);$('origin-labels').append(o.label);
+    const strong=document.createElement('strong'),small=document.createElement('span');strong.textContent=o.person;small.textContent=o.name;o.label.append(strong,small);$('origin-labels').append(o.label);
     o.line=document.createElementNS('http://www.w3.org/2000/svg','line');$('origin-connectors').append(o.line);
   }
   for(const [index,loc] of config.locations.entries()){
@@ -125,7 +126,7 @@ function updateLabels(p){
   for(const [index,o] of origins.entries()){
     const point=globe.projectSurface(o.position),visible=alpha>.01&&point.visible;
     o.mesh.material.opacity=visible?alpha:0;o.mesh.visible=visible;sizeMarker(o.mesh,.009);
-    const labelWidth=width<768?112:130;
+    const labelWidth=width<768?118:148;
     const x=THREE.MathUtils.clamp(point.x+(index?-labelWidth-30:30),20,width-labelWidth-20);
     const y=THREE.MathUtils.clamp(point.y+(index?48:-88),95,height-230);
     o.label.style.transform=`translate3d(${x}px,${y}px,0)`;o.label.style.opacity=visible?alpha:0;
@@ -160,7 +161,8 @@ function updateLabels(p){
 }
 
 function cameraStory(p){
-  pose=choreography.sample(p,{width,height,overviewDistance:globe.overviewDistance,heartBounds:HEART_BOUNDS});
+  const score=toStoryProgress(p);
+  pose=choreography.sample(score,{width,height,overviewDistance:globe.overviewDistance,heartBounds:HEART_BOUNDS});
   if(!interactive){
     globe.camera.position.copy(pose.position);
     // Blend the last free-globe view back into the score when scrubbing upward.
@@ -173,7 +175,7 @@ function cameraStory(p){
     globe.camera.lookAt(pose.target);globe.camera.updateMatrixWorld();
   }
   globe.group.rotation.y=pose.formationRotation;
-  fx.update({progress:p,origins:originVectors,merge:pose.merge,heartScale:pose.heartScale,color:particleColor,dark:displayedTheme.dark,basis:pose.basis,starBasis:pose.basis,formationRotation:pose.formationRotation});
+  fx.update({progress:score,origins:originVectors,merge:pose.merge,heartScale:pose.heartScale,color:particleColor,dark:displayedTheme.dark,basis:pose.basis,starBasis:pose.basis,formationRotation:pose.formationRotation});
   globe.globeMesh.visible=pose.globeReveal>.001;
   globe.globeMaterial.opacity=pose.globeOpacity;
 }
@@ -190,7 +192,7 @@ function renderStory(){
   if(interactive&&!flight)globe.updateControls(Math.min(.04,(performance.now()-lastTime)/1000||1/60));
   cameraStory(progress);
   globe.camera.updateMatrixWorld();updateCopy(progress);updateLabels(progress);
-  globe.render(pose.geographyOpacity);lastTime=performance.now();
+  globe.render(pose.geographyOpacity,pose.originFocus);lastTime=performance.now();
 }
 function schedule(){if(!frame&&!suspensions.size)frame=requestAnimationFrame(tick);}
 function tick(){frame=0;if(!globe||contextLost||suspensions.size)return;if(dirty||interactive||themeFrame>performance.now()){dirty=false;renderStory();}if(interactive||themeFrame>performance.now())schedule();}
@@ -286,14 +288,14 @@ async function init(){
     globe=await createGlobe({canvas:$('story-canvas'),surface:$('globe-interaction'),onInteraction:()=>{flight?.kill();flight=null;dirty=true;schedule();}});
     bindGlobeInput($('globe-interaction'),{canInteract:()=>interactive&&!flight,canTap:()=>interactive&&!flight,onInteract:()=>{},onTap:target=>target?.click()});
     const weak=(navigator.deviceMemory||4)<=2||(navigator.hardwareConcurrency||4)<=2;
-    fx=createParticles({count:weak?8000:width<768?16000:24000,mobile:width<768,formationPositions:globe.getFormationPositions()});globe.scene.add(fx.group);
+    fx=createParticles({count:weak?10000:width<768?24000:36000,mobile:width<768,formationPositions:globe.getFormationPositions()});globe.scene.add(fx.group);
     globe.globeMaterial.transparent=true;
     homeDirection.copy(globe.latLonToVec3((origins[0].lat+origins[1].lat)/2,(origins[0].lon+origins[1].lon)/2,1));
     startDirection.copy(globe.latLonToVec3(30,15,1));
     choreography=createChoreography({homeDirection,startDirection,radius:globe.radius});
     addMarkers();applyTheme();
     await globe.ensureDetail();
-    playback=createPlayback({gsap,duration:40,
+    playback=createPlayback({gsap,duration:STORY_DURATION,
       onMode:next=>{mode=next;updateCopy(progress);dirty=true;schedule();},
       onProgress:p=>{progress=p;dirty=true;schedule();},
       onFinish:()=>syncScroll(1)

@@ -46,6 +46,15 @@ function boundaryGeometry(rings) {
   );
 }
 
+function countryFillGeometry(rings) {
+  const ring = rings[0].slice();
+  if (ring.length > 1 && ring[0][0] === ring.at(-1)[0] && ring[0][1] === ring.at(-1)[1]) ring.pop();
+  const contour = ring.map(([lon, lat]) => new THREE.Vector2(lon, lat));
+  const positions = ring.flatMap(([lon, lat]) => latLonToVec3(lat, lon, RADIUS + .025).toArray());
+  const indices = THREE.ShapeUtils.triangulateShape(contour, []).flat();
+  return new THREE.BufferGeometry().setAttribute('position', new THREE.Float32BufferAttribute(positions, 3)).setIndex(indices);
+}
+
 export async function createGlobe({ canvas, surface = canvas, onInteraction = () => {} }) {
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(45, innerWidth / innerHeight, .1, 1000);
@@ -111,6 +120,7 @@ export async function createGlobe({ canvas, surface = canvas, onInteraction = ()
   group.add(new THREE.LineSegments(overviewGeometry, overviewMaterial));
 
   const detailLayers = [];
+  let originFill = null;
   let detailPromise, disposed = false, width = innerWidth, height = innerHeight;
   let theme = { paper: '#f5f4f0', ink: '#292a28', olive: false, dark: false };
   const paper = new THREE.Color(), ink = new THREE.Color();
@@ -127,7 +137,9 @@ export async function createGlobe({ canvas, surface = canvas, onInteraction = ()
     markerColor.setRGB(.019 * (1 - n) + .84 * n, .02 * (1 - n) + .81 * n, .018 * (1 - n) + .72 * n).lerp(ink, palette);
     for (const layer of detailLayers) {
       layer.material.color.setRGB(.392 * (1 - n) + .69 * n, .408 * (1 - n) + .70 * n, .373 * (1 - n) + .65 * n).lerp(ink, palette);
+      layer.baseColor.copy(layer.material.color);
     }
+    if (originFill) originFill.material.color.copy(ink);
     renderer.setClearColor(paper, 1);
   }
 
@@ -139,7 +151,12 @@ export async function createGlobe({ canvas, surface = canvas, onInteraction = ()
         const material = new THREE.LineBasicMaterial({ transparent: true, opacity: 0, depthWrite: false });
         const line = new THREE.LineSegments(boundaryGeometry(feature.rings), material);
         line.visible = false; group.add(line);
-        detailLayers.push({ iso: feature.iso, line, material });
+        detailLayers.push({ iso: feature.iso, line, material, baseColor: new THREE.Color() });
+        if (feature.iso === 'SVK') {
+          originFill = new THREE.Mesh(countryFillGeometry(feature.rings), new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false, side: THREE.DoubleSide }));
+          originFill.visible = false;
+          group.add(originFill);
+        }
       }
       setTheme(theme);
     }).catch(() => { /* Existing overview boundaries remain a complete fallback. */ });
@@ -198,17 +215,26 @@ export async function createGlobe({ canvas, surface = canvas, onInteraction = ()
     };
   }
 
-  function render(visibility = 1) {
+  function render(visibility = 1, originFocus = 0) {
     camera.updateMatrixWorld(); group.updateMatrixWorld(true);
     const detail = smoothstep((36 - camera.position.length()) / 18, 0, 1);
     if (detail > 0 && !detailPromise) ensureDetail();
     const mix = detailLayers.length ? detail : 0;
     const geographyVisibility = clamp(visibility, 0, 1);
+    const focus = clamp(originFocus, 0, 1);
     overviewMaterial.opacity = .26 * (1 - mix * .86) * geographyVisibility;
     wireMaterial.opacity = .08 * (1 - detail * .94) * geographyVisibility;
     for (const layer of detailLayers) {
       layer.material.opacity = detail * .19 * geographyVisibility;
+      if (layer.iso === 'SVK') {
+        layer.material.opacity = THREE.MathUtils.lerp(layer.material.opacity, .9 * geographyVisibility, focus);
+        layer.material.color.copy(layer.baseColor).lerp(ink, focus);
+      }
       layer.line.visible = layer.material.opacity > .002;
+    }
+    if (originFill) {
+      originFill.material.opacity = .075 * focus * geographyVisibility;
+      originFill.visible = originFill.material.opacity > .001;
     }
     renderer.render(scene, camera);
   }
