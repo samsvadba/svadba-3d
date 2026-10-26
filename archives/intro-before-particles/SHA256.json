@@ -1,0 +1,18 @@
+[
+  {
+    "file": "index-v3.html",
+    "sha256": "52b7f61201207740096a7a4a56ae106c64ad307ed7788b0aee58dc5a03c37dfa"
+  },
+  {
+    "file": "main-v3.js",
+    "sha256": "54a071e90987d2f8eb1e856afdb8019ddc5aa9b610fa1b0a899c3d74411eae4d"
+  },
+  {
+    "file": "style-v3.css",
+    "sha256": "78135b3f49a2c0a14a99c1f92d3b5cb96ae24d1a84b13e3aa1f5b6d9da368756"
+  },
+  {
+    "file": "config-v3.js",
+    "sha256": "372afd68e7a2dc9b53933dc576ca713df2039478e72a8652a83d581c4781f8e5"
+  }
+]

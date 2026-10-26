@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="sk">
+<head>
+<meta charset="UTF-8"><script>if(new URLSearchParams(location.search).get("intro")==="lineart")document.documentElement.dataset.intro="lineart";try{document.documentElement.dataset.theme=localStorage.getItem("sm-theme")==="dark"?"dark":"light";document.documentElement.dataset.palette=localStorage.getItem("sm-palette")==="olive"?"olive":"classic";document.documentElement.lang=localStorage.getItem("sm-language")==="en"?"en":"sk"}catch{}</script><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#f5f4f0"><meta name="description" content="Náš spoločný príbeh pokračuje. Tešíme sa, že náš svadobný deň prežijete s nami.">
+<title>Simona &amp; Martin | 30. 04. 2027</title>
+<link rel="canonical" href="https://samsvadba.github.io/svadba-3d/index-v3.html">
+<meta property="og:title" content="Simona &amp; Martin | 30. 04. 2027">
+<meta property="og:description" content="Náš spoločný príbeh pokračuje. Tešíme sa, že náš svadobný deň prežijete s nami.">
+<meta property="og:url" content="https://samsvadba.github.io/svadba-3d/index-v3.html">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="sk_SK">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Simona &amp; Martin | 30. 04. 2027">
+<meta name="twitter:description" content="Náš spoločný príbeh pokračuje. Tešíme sa, že náš svadobný deň prežijete s nami.">
+<meta property="og:image" content="https://samsvadba.github.io/svadba-3d/simona-martin-wedding-1200x630.jpg">
+<meta property="og:image:type" content="image/jpeg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Svadobné oznámenie Simona &amp; Martin">
+<meta name="twitter:image" content="https://samsvadba.github.io/svadba-3d/simona-martin-wedding-1200x630.jpg">
+<meta name="twitter:image:alt" content="Svadobné oznámenie Simona &amp; Martin">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400&family=Allura&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>html{--paper:#f5f4f0;--ink:#292a28}html[data-theme="dark"]{--paper:#20221f;--ink:#ece9df}html[data-palette="olive"]{--paper:#F4EBDC;--ink:#303D29}html[data-palette="olive"][data-theme="dark"]{--paper:#303D29;--ink:#F4EBDC}body{margin:0;background:var(--paper);color:var(--ink)}#interactive-preloader{position:fixed;inset:0;z-index:100;background:var(--paper);display:grid;place-content:center}[hidden]{display:none!important}</style>
+</head>
+<body class="loading" data-state="loading">
+<div id="interactive-preloader" aria-label="Načítavanie"><span class="preloader-monogram">S & M</span><div id="loading-ring"><span id="preloader-percentage" role="status">0%</span></div><button id="pl-skip-btn">Preskočiť</button></div>
+<header id="persistent-header" inert><button id="header-home" aria-label="Simona a Martin — späť na intro">S<span>&</span>M</button><span class="header-subtitle">A journey of us</span><span class="header-date">30 · 04 · 2027</span></header>
+<main id="app">
+<section id="intro-overlay" class="screen" aria-label="Intro" inert>
+<div class="intro-media"><video id="intro-video-bg" autoplay muted loop playsinline preload="metadata" hidden></video></div>
+<div id="intro-copy" aria-hidden="true"><p class="sub-line">Dve cesty.</p><p class="sub-line">Jeden spoločný príbeh.</p></div>
+<div class="title-layout"><p class="eyebrow">A journey of us</p><h1><span>SIMONA</span><em>&</em><span>MARTIN</span></h1><button id="next-btn" class="outline-button">Explore <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 18 18 6M6 6h12v12"/></svg></button><div id="intro-lineart" aria-hidden="true" hidden></div></div>
+
+</section>
+<section id="journey-scene" class="screen" aria-label="Journey — naše spoločné cesty" aria-hidden="true" inert>
+<div id="globe-surface">
+<canvas id="three-canvas" aria-label="Glóbus: potiahnutím ho otočíte; mesto môžete vybrať aj tlačidlom"></canvas>
+<svg id="svg-canvas" aria-hidden="true"><g id="city-connectors" style="opacity:0;visibility:hidden"></g><line id="memory-connector"/></svg><div id="label-layer" aria-label="Mestá"></div>
+<div id="journey-instruction"><svg viewBox="0 0 40 24" aria-hidden="true"><path d="M8 12h24M13 7l-5 5 5 5m14-10 5 5-5 5"/></svg><p>Roztočte glóbus a objavte naše spoločné chvíle.<br><span>Vyberte mesto a začnite.</span></p></div>
+<p id="globe-fallback" hidden>Glóbus sa nepodarilo zobraziť. Spomienky otvoríte výberom mesta.</p>
+</div>
+<section id="modal" class="memory" aria-labelledby="modal-city" aria-hidden="true" inert>
+<div class="memory-top"><span id="memory-number"></span><button id="video-stop-btn" class="icon-button" aria-label="Zatvoriť spomienku"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div>
+<div class="journey-modal-media"><img id="modal-image" alt="" hidden><iframe id="modal-instagram" title="Tokyo — Japan Reel" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen hidden></iframe><p id="media-error" hidden>Fotografiu sa nepodarilo načítať.</p></div>
+<div class="memory-bottom"><div><h2 id="modal-city" tabindex="-1"></h2><p id="modal-location"></p></div><button id="video-skip-btn" class="text-button destination-next">Ďalšia <span aria-hidden="true">↗</span></button></div><a id="instagram-link" target="_blank" rel="noopener noreferrer" hidden>Otvoriť Reel na Instagrame ↗</a>
+</section></section>
+<section id="transition-screen" class="screen transition-screen" aria-label="Začiatok Journey" aria-hidden="true" inert><div class="transition-text"><p class="trans-line">Roztočte glóbus a objavte naše spoločné chvíle.</p><p class="trans-line">Vyberte mesto a začnite.</p></div></section>
+<section id="final-transition-screen" class="screen transition-screen" aria-label="Naše nové dobrodružstvo" aria-hidden="true" inert><div class="transition-text"><p class="trans-line">And now,</p><p class="trans-line">Our new adventure begins.</p></div></section>
+<section id="wedding-scene" class="screen" aria-label="Svadba" aria-hidden="true" inert></section>
+</main>
+<section id="destination-video-scene" role="dialog" aria-modal="true" aria-labelledby="destination-video-title" aria-hidden="true" inert>
+<video id="destination-video" autoplay muted playsinline preload="metadata"></video>
+<div class="destination-video-shade" aria-hidden="true"></div>
+<div class="destination-video-caption"><p id="destination-video-progress"></p><h2 id="destination-video-title"></h2><p id="destination-video-country"></p><a id="destination-video-highlight" target="_blank" rel="noopener noreferrer" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.35" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="4.5"/><circle cx="12" cy="12" r="4"/><circle cx="17.3" cy="6.8" r=".7" fill="currentColor" stroke="none"/></svg><span id="destination-video-highlight-text">Pozrieť viac z tejto cesty</span></a></div><button id="destination-video-next" class="destination-next" type="button" disabled></button>
+<button id="destination-video-close" class="icon-button" aria-label="Späť na Journey"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
+<p id="destination-video-status" role="status"></p><button id="destination-video-retry" hidden>Prehrať video</button>
+</section>
+<nav id="bottom-nav" aria-label="Navigácia príbehu" inert><div class="nav-labels"><button id="nav-intro" class="nav-item" aria-current="step">INTRO</button><button id="nav-journey" class="nav-item">JOURNEY <span id="journey-count"></span></button><button id="nav-wedding" class="nav-item">WEDDING</button></div><div class="nav-progress" aria-hidden="true"><span id="nav-fill"></span><i class="nav-dot active"></i><i class="nav-dot"></i><i class="nav-dot"></i></div></nav>
+<div id="utility-controls" role="group" aria-label="Globálne ovládanie">
+<button id="story-play" type="button" aria-label="Prehrať náš príbeh" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="story-play-shape" d="m8 5 11 7-11 7Z"/><path class="story-pause-shape" d="M8 5v14M16 5v14"/></svg></button>
+<button id="utility-sound" aria-label="Zapnúť hudbu" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4Z"/><path class="sound-on" d="M15 8q5 4 0 8m3-11q8 7 0 14"/><path class="sound-off" d="m16 9 6 6m0-6-6 6"/></svg></button>
+<button id="utility-gallery" aria-label="Svadobné fotografie"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h16v16H5zM2 7v15h15M7 15l4-5 4 4 3-3 2 4"/><circle cx="16" cy="7" r="1"/></svg></button>
+<button id="utility-mood" aria-label="Prepnúť na tmavú náladu" aria-pressed="false"><svg class="moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 15A9 9 0 0 1 9 4a9 9 0 1 0 11 11Z"/></svg><svg class="sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 1v3m0 16v3M1 12h3m16 0h3M4 4l2 2m12 12 2 2M4 20l2-2M18 6l2-2"/></svg></button>
+<button id="utility-palette" type="button" aria-label="Prepnúť na paletu Olive &amp; Ivory" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 0 0 18h1a2 2 0 0 0 1.4-3.4 1.5 1.5 0 0 1 1.1-2.6H18a3 3 0 0 0 3-3 9 9 0 0 0-9-9Z"/><circle cx="7.5" cy="10" r="1"/><circle cx="10.5" cy="6.7" r="1"/><circle cx="15" cy="7.2" r="1"/></svg></button>
+<button id="utility-language" aria-label="Switch to English">SK</button>
+</div><p id="utility-toast" role="status" hidden></p>
+<p id="app-status" class="sr-only" role="status" aria-live="polite"></p>
+<noscript><div class="no-script">Simona &amp; Martin<br>30. 04. 2027 · 15:00<br>Kostol sv. Jakuba, Trnava<br>Pre Journey a svadobné informácie zapnite JavaScript.</div></noscript>
+<script type="module" src="./main-v3.js"></script>
+</body></html>
+
