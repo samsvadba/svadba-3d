@@ -183,7 +183,7 @@ function cameraStory(p){
     globe.camera.lookAt(pose.target);globe.camera.updateMatrixWorld();
   }
   globe.group.rotation.y=pose.formationRotation;
-  fx.update({progress:score,origins:originVectors,merge:pose.merge,heartScale:pose.heartScale,color:particleColor,dark:displayedTheme.dark,basis:pose.basis,starBasis:pose.basis,formationRotation:pose.formationRotation});
+  fx.update({progress:score,origins:originVectors,merge:pose.merge,heartScale:pose.heartScale,color:particleColor,dark:displayedTheme.dark,basis:pose.basis,starBasis:pose.basis,formationRotation:pose.formationRotation,formationSurface:pose.globeReveal});
   globe.globeMesh.visible=pose.globeReveal>.001;
   globe.globeMaterial.opacity=pose.globeOpacity;
 }

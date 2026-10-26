@@ -3,8 +3,8 @@ import * as THREE from 'three';
 // One film score for autoplay and reversible manual scrubbing. Phases include
 // deliberate stillness over the home towns before the camera follows the stars.
 export const STORY_PHASES = Object.freeze({
-  formation: Object.freeze([0, .105]),
-  overview: Object.freeze([.105, .18]),
+  formation: Object.freeze([0, .144]),
+  overview: Object.freeze([.144, .18]),
   approach: Object.freeze([.18, .30]),
   origins: Object.freeze([.30, .39]),
   stars: Object.freeze([.37, .64]),
@@ -72,7 +72,7 @@ export function createChoreography({ homeDirection, startDirection, radius = 12 
     const approach = smoother(.18, .30, p);
     const retreat = smoother(.39, .65, p);
     const returnToOverview = smoother(.95, 1, p);
-    const formationSettle = smoother(0, .105, p);
+    const formationSettle = smoother(0, .144, p);
 
     // All orientation changes are spherical rotations outside the Earth.
     rotation.copy(identity).slerp(orientRotation, smoother(.18, .285, p));
@@ -97,18 +97,18 @@ export function createChoreography({ homeDirection, startDirection, radius = 12 
     const verticalScale = worldHeight * (height < 560 ? .46 : .55) / heartBounds.height;
     pose.heartScale = Math.min(horizontalScale, verticalScale);
 
-    const globeReveal = smooth(.07, .105, p);
+    const globeReveal = smooth(.08, .144, p);
     const heartPresence = smooth(.70, .81, p) * (1 - smooth(.95, .995, p));
     pose.progress = p;
     pose.cameraRadius = cameraRadius;
     pose.globeReveal = globeReveal;
     pose.globeOpacity = globeReveal * (1 - .82 * heartPresence);
     pose.geographyOpacity = globeReveal * (1 - .94 * heartPresence);
-    pose.formationProgress = smooth(0, .105, p);
-    // Gather without consuming any of the visible turns. Once the globe is
-    // complete, two shared axial turns ease in and settle over six seconds.
-    // Cloud and geography use this same rotation, with no motion after approach.
-    const spin = smoother(.105, .18, p);
+    pose.formationProgress = smooth(0, .144, p);
+    // One shared motion from the first cloud to the completed globe. Gathering
+    // finishes after four seconds, with the final second gently coasting to rest.
+    // The same angle drives cloud and geography, so neither jumps at handoff.
+    const spin = smoother(0, .18, p);
     pose.formationRotation = -Math.PI * 4 * (1 - spin);
     pose.originReveal = smooth(.275, .30, p) * (1 - smooth(.39, .45, p));
     pose.originFocus = smooth(.21, .29, p) * (1 - smooth(.43, .50, p));

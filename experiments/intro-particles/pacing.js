@@ -1,13 +1,16 @@
 // Presentation pacing only. Existing geographic/particle phases stay in one
 // reversible score, shared by autoplay and manual scrubbing.
-export const STORY_DURATION = 39;
-// Gather first, then give the finished globe six seconds for its two turns.
-// Every subsequent cue retains its previous elapsed time, shifted by five seconds.
-const input = [0, 2.4, 8.4, 11.46, 12.82, 14.18, 24.04, 27.78, 32.2, 37.3, 38.66, 39]
+export const STORY_DURATION = 35.6;
+// The cloud rotates while gathering for four seconds; the finished globe coasts
+// for one more second. Later cues keep their existing elapsed-time intervals.
+const input = [0, 4, 5, 8.06, 9.42, 10.78, 20.64, 24.38, 28.8, 33.9, 35.26, 35.6]
   .map(seconds => seconds / STORY_DURATION);
-const score = [0, .105, .18, .30, .37, .39, .64, .74, .85, .95, .99, 1];
+const score = [0, .144, .18, .30, .37, .39, .64, .74, .85, .95, .99, 1];
 const slopes = input.slice(1).map((x, i) => (score[i + 1] - score[i]) / (x - input[i]));
 const tangents = input.map((_, i) => {
+  // Exact linear score during the shared five-second opening: the rotation's
+  // own easing determines speed, with no extra retiming at the completed globe.
+  if (i <= 2) return .036 * STORY_DURATION;
   if (i === 0) return slopes[0];
   if (i === input.length - 1) return slopes[slopes.length - 1];
   const before = input[i] - input[i - 1], after = input[i + 1] - input[i];

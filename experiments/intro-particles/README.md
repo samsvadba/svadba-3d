@@ -4,9 +4,10 @@ Open `intro-particles-test.html`. Production V3 is not imported or initialized.
 The prototype reads the existing configuration, geography, typography, monogram,
 input helper and theme tokens. Its Three.js scene, camera and controls are separate.
 
-One 39-second GSAP timeline starts after the scene and shaders are ready. `pacing.js`
-separates a 2.4-second cloud formation from six seconds of visible globe rotation.
-The later narrative cue durations are preserved, shifted five seconds later;
+One 35.6-second GSAP timeline starts after the scene and shaders are ready. `pacing.js`
+gives the rotating cloud four seconds to gather, followed by one final second
+of gentle coasting on the completed globe. These are one continuous motion.
+The later narrative cue durations are preserved, shifted 1.6 seconds later;
 manual scrolling samples the identical reversible score. A first
 scene click/touch pauses exactly at its current progress; that entire initiating
 gesture is consumed. Further native scroll/pan seeks forward/backward through the
@@ -14,11 +15,13 @@ same timeline. The manual instruction and accessible progress range appear only
 when paused. The utility Play control resumes, without restarting the score.
 Background tabs and WebGL context loss suspend playback without changing progress.
 
-The opening GPU cloud gathers onto the actual existing country borders without
-consuming any of the globe's turns. Once the globe is fully visible, two shared
-axial turns (720 degrees) ease in over six seconds and gradually settle to zero
-velocity and acceleration before the unchanged approach. Peak speed stays below
-half a turn per second. The startup already shows particles, without a loading label.
+The opening GPU cloud rotates while gathering onto the actual existing country
+borders. Cloud and geography share two axial turns (720 degrees) across five
+seconds, with smooth acceleration and deceleration. The globe finishes forming
+after four seconds, then coasts through its remaining 42 degrees during the
+final second, settling to zero velocity and acceleration before the unchanged
+approach. Peak speed is 0.75 turns per second. The startup already shows particles,
+without a loading label.
 Slovakia is highlighted using only its existing geographic contour; there is no
 surface fill. Editorial origin labels stay outside its projected boundary, with
 the names above their towns. After a shorter hold, the camera retreats while one star arcs upward and
@@ -27,6 +30,10 @@ At the end, autoplay stops and the original globe accepts drag/pinch/wheel. The
 existing-style footer offers replay and the verified production Journey/Wedding
 routes. Scroll outside the globe surface, or use replay, to leave free exploration.
 Reduced motion opens this final navigation immediately; replay is an explicit opt-in.
+
+During formation, an analytic ray/sphere visibility fade follows the surface reveal.
+The still-transparent globe therefore cannot abruptly depth-cut the rotating cloud
+over America. Hardware depth testing returns for the unchanged explosion/heart.
 
 The particle shaders are original code: one shared GPU point cloud morphs between
 geographic formation, seeded explosion and a volumetric heart.
@@ -62,6 +69,7 @@ From the repository root:
 
     node experiments/intro-particles/tests.mjs
     node experiments/intro-particles/label-layout.test.mjs
+    node experiments/intro-particles/continent-visibility.test.mjs
     node experiments/intro-particles/playback.test.mjs
     node experiments/intro-particles/build.mjs
     npm run build

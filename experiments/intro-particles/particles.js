@@ -93,6 +93,8 @@ const sharedVertex = /* glsl */ `
 
 const particleVertex = /* glsl */ `
   ${sharedVertex}
+  uniform float uFormationSurface;
+  uniform float uGlobeRadius;
   attribute vec3 aHeart;
   attribute vec3 aHeartSeed;
   attribute vec4 aHeartNormal;
@@ -101,6 +103,17 @@ const particleVertex = /* glsl */ `
   attribute vec3 aSeed;
   attribute vec3 aFormation;
   attribute vec3 aScatter;
+  float formationVisibility(vec3 position, vec3 eye, float radius, float surface) {
+    vec3 ray = position - eye;
+    float distance = max(length(ray), 0.0001);
+    vec3 direction = ray / distance;
+    float centre = -dot(eye, direction);
+    float discriminant = centre * centre - (dot(eye, eye) - radius * radius);
+    float entry = centre - sqrt(max(0.0, discriminant));
+    float blocked = step(0.0, discriminant) * step(0.0, entry)
+                    * step(entry + 0.02, distance);
+    return 1.0 - clamp(surface, 0.0, 1.0) * blocked;
+  }
   void main() {
     float burst = phase(0.64, 0.74);
     float expansion = 1.0 - pow(1.0 - burst, 3.0);
@@ -133,7 +146,7 @@ const particleVertex = /* glsl */ `
     float formationAlpha = 0.0;
     if (uProgress < 0.18) {
       float stagger = aSeed.x * 0.012;
-      float arrival = smoothPhase(0.008 + stagger, 0.09 + stagger);
+      float arrival = smoothPhase(0.008 + stagger, 0.128 + stagger);
       float spin = (1.0 - arrival) * (0.12 + aSeed.y * 0.10);
       mat3 orbit = mat3(cos(spin), 0.0, -sin(spin),
                         0.0, 1.0, 0.0,
@@ -149,7 +162,8 @@ const particleVertex = /* glsl */ `
       // Already visible on the very first GPU frame; the parser-time cloud
       // crossfades into this same opening, rather than a blank loading screen.
       formationAlpha = (0.82 + 0.18 * smoothPhase(0.0, 0.012))
-                       * (1.0 - smoothPhase(0.105, 0.125));
+                       * (1.0 - smoothPhase(0.144, 0.18))
+                       * formationVisibility(worldPosition, cameraPosition, uGlobeRadius, uFormationSurface);
     }
     vec4 viewPosition = modelViewMatrix * vec4(worldPosition, 1.0);
     gl_Position = projectionMatrix * viewPosition;
@@ -330,6 +344,8 @@ export function createParticles({ count = 10000, mobile = false, formationPositi
     uBasis: { value: new THREE.Matrix3() },
     uStarBasis: { value: new THREE.Matrix3() },
     uFormationRotation: { value: 0 },
+    uFormationSurface: { value: 0 },
+    uGlobeRadius: { value: 12 },
     uTrailReveal: { value: 0 },
     uTrailSpread: { value: .012 },
     uStarCoreLimit: { value: 3.6 },
@@ -349,6 +365,7 @@ export function createParticles({ count = 10000, mobile = false, formationPositi
   const seeds = new Float32Array(particleCount * 3);
   const scatter = new Float32Array(particleCount * 3);
   const formation = geographicSamples(formationPositions, particleCount, random);
+  uniforms.uGlobeRadius.value = formation.available ? formation.radius - .045 : 12;
   // Original seed and original per-point random sequence are independent of the
   // current globe/explosion stream, so those approved stages stay byte-identical.
   const heartRandom = randomSequence(0x534d2027);
@@ -493,7 +510,7 @@ export function createParticles({ count = 10000, mobile = false, formationPositi
   return {
     group,
     sampleStarPath,
-    update({ progress, origins, merge, heartScale = 6, color, dark = 0, basis = identityQuaternion, starBasis = basis, formationRotation = 0 }) {
+    update({ progress, origins, merge, heartScale = 6, color, dark = 0, basis = identityQuaternion, starBasis = basis, formationRotation = 0, formationSurface = 0 }) {
       const p = THREE.MathUtils.clamp(progress, 0, 1);
       uniforms.uProgress.value = p;
       uniforms.uScale.value = heartScale;
@@ -503,6 +520,7 @@ export function createParticles({ count = 10000, mobile = false, formationPositi
       uniforms.uColor.value.copy(color);
       uniforms.uDark.value = dark;
       uniforms.uFormationRotation.value = p < .18 && Number.isFinite(formationRotation) ? formationRotation : 0;
+      uniforms.uFormationSurface.value = THREE.MathUtils.clamp(formationSurface, 0, 1);
       const retreat = THREE.MathUtils.smoothstep(p, .41, .50);
       uniforms.uTrailReveal.value = THREE.MathUtils.smoothstep(p, .415, .465);
       uniforms.uTrailSpread.value = THREE.MathUtils.lerp(.012, .030, retreat);
@@ -520,7 +538,11 @@ export function createParticles({ count = 10000, mobile = false, formationPositi
       configureCurve(origins[0], 1, uniforms.uAnchorA.value, uniforms.uControlAA.value, uniforms.uControlAB.value, heartScale);
       configureCurve(origins[1], -1, uniforms.uAnchorB.value, uniforms.uControlBA.value, uniforms.uControlBB.value, heartScale);
       geometry.setDrawRange(0, p < .18 ? particleCount : burstCount);
-      particles.visible = (formation.available && p < .126) || (p > .637 && p < .991);
+      // A transparent sphere must not hard-occlude the forming continents.
+      // Use the gradual ray/sphere fade above until the solid globe takes over;
+      // restore normal hardware depth for the unchanged explosion and heart.
+      material.depthTest = p >= .18;
+      particles.visible = (formation.available && p < .18) || (p > .637 && p < .991);
       stars.visible = p > .366 && p < .661;
       flash.visible = p > .638 && p < .690;
       flash.position.copy(merge);

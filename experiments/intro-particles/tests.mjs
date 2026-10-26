@@ -56,13 +56,19 @@ assert.ok(separationKm > 20 && separationKm < 35);
 assert.deepEqual(STORY_PHASES.stars, [.37, .64]);
 assert.deepEqual(STORY_PHASES.gather, [.735, .85]);
 
-assert.equal(STORY_DURATION, 39);
-for (const [seconds, score] of [[0,0],[2.4,.105],[8.4,.18],[11.46,.30],[12.82,.37],[32.2,.85],[39,1]]) {
+assert.equal(STORY_DURATION, 35.6);
+assert.deepEqual(STORY_PHASES.formation, [0,.144]);
+assert.deepEqual(STORY_PHASES.overview, [.144,.18]);
+for (const [seconds, score] of [[0,0],[4,.144],[5,.18],[8.06,.30],[9.42,.37],[28.8,.85],[35.6,1]]) {
   assert.ok(Math.abs(toStoryProgress(seconds/STORY_DURATION)-score)<1e-10);
+}
+for (let milliseconds=0;milliseconds<=5000;milliseconds+=5) {
+  assert.ok(Math.abs(toStoryProgress(milliseconds/1000/STORY_DURATION)-milliseconds*.000036)<1e-10,
+    'Opening retiming interrupts the shared cloud/globe motion');
 }
 // Only the opening receives extra time; later narrative cues keep their durations.
 for (const [oldSeconds, score] of [[3.4,.18],[6.46,.30],[7.82,.37],[9.18,.39],[19.04,.64],[22.78,.74],[27.2,.85],[32.3,.95],[33.66,.99]]) {
-  assert.ok(Math.abs(toStoryProgress((oldSeconds+5)/STORY_DURATION)-score)<1e-10);
+  assert.ok(Math.abs(toStoryProgress((oldSeconds+1.6)/STORY_DURATION)-score)<1e-10);
 }
 let previousScore = -1;
 for (let i=0;i<=10000;i++) { const score=toStoryProgress(i/10000); assert.ok(score>=previousScore && score>=0 && score<=1); previousScore=score; }
@@ -150,24 +156,33 @@ const snapshots = effect.group.children.map(object => ({
 const homeDirection = latLonToVec3((config.origins[0].lat + config.origins[1].lat) / 2, (config.origins[0].lon + config.origins[1].lon) / 2, 1);
 const startDirection = latLonToVec3(30, 15, 1);
 const choreography = createChoreography({ homeDirection, startDirection, radius });
-for (let i = 0; i <= 100; i += 1) {
-  const pose = choreography.sample(i / 100 * .105, { width: 390, height: 844, overviewDistance });
-  assert.equal(pose.formationRotation, -Math.PI*4, 'Visible turns are consumed while the globe is still forming');
-}
-assert.equal(choreography.sample(.105, { width:390,height:844,overviewDistance }).globeReveal,1, 'The globe must be fully visible before its two turns');
+const gathering = choreography.sample(toStoryProgress(2/STORY_DURATION), { width:390,height:844,overviewDistance });
+assert.ok(gathering.formationProgress>0 && gathering.formationProgress<1);
+assert.ok(gathering.formationRotation>-Math.PI*4 && gathering.formationRotation<-.5,
+  'The cloud must already rotate while it is still gathering');
+const formed = choreography.sample(toStoryProgress(4/STORY_DURATION), { width:390,height:844,overviewDistance });
+assert.equal(formed.globeReveal,1, 'The globe must be fully visible after four seconds');
+assert.equal(formed.formationProgress,1);
+assert.ok(formed.formationRotation<-.6 && formed.formationRotation>-.8,
+  'The completed globe must still coast through its final approximately 42 degrees');
 let previousSpinAngle = -Math.PI*4, greatestSpinSpeed = 0, firstSpinSpeed = 0, finalSpinSpeed = 0;
-for (let i = 1; i <= 6000; i += 1) {
-  const seconds = 2.4+i/1000;
+let previousCoastSpeed=Infinity;
+for (let i = 1; i <= 5000; i += 1) {
+  const seconds = i/1000;
   const angle = choreography.sample(toStoryProgress(seconds/STORY_DURATION), { width:390,height:844,overviewDistance }).formationRotation;
   const speed = (angle-previousSpinAngle)*1000;
   assert.ok(speed>=-1e-8, 'Opening spin reverses');
   if (i===1) firstSpinSpeed=speed;
-  if (i===6000) finalSpinSpeed=speed;
+  if (i===5000) finalSpinSpeed=speed;
+  if (i>=4000) {
+    assert.ok(speed<=previousCoastSpeed+1e-8, 'The completed globe speeds up instead of coasting');
+    previousCoastSpeed=speed;
+  }
   greatestSpinSpeed=Math.max(greatestSpinSpeed,speed);
   previousSpinAngle=angle;
 }
 assert.ok(Math.abs(previousSpinAngle)<1e-10, 'Two visible turns did not finish before approach');
-assert.ok(greatestSpinSpeed<Math.PI, 'The visible two-turn spin exceeds half a turn per second');
+assert.ok(greatestSpinSpeed<Math.PI*1.51, 'The shared five-second spin exceeds its intended 0.75 turns/s peak');
 assert.ok(firstSpinSpeed<.0001 && finalSpinSpeed<.0001, 'Visible spin starts or stops abruptly');
 const color = new THREE.Color('#303D29');
 const star = new THREE.Vector3(), projected = new THREE.Vector3();
@@ -182,6 +197,7 @@ function snapshot(camera, pose) {
   return [...camera.position, ...camera.quaternion, ...pose.basis, ...uniforms.uMerge.value,
     ...uniforms.uBasis.value.elements, ...uniforms.uStarBasis.value.elements,
     uniforms.uProgress.value, uniforms.uScale.value, uniforms.uFormationRotation.value,
+    uniforms.uFormationSurface.value, uniforms.uGlobeRadius.value, Number(effect.group.children[0].material.depthTest),
     uniforms.uTrailReveal.value, uniforms.uTrailSpread.value, uniforms.uStarCoreLimit.value,
     uniforms.uStarHaloLimit.value, uniforms.uStarGrainLimit.value, uniforms.uStarHaloOpacity.value,
     pose.globeOpacity, pose.geographyOpacity, pose.originFocus,
@@ -200,7 +216,7 @@ for (const [width, height] of viewports) {
   const evaluate = progress => {
     const pose = choreography.sample(progress, { width, height, overviewDistance, heartBounds: HEART_BOUNDS });
     camera.position.copy(pose.position); camera.lookAt(pose.target); camera.updateMatrixWorld();
-    effect.update({ progress, origins, merge: pose.merge, heartScale: pose.heartScale, color, basis: camera.quaternion, starBasis: pose.basis, formationRotation: pose.formationRotation });
+    effect.update({ progress, origins, merge: pose.merge, heartScale: pose.heartScale, color, basis: camera.quaternion, starBasis: pose.basis, formationRotation: pose.formationRotation, formationSurface: pose.globeReveal });
     return pose;
   };
   for (let i = 0; i <= 1000; i += 1) {
@@ -213,6 +229,8 @@ for (const [width, height] of viewports) {
     assert.ok(pose.heartScale > 0);
     const uniforms = effect.group.children[0].material.uniforms;
     assert.ok(Math.abs(uniforms.uFormationRotation.value - pose.formationRotation) < 1e-12, 'Geography and particle formation have different axes');
+    assert.equal(uniforms.uFormationSurface.value, pose.globeReveal, 'Cloud occlusion differs from the visible globe surface');
+    assert.equal(effect.group.children[0].material.depthTest, progress >= .18, 'The transparent forming sphere abruptly cuts off cloud geography');
     assert.ok(pose.formationRotation >= previousFormationRotation, 'Formation spin reverses during settling');
     previousFormationRotation = pose.formationRotation;
     if (progress === 0) assert.equal(pose.formationRotation, -Math.PI * 4);
@@ -290,4 +308,4 @@ console.log('PASS — stable geometries/attributes; no independent clock; 1,001 
 console.log(`PASS — origins ${separationKm.toFixed(2)} km apart; minimum camera radius ${minimumCamera.toFixed(3)}; minimum star radius ${minimumStarRadius.toFixed(3)}.`);
 console.log(`PASS — star depth ≥${minimumStarDepth.toFixed(2)}, edge clearance ≥${edgeMargin.toFixed(1)} px; fixed trajectory basis; clean final globe handoff.`);
 console.log(`PASS — distinct star cores remain ≥${minimumSeparateCores.toFixed(1)} px apart through p=.61, without crossing before the p=.64 merger.`);
-console.log(`PASS — 2.4-second formation, then six visible seconds for 720° with smooth start/stop (peak ${(greatestSpinSpeed/(2*Math.PI)).toFixed(3)} turns/s); downstream cues shifted +5s only.`);
+console.log(`PASS — cloud rotates while gathering for four seconds, then the completed globe coasts one second; 720° with smooth start/stop (peak ${(greatestSpinSpeed/(2*Math.PI)).toFixed(3)} turns/s); downstream cue durations preserved.`);
