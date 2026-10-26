@@ -11,7 +11,8 @@ same timeline. The manual instruction and accessible progress range appear only
 when paused. The utility Play control resumes, without restarting the score.
 Background tabs and WebGL context loss suspend playback without changing progress.
 
-The opening GPU cloud gathers onto the actual existing country borders. The camera
+The opening GPU cloud gathers onto the actual existing country borders, with one
+shared axial rotation on the cloud and globe that settles before the approach. The camera
 then holds over Hlohovec/Cífer before retreating along the asymmetric star flight.
 At the end, autoplay stops and the original globe accepts drag/pinch/wheel. The
 existing-style footer offers replay and the verified production Journey/Wedding
@@ -24,7 +25,9 @@ The rounded heart combines a Bézier profile with a shell/interior loft. A secon
 point batch renders star cores/trails; a small plane renders the merger impulse.
 Pulse, yaw and the traveling light wave are progress-based, so pausing freezes them
 and backward seeking reverses them. There is no accumulating physics simulation.
-9,000 points are used on mobile, 5,200 on constrained devices, 14,000 on desktop.
+16,000 points are used on mobile, 8,000 on constrained devices, 24,000 on desktop.
+Star trails use a separate, smaller budget: they grow with traveled distance after
+liftoff, instead of stacking the entire tail into one close-up particle blot.
 The reference repository had no license, so none of its source was copied.
 
 ## Build without changing production configuration

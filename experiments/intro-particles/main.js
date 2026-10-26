@@ -172,7 +172,8 @@ function cameraStory(p){
     }
     globe.camera.lookAt(pose.target);globe.camera.updateMatrixWorld();
   }
-  fx.update({progress:p,origins:originVectors,merge:pose.merge,heartScale:pose.heartScale,color:particleColor,dark:displayedTheme.dark,basis:pose.basis,starBasis:pose.basis});
+  globe.group.rotation.y=pose.formationRotation;
+  fx.update({progress:p,origins:originVectors,merge:pose.merge,heartScale:pose.heartScale,color:particleColor,dark:displayedTheme.dark,basis:pose.basis,starBasis:pose.basis,formationRotation:pose.formationRotation});
   globe.globeMesh.visible=pose.globeReveal>.001;
   globe.globeMaterial.opacity=pose.globeOpacity;
 }
@@ -285,7 +286,7 @@ async function init(){
     globe=await createGlobe({canvas:$('story-canvas'),surface:$('globe-interaction'),onInteraction:()=>{flight?.kill();flight=null;dirty=true;schedule();}});
     bindGlobeInput($('globe-interaction'),{canInteract:()=>interactive&&!flight,canTap:()=>interactive&&!flight,onInteract:()=>{},onTap:target=>target?.click()});
     const weak=(navigator.deviceMemory||4)<=2||(navigator.hardwareConcurrency||4)<=2;
-    fx=createParticles({count:weak?5200:width<768?9000:14000,mobile:width<768,formationPositions:globe.getFormationPositions()});globe.scene.add(fx.group);
+    fx=createParticles({count:weak?8000:width<768?16000:24000,mobile:width<768,formationPositions:globe.getFormationPositions()});globe.scene.add(fx.group);
     globe.globeMaterial.transparent=true;
     homeDirection.copy(globe.latLonToVec3((origins[0].lat+origins[1].lat)/2,(origins[0].lon+origins[1].lon)/2,1));
     startDirection.copy(globe.latLonToVec3(30,15,1));

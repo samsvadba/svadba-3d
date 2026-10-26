@@ -49,6 +49,7 @@ export function createChoreography({ homeDirection, startDirection, radius = 12 
     geographyOpacity: 0,
     globeReveal: 0,
     formationProgress: 0,
+    formationRotation: 0,
     originReveal: 0,
     finalReveal: 0,
     travel: 0,
@@ -103,6 +104,9 @@ export function createChoreography({ homeDirection, startDirection, radius = 12 
     pose.globeOpacity = globeReveal * (1 - .82 * heartPresence);
     pose.geographyOpacity = globeReveal * (1 - .94 * heartPresence);
     pose.formationProgress = smooth(0, .15, p);
+    // The geography and its forming cloud share one axial turn, settling before
+    // the camera approaches the fixed geographic origins. Fully reversible.
+    pose.formationRotation = -Math.PI * 1.25 * (1 - smoother(0, .18, p));
     pose.originReveal = smooth(.275, .30, p) * (1 - smooth(.39, .45, p));
     pose.finalReveal = smooth(.99, 1, p);
     pose.travel = smooth(.37, .64, p);

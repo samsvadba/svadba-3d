@@ -46,8 +46,8 @@ assert.ok(separationKm > 20 && separationKm < 35);
 assert.deepEqual(STORY_PHASES.stars, [.37, .64]);
 assert.deepEqual(STORY_PHASES.gather, [.735, .85]);
 
-for (const count of [5200, 9000, 14000]) {
-  const effect = createParticles({ count, mobile: count < 14000, formationPositions });
+for (const count of [8000, 16000, 24000]) {
+  const effect = createParticles({ count, mobile: count < 24000, formationPositions });
   const geometry = effect.group.children[0].geometry;
   for (const object of effect.group.children) {
     for (const [name, attribute] of Object.entries(object.geometry.attributes)) {
@@ -56,6 +56,9 @@ for (const count of [5200, 9000, 14000]) {
     assert.ok(!Object.keys(object.material.uniforms).some(name => /time|clock|delta/i.test(name)), 'Effect has an independent clock');
   }
   for (const attribute of Object.values(geometry.attributes)) assert.equal(attribute.count, count);
+  const starKinds = effect.group.children[1].geometry.getAttribute('aKind').array;
+  assert.equal(starKinds.filter(kind => kind === 1).length, 2, 'Expected just two restrained star cores');
+  assert.equal(starKinds.filter(kind => kind === 2).length, 2, 'Expected just two secondary halos');
   const formation = geometry.getAttribute('aFormation');
   const point = new THREE.Vector3();
   for (let i = 0; i < count; i += 1) {
@@ -91,7 +94,7 @@ for (const count of [5200, 9000, 14000]) {
   assert.equal(effect.group.children.length, 0);
 }
 
-const effect = createParticles({ count: 9000, mobile: true, formationPositions });
+const effect = createParticles({ count: 16000, mobile: true, formationPositions });
 const snapshots = effect.group.children.map(object => ({
   uuid: object.geometry.uuid,
   attributes: Object.fromEntries(Object.entries(object.geometry.attributes).map(([name, attribute]) => [name, attribute.array])),
@@ -111,7 +114,10 @@ function snapshot(camera, pose) {
   const uniforms = effect.group.children[0].material.uniforms;
   return [...camera.position, ...camera.quaternion, ...pose.basis, ...uniforms.uMerge.value,
     ...uniforms.uBasis.value.elements, ...uniforms.uStarBasis.value.elements,
-    uniforms.uProgress.value, uniforms.uScale.value, pose.globeOpacity, pose.geographyOpacity,
+    uniforms.uProgress.value, uniforms.uScale.value, uniforms.uFormationRotation.value,
+    uniforms.uTrailReveal.value, uniforms.uTrailSpread.value, uniforms.uStarCoreLimit.value,
+    uniforms.uStarHaloLimit.value, uniforms.uStarGrainLimit.value, uniforms.uStarHaloOpacity.value,
+    pose.globeOpacity, pose.geographyOpacity,
     ...effect.group.children.map(object => Number(object.visible))];
 }
 
@@ -121,10 +127,11 @@ for (const [width, height] of viewports) {
   const fixedBasis = choreography.sample(0, { width, height, overviewDistance }).basis.toArray();
   const states = [];
   let greatestSilhouetteExcursion = 0;
+  let previousFormationRotation = -Infinity;
   const evaluate = progress => {
     const pose = choreography.sample(progress, { width, height, overviewDistance, heartBounds: HEART_BOUNDS });
     camera.position.copy(pose.position); camera.lookAt(pose.target); camera.updateMatrixWorld();
-    effect.update({ progress, origins, merge: pose.merge, heartScale: pose.heartScale, color, basis: camera.quaternion, starBasis: pose.basis });
+    effect.update({ progress, origins, merge: pose.merge, heartScale: pose.heartScale, color, basis: camera.quaternion, starBasis: pose.basis, formationRotation: pose.formationRotation });
     return pose;
   };
   for (let i = 0; i <= 1000; i += 1) {
@@ -135,6 +142,19 @@ for (const [width, height] of viewports) {
     assert.ok(cameraRadius > radius * 1.25, 'Story camera violates the existing minimum zoom safety distance');
     assert.deepEqual(pose.basis.toArray(), fixedBasis, 'Star frame follows the moving camera');
     assert.ok(pose.heartScale > 0);
+    const uniforms = effect.group.children[0].material.uniforms;
+    assert.ok(Math.abs(uniforms.uFormationRotation.value - pose.formationRotation) < 1e-12, 'Geography and particle formation have different axes');
+    assert.ok(pose.formationRotation >= previousFormationRotation, 'Formation spin reverses during settling');
+    previousFormationRotation = pose.formationRotation;
+    if (progress === 0) assert.equal(pose.formationRotation, -Math.PI * 1.25);
+    if (progress >= .18) assert.ok(Math.abs(pose.formationRotation) < 1e-12, 'Formation rotation leaks into geographic coordinates');
+    assert.ok(uniforms.uTrailSpread.value <= .030, 'Trail width scales into a close-up particle cloud');
+    if (progress >= .367 && progress <= .415) {
+      assert.equal(uniforms.uTrailReveal.value, 0, 'Stationary origin renders a cluster of delayed tail particles');
+      assert.ok(uniforms.uStarCoreLimit.value < 3.7, 'Close-up star core is oversized');
+      assert.ok(uniforms.uStarHaloLimit.value < 11.2 && uniforms.uStarHaloOpacity.value < .10, 'Close-up halo is too heavy');
+    }
+    if (progress >= .465) assert.equal(uniforms.uTrailReveal.value, 1, 'Moving stars should reveal their wake');
     for (const [index, object] of effect.group.children.entries()) {
       assert.equal(object.geometry.uuid, snapshots[index].uuid);
       for (const [name, attribute] of Object.entries(object.geometry.attributes)) {
@@ -187,8 +207,9 @@ for (const [width, height] of viewports) {
 }
 
 effect.dispose(); sourceGeometry.dispose();
-console.log('PASS — 5,200 / 9,000 / 14,000 finite GPU particles; actual country-border formation; parametric heart lobes, cleft, tip and 3D interior.');
+console.log('PASS — 8,000 / 16,000 / 24,000 finite GPU particles; actual country-border formation; unchanged parametric heart lobes, cleft, tip and 3D interior.');
 console.log('PASS — stable geometries/attributes; no independent clock; 1,001 forward/backward states identical across five viewports.');
 console.log(`PASS — origins ${separationKm.toFixed(2)} km apart; minimum camera radius ${minimumCamera.toFixed(3)}; minimum star radius ${minimumStarRadius.toFixed(3)}.`);
 console.log(`PASS — star depth ≥${minimumStarDepth.toFixed(2)}, edge clearance ≥${edgeMargin.toFixed(1)} px; fixed trajectory basis; clean final globe handoff.`);
 console.log(`PASS — distinct star cores remain ≥${minimumSeparateCores.toFixed(1)} px apart through p=.61, without crossing before the p=.64 merger.`);
+console.log('PASS — synchronized 225° formation spin settles to identity; clean two-core liftoff, no stationary trail cloud, restrained halo and narrow world-space wake.');

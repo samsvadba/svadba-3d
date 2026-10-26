@@ -94,6 +94,7 @@ const sharedVertex = /* glsl */ `
   uniform vec3 uMerge;
   uniform mat3 uBasis;
   uniform mat3 uStarBasis;
+  uniform float uFormationRotation;
   varying float vAlpha;
   varying float vSoftness;
   float phase(float start, float end) {
@@ -152,6 +153,11 @@ const particleVertex = /* glsl */ `
       worldPosition = mix(orbit * aScatter, aFormation, arrival);
       worldPosition += normalize(aScatter) * sin(arrival * 3.14159265)
                        * sin(driftPhase) * 0.5;
+      float formationCos = cos(uFormationRotation);
+      float formationSin = sin(uFormationRotation);
+      worldPosition = mat3(formationCos, 0.0, -formationSin,
+                           0.0, 1.0, 0.0,
+                           formationSin, 0.0, formationCos) * worldPosition;
       formationAlpha = smoothPhase(0.0, 0.012) * (1.0 - smoothPhase(0.13, 0.16));
     }
     vec4 viewPosition = modelViewMatrix * vec4(worldPosition, 1.0);
@@ -180,6 +186,12 @@ const starVertex = /* glsl */ `
   uniform vec3 uControlAB;
   uniform vec3 uControlBA;
   uniform vec3 uControlBB;
+  uniform float uTrailReveal;
+  uniform float uTrailSpread;
+  uniform float uStarCoreLimit;
+  uniform float uStarHaloLimit;
+  uniform float uStarGrainLimit;
+  uniform float uStarHaloOpacity;
   attribute float aStar;
   attribute float aTail;
   attribute float aKind;
@@ -223,22 +235,25 @@ const starVertex = /* glsl */ `
     float tailDelay = aTail * 0.07;
     vec3 origin = aStar > 0.0 ? uOriginA : uOriginB;
     vec3 pointPosition = trajectory(uProgress - tailDelay, origin, aStar);
-    float spread = (0.005 + aTail * 0.012) * uScale;
+    // A narrow world-space wake, independent of the much larger heart scale.
+    // Delayed trail samples are invisible until their source has actually moved.
+    float spread = mix(0.0025, uTrailSpread, aTail);
     vec3 orbit = vec3(cos(aSeed.x * 6.2831853), sin(aSeed.x * 6.2831853),
                       sin(aSeed.y * 6.2831853));
     pointPosition += uStarBasis * orbit * spread * aSeed.z * (aKind < 0.5 ? 1.0 : 0.0);
     vec4 viewPosition = modelViewMatrix * vec4(pointPosition, 1.0);
     gl_Position = projectionMatrix * viewPosition;
-    float size = aKind > 1.5 ? 0.78 : (aKind > 0.5 ? 0.17 : 0.025);
+    float size = aKind > 1.5 ? 0.42 : (aKind > 0.5 ? 0.10 : 0.017);
     size *= clamp(uScale / 6.0, 0.8, 2.0);
-    float maxSize = aKind > 1.5 ? 28.0 : (aKind > 0.5 ? 8.0 : 2.5);
+    float maxSize = aKind > 1.5 ? uStarHaloLimit : (aKind > 0.5 ? uStarCoreLimit : uStarGrainLimit);
     gl_PointSize = clamp(size * uProjectionScale / max(0.5, -viewPosition.z),
-                         0.8 * uPixelRatio, maxSize * uPixelRatio);
+                         0.65 * uPixelRatio, maxSize * uPixelRatio);
     float appear = smoothPhase(0.367, 0.389);
     float vanish = 1.0 - smoothPhase(0.638, 0.66);
-    float tailVisible = smoothstep(0.37 + tailDelay, 0.39 + tailDelay, uProgress);
-    vAlpha = appear * vanish * (aKind < 0.5 ? tailVisible * pow(1.0 - aTail, 1.6)
-                                      : (aKind > 1.5 ? 0.22 : 0.95));
+    float tailVisible = smoothstep(0.388, 0.41, uProgress - tailDelay);
+    vAlpha = appear * vanish * (aKind < 0.5 ? tailVisible * uTrailReveal
+                                       * pow(1.0 - aTail, 1.6) * 0.5
+                                      : (aKind > 1.5 ? uStarHaloOpacity : 0.92));
     vSoftness = aKind > 1.5 ? 1.0 : 0.0;
   }
 `;
@@ -291,7 +306,7 @@ const flashFragment = /* glsl */ `
 
 /** Isolated, deterministic GPU effect for intro-particles-test.html. */
 export function createParticles({ count = 10000, mobile = false, formationPositions } = {}) {
-  const particleCount = Math.max(3000, Math.min(16000, Math.round(count)));
+  const particleCount = Math.max(3000, Math.min(24000, Math.round(count)));
   const random = randomSequence(0x534d2027);
   const group = new THREE.Group();
   group.name = 'intro-story-particles';
@@ -317,6 +332,13 @@ export function createParticles({ count = 10000, mobile = false, formationPositi
     uControlBB: { value: new THREE.Vector3() },
     uBasis: { value: new THREE.Matrix3() },
     uStarBasis: { value: new THREE.Matrix3() },
+    uFormationRotation: { value: 0 },
+    uTrailReveal: { value: 0 },
+    uTrailSpread: { value: .012 },
+    uStarCoreLimit: { value: 3.6 },
+    uStarHaloLimit: { value: 11 },
+    uStarGrainLimit: { value: 1.1 },
+    uStarHaloOpacity: { value: .09 },
     uColor: { value: new THREE.Color() },
     uDark: { value: 0 },
   };
@@ -459,7 +481,7 @@ export function createParticles({ count = 10000, mobile = false, formationPositi
   return {
     group,
     sampleStarPath,
-    update({ progress, origins, merge, heartScale = 6, color, dark = 0, basis = identityQuaternion, starBasis = basis }) {
+    update({ progress, origins, merge, heartScale = 6, color, dark = 0, basis = identityQuaternion, starBasis = basis, formationRotation = 0 }) {
       const p = THREE.MathUtils.clamp(progress, 0, 1);
       uniforms.uProgress.value = p;
       uniforms.uScale.value = heartScale;
@@ -468,6 +490,14 @@ export function createParticles({ count = 10000, mobile = false, formationPositi
       uniforms.uMerge.value.copy(merge);
       uniforms.uColor.value.copy(color);
       uniforms.uDark.value = dark;
+      uniforms.uFormationRotation.value = p < .18 && Number.isFinite(formationRotation) ? formationRotation : 0;
+      const retreat = THREE.MathUtils.smoothstep(p, .41, .50);
+      uniforms.uTrailReveal.value = THREE.MathUtils.smoothstep(p, .415, .465);
+      uniforms.uTrailSpread.value = THREE.MathUtils.lerp(.012, .030, retreat);
+      uniforms.uStarCoreLimit.value = THREE.MathUtils.lerp(3.6, 5.2, retreat);
+      uniforms.uStarHaloLimit.value = THREE.MathUtils.lerp(11, 19, retreat);
+      uniforms.uStarGrainLimit.value = THREE.MathUtils.lerp(1.1, 2.0, retreat);
+      uniforms.uStarHaloOpacity.value = THREE.MathUtils.lerp(.09, .18, retreat);
       basisMatrix4.makeRotationFromQuaternion(basis);
       uniforms.uBasis.value.setFromMatrix4(basisMatrix4);
       starBasisMatrix4.makeRotationFromQuaternion(starBasis);
