@@ -190,6 +190,33 @@ html[data-intro="lineart"] .title-layout h1.brand-names{width:min(620px,100%);ma
 #intro-lineart path{stroke:currentColor;stroke-width:1.2;stroke-opacity:0}
 @media(max-width:767px){html[data-intro="lineart"] .title-layout{inset:100px 6% calc(env(safe-area-inset-bottom) + 150px);row-gap:16px}}
 @media(max-height:580px){html[data-intro="lineart"] .title-layout{inset:65px 6% calc(env(safe-area-inset-bottom) + 118px);row-gap:8px}html[data-intro="lineart"] .title-layout h1.brand-names{width:min(320px,42dvh)}}
+
+/* The particle intro uses the existing Journey canvas and persistent V3 bars. */
+html[data-intro="particles"]{--intro-paper:var(--paper);--intro-ink:var(--ink);--intro-muted:color-mix(in srgb,var(--ink) 40%,transparent)}
+html[data-intro="particles"] #intro-overlay{z-index:2;background:transparent;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
+body[data-state="intro"][data-intro-pending] #three-canvas{visibility:hidden}
+html[data-intro="particles"] #intro-overlay>.intro-media,
+html[data-intro="particles"] #intro-copy,
+html[data-intro="particles"] #intro-overlay>.title-layout{display:none}
+#particle-intro-content,#particle-intro-labels,#particle-intro-connectors{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;color:var(--ink)}
+#particle-intro-connectors line{stroke:currentColor;stroke-width:.7;opacity:.32}
+.particle-origin-label{position:absolute;left:0;top:0;width:148px;text-align:left;opacity:0;will-change:transform}
+.particle-origin-label strong{display:block;font:italic 400 42px/.98 'Cormorant Garamond',serif;letter-spacing:-.025em}
+.particle-origin-label span{display:block;font:400 9px/1.5 'DM Sans',sans-serif;letter-spacing:.23em;text-transform:uppercase;margin-top:9px;opacity:.7}
+.particle-origin-label:after{content:'';display:block;width:32px;height:1px;background:currentColor;opacity:.4;margin-top:11px}
+.particle-origin-label[data-side="left"]{text-align:right}
+.particle-origin-label[data-side="left"]:after{margin-left:auto}
+#particle-intro-caption{position:absolute;left:8%;right:8%;bottom:calc(env(safe-area-inset-bottom) + 210px);text-align:center;font:400 9px/1.7 'DM Sans',sans-serif;letter-spacing:.08em;opacity:.6;text-wrap:balance}
+#particle-intro-timeline{position:absolute;left:50%;bottom:calc(env(safe-area-inset-bottom) + 166px);transform:translateX(-50%);width:min(390px,calc(100% - 70px));display:flex;align-items:center;gap:18px;pointer-events:auto}
+#particle-intro-progress{appearance:none;-webkit-appearance:none;background:transparent;flex:1;min-width:0;height:30px;cursor:ew-resize;color:inherit;touch-action:none;accent-color:var(--ink)}
+#particle-intro-progress::-webkit-slider-runnable-track{height:1px;background:currentColor;opacity:.35}
+#particle-intro-progress::-webkit-slider-thumb{appearance:none;-webkit-appearance:none;width:5px;height:5px;margin-top:-2px;background:currentColor;border-radius:50%;border:none}
+#particle-intro-progress::-moz-range-track{height:1px;background:currentColor}
+#particle-intro-progress::-moz-range-thumb{width:5px;height:5px;background:currentColor;border:0;border-radius:50%}
+#particle-intro-progress:focus-visible{outline:1px solid currentColor;outline-offset:4px}
+#particle-intro-stage{font-size:8px;letter-spacing:.15em;opacity:.5;white-space:nowrap}
+@media(max-width:767px){.particle-origin-label{width:118px}.particle-origin-label strong{font-size:34px}}
+@media(max-height:560px){#particle-intro-caption{bottom:calc(env(safe-area-inset-bottom) + 172px);font-size:8px}#particle-intro-timeline{bottom:calc(env(safe-area-inset-bottom) + 132px)}}
 .origin-layer{position:absolute;inset:0;pointer-events:none;visibility:hidden;z-index:4;color:var(--origin)}
 .origin-leaders{position:absolute;inset:0;width:100%;height:100%;fill:none;stroke:currentColor;stroke-width:.7}
 .origin-marker{position:absolute;left:0;top:0;width:44px;height:44px;padding:14px;pointer-events:none;opacity:0;color:inherit;background:none;border:0;touch-action:manipulation}

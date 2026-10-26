@@ -59,7 +59,11 @@ function event(){return {prevented:false,stopped:false,preventDefault(){this.pre
   assert.equal(pending.run('instagramCopyHelp.hidden'),true); // Stale clipboard response cannot affect the next city.
   const html=fs.readFileSync(path.join(__dirname,'index-v3.html'),'utf8');
   assert.match(html,/<a id="destination-video-highlight" target="_blank" rel="noopener noreferrer"/);
-  assert.ok(source.includes('event.persisted && !fullscreenVideo.externalHold'));
+  // BFCache keeps every current chapter/destination in place. Only an active
+  // particle intro may resume its existing clock; it must never restart V3.
+  const pageshow=source.split('\n').find(line=>line.startsWith("window.addEventListener('pageshow'"));
+  assert.ok(pageshow.includes("particleIntro.resume('page')"));
+  assert.doesNotMatch(pageshow,/playIntroTextAnimations|playJourneyTransition|nextMemory|window\.open/);
   assert.ok(!/window\.open|location\s*=|location\.href|intent:|instagram:\/\//.test(helpers+handlers));
   for(const key of ['instagramCopy','instagramBrowserHint','instagramCopied','instagramCopyManual','videoResume']){
     assert.ok(config.ui.sk[key]);assert.ok(config.ui.en[key]);

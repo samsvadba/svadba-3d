@@ -18,6 +18,8 @@ const duration = (seconds) => reducedMotion.matches ? 0 : seconds;
 const base = import.meta.env.BASE_URL;
 const asset = (path) => `${base}${path}`;
 const lineartIntro = document.documentElement.dataset.intro === 'lineart';
+const particleIntroEnabled = document.documentElement.dataset.intro === 'particles';
+let particleIntro, particleIntroFactory, particleTheme;
 let introLineartPromise, introLineartStarted = false, introLineartPaths = [];
 const screens = ['intro-overlay', 'journey-scene', 'transition-screen', 'final-transition-screen', 'wedding-scene'];
 let weddingChapter;
@@ -37,7 +39,7 @@ const view = { width: 0, height: 0 };
 const journeyMotion = { focus: 0, spin: 0 };
 const entranceSweep = Math.PI * 1.65;
 let globeFlight, lastFrame = 0, idleSince = 0, dragging = false, layoutDirty = true;
-let globeMaterial, overviewMaterial, wireMaterial, detailPromise, detailReady = 0;
+let globeMesh, globeMaterial, overviewMaterial, overviewGeometry, wireMaterial, detailPromise, detailReady = 0;
 const detailLayers = [];
 const countryByCity=Object.fromEntries(locations.map(loc=>[loc.key,loc.countryCode]));
 const layout = { minY:100, maxY:500, margin:20, modal:null };
@@ -260,6 +262,9 @@ function unloadMedia() {
 }
 
 function killActiveSectionTransition() {
+  particleIntro?.leave();
+  appliedGlobeTheme.material = null;
+  delete document.body.dataset.introPending;
   originMarkers?.reset();
   weddingChapter?.leave();
   clearTimeout(storyTimer);
@@ -309,6 +314,75 @@ function loadIntroLineart() {
 }
 
 function playIntroTextAnimations() {
+  if (particleIntroEnabled) playParticleIntro();
+  else playLegacyIntro();
+}
+
+function finishStartupCloud() {
+  window.dispatchEvent(new Event('intro-particles:first-frame'));
+}
+
+async function playParticleIntro() {
+  const request = killActiveSectionTransition();
+  hideAllScreensImmediate();
+  currentIndex = -1;
+  setState('intro'); setActiveNav('intro');
+  document.body.dataset.introPending = 'true';
+  showScreen('journey-scene', false); showScreen('intro-overlay');
+  gsap.set([$ ('label-layer'), $('city-connectors'), $('journey-instruction')], {autoAlpha:0});
+  announce(t('introStatus'));
+  try {
+    const modulePromise = particleIntroFactory ? null : import('./intro-particles-v3.js').then(module => { particleIntroFactory = module.createParticleIntro; });
+    await Promise.all([ensureGlobeScene(), modulePromise]);
+    if (request !== revision) return;
+    if (!renderer || !camera) throw new Error('WebGL unavailable');
+    await loadGeographicDetail();
+    if (request !== revision) return;
+    markerData.forEach(item => { if (item.mesh) item.mesh.visible = false; });
+    if (!particleIntro) {
+      particleIntro = particleIntroFactory({
+        scene, camera, renderer, controls, globeGroup, globeMesh, globeMaterial,
+        overviewMaterial, wireMaterial, detailLayers,
+        formationPositions: overviewGeometry.attributes.position.array,
+        radius: GLOBE_RADIUS, latLonToVec3, overviewDistance, origins: config.origins,
+        root: $('intro-overlay'), getTheme: getParticleTheme,
+        getLanguage: () => preferences.language, getText: t, reducedMotion,
+        onFinish: enterJourneyFromIntro, onMode: syncStoryUI,
+        onFirstFrame: () => { delete document.body.dataset.introPending; finishStartupCloud(); },
+      });
+    }
+    applyGlobeTheme();
+    particleIntro.start(); syncStoryUI();
+    delete document.body.dataset.introPending;
+  } catch (error) {
+    if (request !== revision) return;
+    console.warn('Particle intro unavailable:', error.message);
+    finishStartupCloud();
+    document.documentElement.dataset.intro = 'video';
+    playLegacyIntro();
+  }
+}
+
+function enterJourneyFromIntro() {
+  // Keep the same renderer, globe and final camera pose; do not replay the
+  // Journey entrance or replace the page after the heart dissolves.
+  const offsetY = camera?.view?.enabled ? camera.view.offsetY / camera.view.height : 0;
+  const request = killActiveSectionTransition();
+  hideAllScreensImmediate(); showScreen('journey-scene');
+  currentIndex = -1; storyIndex = 0; storyCycleEnd = -1; storyStarted = false;
+  autoStoryPending = !reducedMotion.matches;
+  journeyMotion.focus = 0; framing.x = 0; framing.y = offsetY;
+  setState('journey'); setActiveNav('journey'); layoutDirty = true;
+  gsap.to(framing, {y:.065, duration:duration(.7), ease:'sine.inOut'});
+  gsap.set([$ ('label-layer'), $('city-connectors'), $('journey-instruction')], {autoAlpha:0});
+  activeSectionTimeline = gsap.timeline()
+    .to([$ ('label-layer'), $('city-connectors'), $('journey-instruction')], {autoAlpha:1, duration:duration(.7)})
+    .to({}, {duration:2})
+    .call(() => { if (request === revision && autoStoryPending) { autoStoryPending = false; startStory(); } });
+  announce(t('storyHint'));
+}
+
+function playLegacyIntro() {
   const request=killActiveSectionTransition();
   hideAllScreensImmediate();
   setState('intro');setActiveNav('intro');showScreen('intro-overlay');currentIndex=-1;
@@ -370,6 +444,7 @@ function animateTransitionLines(tl, screen, hold = .8) {
 }
 
 async function playJourneyTransition() {
+  finishStartupCloud();
   const request = killActiveSectionTransition();
   storyIndex=0;storyCycleEnd=-1;storyStarted=false;autoStoryPending=true;
   gsap.set([$ ('label-layer'), $('city-connectors')],{autoAlpha:0});
@@ -422,6 +497,7 @@ async function playJourneyTransition() {
 
 function playWeddingTransition() {
   if(state==='wedding')return;
+  finishStartupCloud();
   pauseStory();
   killActiveSectionTransition();
   hideAllScreensImmediate();
@@ -585,7 +661,8 @@ async function ensureGlobeScene() {
       scene.add(globeGroup);
       originMarkers=createOrigins(globeSurface,config.origins,{THREE,gsap,reducedMotion,radius:GLOBE_RADIUS+.17});
       originMarkers.refreshLanguage(t('originLabel'));
-      globeGroup.add(new THREE.Mesh(new THREE.SphereGeometry(GLOBE_RADIUS, 128, 96), (globeMaterial=new THREE.MeshBasicMaterial({color: 0xf5f4f0}))));
+      globeMesh = new THREE.Mesh(new THREE.SphereGeometry(GLOBE_RADIUS, 128, 96), (globeMaterial=new THREE.MeshBasicMaterial({color: 0xf5f4f0})));
+      globeGroup.add(globeMesh);
       wireMaterial=new THREE.LineBasicMaterial({color:0x8e918c,transparent:true,opacity:.08,depthWrite:false});
       const netSource=new THREE.IcosahedronGeometry(GLOBE_RADIUS,3);
       const netEdges=new THREE.WireframeGeometry(netSource);
@@ -611,7 +688,8 @@ async function ensureGlobeScene() {
         markerData[index].mesh = mesh;
       });
       overviewMaterial=new THREE.LineBasicMaterial({color:0x64685f,transparent:true,opacity:.26,depthWrite:false});
-      globeGroup.add(new THREE.LineSegments(boundaryGeometry(countries),overviewMaterial));
+      overviewGeometry = boundaryGeometry(countries);
+      globeGroup.add(new THREE.LineSegments(overviewGeometry,overviewMaterial));
       loadGeographicDetail();
       const measureObserver=new ResizeObserver(()=>{layoutDirty=true;});
       markerData.forEach(item=>measureObserver.observe(item.element));
@@ -619,11 +697,12 @@ async function ensureGlobeScene() {
       document.fonts?.ready.then(()=>{layoutDirty=true;});
       $('three-canvas').addEventListener('webglcontextlost', event => {
         event.preventDefault();
+        if (particleIntro?.active) { particleIntro.suspend('context'); return; }
         $('globe-fallback').hidden = false;
         connector.style.visibility = 'hidden';
         showFallbackLabels();
       });
-      $('three-canvas').addEventListener('webglcontextrestored', () => { $('globe-fallback').hidden = true; globeSurface.style.touchAction='none'; controls.enabled=state==='journey'&&!cameraMoving; $('label-layer').classList.remove('fallback-list'); layoutDirty=true; });
+      $('three-canvas').addEventListener('webglcontextrestored', () => { $('globe-fallback').hidden = true; globeSurface.style.touchAction='none'; controls.enabled=state==='journey'&&!cameraMoving; $('label-layer').classList.remove('fallback-list'); particleIntro?.resume('context'); layoutDirty=true; });
       renderer.setAnimationLoop(animate);
     } catch (error) {
       console.warn('Globe unavailable:', error.message);
@@ -718,12 +797,16 @@ function separateLabels(items,key,minY,maxY,gap=9) {
 function animate(time) {
   const dt=Math.min(.05,Math.max(.001,(time-(lastFrame||time-16.7))/1000));
   lastFrame=time;
-  if(document.hidden||!['transition','journey','memory'].includes(state))return;
+  if(document.hidden||!(['transition','journey','memory'].includes(state)||(state==='intro'&&particleIntro?.active)))return;
+  if(renderer.getContext().isContextLost())return;
   if(!$('globe-fallback').hidden){showFallbackLabels();return;}
   if(view.width!==innerWidth||view.height!==innerHeight){
     view.width=innerWidth;view.height=innerHeight;
     renderer.setSize(view.width,view.height);
     camera.aspect=view.width/view.height;camera.updateProjectionMatrix();layoutDirty=true;
+  }
+  if (state === 'intro' && particleIntro?.active) {
+    applyGlobeTheme(); particleIntro.render(view.width, view.height); return;
   }
   if(layoutDirty)measureJourneyLayout();
   applyFraming();
@@ -1025,6 +1108,13 @@ function nextMemory(){
 
 function syncStoryUI(){
   const button=$('story-play');if(!button)return;
+  if (state === 'intro' && particleIntro?.active) {
+    const playing = particleIntro.mode === 'auto';
+    const label = t(playing ? 'introPause' : particleIntro.progress > 0 ? 'introContinue' : 'introPlay');
+    button.setAttribute('aria-label',label);button.title=label;
+    button.setAttribute('aria-pressed',String(playing));button.disabled=false;
+    return;
+  }
   const label=t(storyActive?'storyPause':storyStarted?'storyContinue':'storyPlay');
   button.setAttribute('aria-label',label);button.title=label;
   button.setAttribute('aria-pressed',String(storyActive));
@@ -1046,7 +1136,7 @@ function interruptStoryGesture(){
   gsap.to(journeyMotion,{focus:0,duration:duration(.4)});
   gsap.to([$ ('label-layer'),$('city-connectors'),$('journey-instruction')],{autoAlpha:1,duration:duration(.4)});
 }
-$('story-play').onclick=()=>{if(storyActive){pauseStory();if(state==='memory')closeModal();}else startStory();};
+$('story-play').onclick=()=>{if(state==='intro'&&particleIntro?.active){particleIntro.toggle();return;}if(storyActive){pauseStory();if(state==='memory')closeModal();}else startStory();};
 videoScene.addEventListener('click',event=>{
   if(storyActive&&!event.target.closest('button,a')){pauseStory();closeFullscreenVideo();}
 });
@@ -1078,6 +1168,25 @@ function readPreference(key,fallback){try{return localStorage.getItem(key)||fall
 function savePreference(key,value){try{localStorage.setItem(key,value);}catch{}}
 const preferences={sound:readPreference('sm-sound','off')==='on',theme:readPreference('sm-theme','light')==='dark'?'dark':'light',palette:readPreference('sm-palette','classic')==='olive'?'olive':'classic',language:readPreference('sm-language','sk')==='en'?'en':'sk'};
 const mood={value:preferences.theme==='dark'?1:0,palette:preferences.palette==='olive'?1:0};
+function getParticleTheme() {
+  if (!particleTheme) {
+    const css = getComputedStyle(document.documentElement);
+    particleTheme = {
+      lightPaper:new THREE.Color('#f5f4f0'),darkPaper:new THREE.Color('#20221f'),
+      lightInk:new THREE.Color('#292a28'),darkInk:new THREE.Color('#ece9df'),
+      oliveColor:new THREE.Color(css.getPropertyValue('--olive').trim()),ivory:new THREE.Color(css.getPropertyValue('--ivory').trim()),
+      paper:new THREE.Color(),ink:new THREE.Color(),pairPaper:new THREE.Color(),pairInk:new THREE.Color(),
+      dark:0,olive:0,
+    };
+  }
+  const theme=particleTheme,n=mood.value,p=mood.palette;
+  theme.pairPaper.copy(theme.ivory).lerp(theme.oliveColor,n);
+  theme.pairInk.copy(theme.oliveColor).lerp(theme.ivory,n);
+  theme.paper.copy(theme.lightPaper).lerp(theme.darkPaper,n).lerp(theme.pairPaper,p);
+  theme.ink.copy(theme.lightInk).lerp(theme.darkInk,n).lerp(theme.pairInk,p);
+  theme.dark=n;theme.olive=p;
+  return theme;
+}
 let oliveGlobeColors;
 const appliedGlobeTheme={material:null,value:null,palette:null,markers:0};
 const music=new Audio();music.loop=true;music.preload='none';music.crossOrigin='anonymous';music.volume=0;music.id='background-music';music.hidden=true;document.body.append(music);
@@ -1166,6 +1275,7 @@ function applyLanguage(){
   refreshInstagramCopy();
   updateDestinationNavigation();syncStoryUI();
   weddingChapter?.refreshLanguage();
+  particleIntro?.refreshLanguage();
   if(!$('media-error').classList.contains('empty-memory'))text('#media-error','imageError');
   for(const item of markerData){const loc=locations[item.index];item.element.setAttribute('aria-label',cityName(loc)+' — '+countryText(loc));item.element.querySelector('.city-subname').textContent=countryText(loc);item.element.querySelector('.city-name').textContent=cityName(loc);}
   if(currentIndex>=0){
@@ -1203,13 +1313,13 @@ document.addEventListener('visibilitychange',syncMusic);
 createLabels();
 applyLanguage();
 applyMood(false);
-$('next-btn').onclick = $('nav-journey').onclick = ()=>{pauseStory();playJourneyTransition();};
+$('next-btn').onclick = $('nav-journey').onclick = ()=>{pauseStory();if(state==='intro'&&particleIntro?.active)particleIntro.finish();else playJourneyTransition();};
 $('header-home').onclick = $('nav-intro').onclick = ()=>{pauseStory();playIntroTextAnimations();};
 $('nav-wedding').onclick = ()=>{pauseStory();playWeddingTransition();};
 $('video-stop-btn').onclick = ()=>{pauseStory();closeModal();};
 $('video-skip-btn').onclick = nextMemory;
 $('destination-video-next').onclick = event => { event.stopPropagation(); nextMemory(); };
-document.addEventListener('keydown', event => { if (event.key === 'Escape'){pauseStory();closeModal();} });
+document.addEventListener('keydown', event => { if (event.key === 'Escape' && !particleIntro?.active){pauseStory();closeModal();} });
 let previousOverview=overviewDistance();
 window.addEventListener('resize', () => {
   layoutDirty=true;
@@ -1235,6 +1345,7 @@ reducedMotion.addEventListener('change', () => {
     introLineartStarted=true;
   }
   if (controls) controls.autoRotate=state==='journey'&&!reducedMotion.matches;
+  if (reducedMotion.matches && particleIntro?.active) particleIntro.finish();
   journeyMotion.spin=0;
   if(reducedMotion.matches && globeFlight) globeFlight.progress(1);
 });
@@ -1249,7 +1360,8 @@ $('three-canvas').addEventListener('keydown',event=>{
   spherical.phi=clamp(spherical.phi+(event.key==='ArrowUp'?-.1:event.key==='ArrowDown'?.1:0),.1,Math.PI-.1);
   camera.position.setFromSpherical(spherical); controls.update(); idleSince=performance.now()+1800;
 });
-window.addEventListener('pageshow', event => { if (event.persisted && !fullscreenVideo.externalHold) playIntroTextAnimations(); });
+// BFCache restores the existing section and playback state, never a fresh intro.
+window.addEventListener('pageshow', () => { if (particleIntro?.active) particleIntro.resume('page'); });
 
 let loaded = false;
 function finishLoading() {
@@ -1263,10 +1375,10 @@ function finishLoading() {
   gsap.to($('interactive-preloader'), {autoAlpha:0,duration:duration(.45)});
   document.body.classList.remove('loading');
   $('persistent-header').inert = $('bottom-nav').inert = false;
-  playIntroTextAnimations();
   const initialView = new URLSearchParams(location.search).get('view');
-  if (initialView === 'journey') playJourneyTransition();
-  if (initialView === 'wedding') playWeddingTransition();
+  if (initialView === 'journey') { finishStartupCloud(); playJourneyTransition(); }
+  else if (initialView === 'wedding') { finishStartupCloud(); playWeddingTransition(); }
+  else playIntroTextAnimations();
 }
 const loadTimeout = setTimeout(finishLoading, 6000);
 $('pl-skip-btn').onclick = finishLoading;
