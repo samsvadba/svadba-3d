@@ -12,13 +12,13 @@ function randomSequence(seed) {
 }
 
 function heartProfile() {
-  // Original cubic silhouette: rounded shoulders, a deliberate cleft, a long
-  // unbroken side curve and a narrow tip. Lofting gives it a rounded front/back.
+  // Broad rounded lobes and sweeping sides follow the supplied heart references.
+  // Cubic tangents meet smoothly; the bottom tip remains deliberately pointed.
   const left = [
-    [[0, .52], [-.12, .99], [-.34, 1.14], [-.56, .98]],
-    [[-.56, .98], [-.86, .99], [-1.08, .78], [-1.02, .43]],
-    [[-1.02, .43], [-1, .10], [-.87, -.17], [-.67, -.43]],
-    [[-.67, -.43], [-.49, -.66], [-.13, -.94], [0, -1.15]],
+    [[0, .50], [-.12, .50], [-.32, .82], [-.54, .82]],
+    [[-.54, .82], [-.76, .82], [-1.02, .60], [-1.02, .35]],
+    [[-1.02, .35], [-1.02, .10], [-.84, -.12], [-.64, -.30]],
+    [[-.64, -.30], [-.44, -.48], [-.12, -.76], [0, -.92]],
   ];
   const curves = [...left, ...left.slice().reverse().map(curve => curve.slice().reverse().map(([x, y]) => [-x, y]))];
   const points = [], lengths = [0];

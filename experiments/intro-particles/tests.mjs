@@ -70,7 +70,8 @@ for (const count of [8000, 16000, 24000]) {
   const box = new THREE.Box3().setFromBufferAttribute(heart);
   const size = box.getSize(new THREE.Vector3());
   assert.ok(size.x > 2 && size.x <= HEART_BOUNDS.width);
-  assert.ok(size.y > 2.1 && size.y <= HEART_BOUNDS.height);
+  assert.ok(size.y > 1.70 && size.y < 1.80 && size.y <= HEART_BOUNDS.height);
+  assert.ok(size.x / size.y > 1.13 && size.x / size.y < 1.22, 'Expected the broader reference-heart proportions');
   assert.ok(size.z > 1.2 && size.z <= HEART_BOUNDS.depth, 'Heart is flat or exceeds framing bounds');
   let leftLobe = -Infinity, rightLobe = -Infinity, cleft = -Infinity;
   let lowTip = 0, interior = 0, front = 0, back = 0;
@@ -81,13 +82,13 @@ for (const count of [8000, 16000, 24000]) {
       if (x > .25 && x < .85) rightLobe = Math.max(rightLobe, y);
       if (Math.abs(x) < .055 && y > 0) cleft = Math.max(cleft, y);
     }
-    if (Math.abs(x) < .16 && y < -1.02) lowTip += 1;
+    if (Math.abs(x) < .16 && y < -.84) lowTip += 1;
     if (Math.hypot(x, y, z) < .35) interior += 1;
     if (z > .30) front += 1;
     if (z < -.30) back += 1;
   }
-  assert.ok(leftLobe > .97 && rightLobe > .97, 'Rounded upper lobes are missing');
-  assert.ok(cleft < leftLobe - .16 && cleft < rightLobe - .16, 'Middle cleft is not defined');
+  assert.ok(leftLobe > .80 && rightLobe > .80, 'Rounded upper lobes are missing');
+  assert.ok(cleft < leftLobe - .18 && cleft < rightLobe - .18, 'Middle cleft is not defined');
   assert.ok(lowTip > 5 && interior > 4, 'Expected a defined tip and genuine interior particles');
   assert.ok(front > count * .15 && back > count * .15, 'Heart has no front/back depth');
   effect.dispose();
@@ -207,7 +208,7 @@ for (const [width, height] of viewports) {
 }
 
 effect.dispose(); sourceGeometry.dispose();
-console.log('PASS — 8,000 / 16,000 / 24,000 finite GPU particles; actual country-border formation; unchanged parametric heart lobes, cleft, tip and 3D interior.');
+console.log('PASS — 8,000 / 16,000 / 24,000 finite GPU particles; actual country-border formation; broader reference-heart lobes, cleft, tip and 3D interior.');
 console.log('PASS — stable geometries/attributes; no independent clock; 1,001 forward/backward states identical across five viewports.');
 console.log(`PASS — origins ${separationKm.toFixed(2)} km apart; minimum camera radius ${minimumCamera.toFixed(3)}; minimum star radius ${minimumStarRadius.toFixed(3)}.`);
 console.log(`PASS — star depth ≥${minimumStarDepth.toFixed(2)}, edge clearance ≥${edgeMargin.toFixed(1)} px; fixed trajectory basis; clean final globe handoff.`);
