@@ -54,22 +54,24 @@ for (const [index, origin] of config.origins.entries()) {
 const separationKm = origins[0].angleTo(origins[1]) * 6371;
 assert.ok(separationKm > 20 && separationKm < 35);
 assert.deepEqual(STORY_PHASES.stars, [.37, .64]);
-assert.deepEqual(STORY_PHASES.gather, [.735, .85]);
+assert.deepEqual(STORY_PHASES.gather, [.72, .795]);
 
-assert.equal(STORY_DURATION, 35.6);
+assert.equal(STORY_DURATION, 29);
 assert.deepEqual(STORY_PHASES.formation, [0,.144]);
 assert.deepEqual(STORY_PHASES.overview, [.144,.18]);
-for (const [seconds, score] of [[0,0],[4,.144],[5,.18],[8.06,.30],[9.42,.37],[28.8,.85],[35.6,1]]) {
+for (const [seconds, score] of [[0,0],[4,.144],[5,.18],[7.5,.30],[8.12,.37],[8.3,.39],[13.3,.64],[15,.72],[15.6,.735],[18.2,.795],[21.7,.87],[24.4,.915],[25.1,.935],[25.8,.955],[26.55,.965],[28.8,.995],[29,1]]) {
   assert.ok(Math.abs(toStoryProgress(seconds/STORY_DURATION)-score)<1e-10);
 }
 for (let milliseconds=0;milliseconds<=5000;milliseconds+=5) {
   assert.ok(Math.abs(toStoryProgress(milliseconds/1000/STORY_DURATION)-milliseconds*.000036)<1e-10,
     'Opening retiming interrupts the shared cloud/globe motion');
 }
-// Only the opening receives extra time; later narrative cues keep their durations.
-for (const [oldSeconds, score] of [[3.4,.18],[6.46,.30],[7.82,.37],[9.18,.39],[19.04,.64],[22.78,.74],[27.2,.85],[32.3,.95],[33.66,.99]]) {
-  assert.ok(Math.abs(toStoryProgress((oldSeconds+1.6)/STORY_DURATION)-score)<1e-10);
-}
+// The five-second formation stays intact; the towns/retreat are now concise,
+// leaving the latter passage for two hearts, a brief union and geographic reform.
+assert.deepEqual(STORY_PHASES.twins, [.795,.87]);
+assert.deepEqual(STORY_PHASES.join, [.87,.915]);
+assert.deepEqual(STORY_PHASES.heart, [.915,.935]);
+assert.deepEqual(STORY_PHASES.reform, [.955,.995]);
 let previousScore = -1;
 for (let i=0;i<=10000;i++) { const score=toStoryProgress(i/10000); assert.ok(score>=previousScore && score>=0 && score<=1); previousScore=score; }
 const detail = JSON.parse(await readFile(new URL('../../geography-detail-v3.json', import.meta.url), 'utf8'));
@@ -139,10 +141,10 @@ for (const count of [16000, 42000, 60000]) {
   assert.ok(size.z > 1.10 && size.z <= HEART_BOUNDS.depth, 'Original spatial volume was replaced by a flat or shallow cloud');
   assert.ok(size.x / size.y > 1.04 && size.x / size.y < 1.14, 'Heart lost its balanced proportions');
   const burstBudget=count<=16000?12000:count<60000?30000:45000;
-  for (const progress of [0,.105,.179,.18,.64,.90,1,.05]) {
+  for (const progress of [0,.105,.179,.18,.64,.90,.93499,.935,.97,.999,1,.05]) {
     effect.update({progress,origins,merge:new THREE.Vector3(0,0,20),color:new THREE.Color('#303D29')});
     assert.equal(geometry.drawRange.start,0);
-    assert.equal(geometry.drawRange.count,progress<.18?count:burstBudget,'Extra formation points leak into the unchanged explosion/heart budget');
+    assert.equal(geometry.drawRange.count,progress<.18||progress>=.935?count:burstBudget,'Formation points must return only for the final shatter/geographic reform');
   }
   effect.dispose();
   assert.equal(effect.group.children.length, 0);
@@ -196,6 +198,8 @@ function snapshot(camera, pose) {
   const uniforms = effect.group.children[0].material.uniforms;
   return [...camera.position, ...camera.quaternion, ...pose.basis, ...uniforms.uMerge.value,
     ...uniforms.uBasis.value.elements, ...uniforms.uStarBasis.value.elements,
+    ...uniforms.uHeartCenterA.value, ...uniforms.uHeartCenterB.value,
+    uniforms.uHeartAngleA.value, uniforms.uHeartAngleB.value, uniforms.uHeartScale.value,
     uniforms.uProgress.value, uniforms.uScale.value, uniforms.uFormationRotation.value,
     uniforms.uFormationSurface.value, uniforms.uGlobeRadius.value, Number(effect.group.children[0].material.depthTest),
     uniforms.uTrailReveal.value, uniforms.uTrailSpread.value, uniforms.uStarCoreLimit.value,
@@ -216,7 +220,7 @@ for (const [width, height] of viewports) {
   const evaluate = progress => {
     const pose = choreography.sample(progress, { width, height, overviewDistance, heartBounds: HEART_BOUNDS });
     camera.position.copy(pose.position); camera.lookAt(pose.target); camera.updateMatrixWorld();
-    effect.update({ progress, origins, merge: pose.merge, heartScale: pose.heartScale, color, basis: camera.quaternion, starBasis: pose.basis, formationRotation: pose.formationRotation, formationSurface: pose.globeReveal });
+    effect.update({ progress, origins, merge: pose.merge, heartScale: pose.heartScale, color, basis: camera.quaternion, starBasis: pose.basis, formationRotation: pose.formationRotation, formationSurface: progress >= .935 ? pose.globeOpacity : pose.globeReveal });
     return pose;
   };
   for (let i = 0; i <= 1000; i += 1) {
@@ -229,8 +233,8 @@ for (const [width, height] of viewports) {
     assert.ok(pose.heartScale > 0);
     const uniforms = effect.group.children[0].material.uniforms;
     assert.ok(Math.abs(uniforms.uFormationRotation.value - pose.formationRotation) < 1e-12, 'Geography and particle formation have different axes');
-    assert.equal(uniforms.uFormationSurface.value, pose.globeReveal, 'Cloud occlusion differs from the visible globe surface');
-    assert.equal(effect.group.children[0].material.depthTest, progress >= .18, 'The transparent forming sphere abruptly cuts off cloud geography');
+    assert.equal(uniforms.uFormationSurface.value, progress >= .935 ? pose.globeOpacity : pose.globeReveal, 'Cloud occlusion differs from the visible globe surface');
+    assert.equal(effect.group.children[0].material.depthTest, progress >= .18 && (progress < .935 || progress >= 1), 'The transparent forming sphere abruptly cuts off cloud geography');
     assert.ok(pose.formationRotation >= previousFormationRotation, 'Formation spin reverses during settling');
     previousFormationRotation = pose.formationRotation;
     if (progress === 0) assert.equal(pose.formationRotation, -Math.PI * 4);
@@ -308,4 +312,4 @@ console.log('PASS — stable geometries/attributes; no independent clock; 1,001 
 console.log(`PASS — origins ${separationKm.toFixed(2)} km apart; minimum camera radius ${minimumCamera.toFixed(3)}; minimum star radius ${minimumStarRadius.toFixed(3)}.`);
 console.log(`PASS — star depth ≥${minimumStarDepth.toFixed(2)}, edge clearance ≥${edgeMargin.toFixed(1)} px; fixed trajectory basis; clean final globe handoff.`);
 console.log(`PASS — distinct star cores remain ≥${minimumSeparateCores.toFixed(1)} px apart through p=.61, without crossing before the p=.64 merger.`);
-console.log(`PASS — cloud rotates while gathering for four seconds, then the completed globe coasts one second; 720° with smooth start/stop (peak ${(greatestSpinSpeed/(2*Math.PI)).toFixed(3)} turns/s); downstream cue durations preserved.`);
+console.log(`PASS — cloud rotates while gathering for four seconds, then the completed globe coasts one second; 720° with smooth start/stop (peak ${(greatestSpinSpeed/(2*Math.PI)).toFixed(3)} turns/s); shortened towns/retreat and 29-second twin-heart/geographic-reform score.`);

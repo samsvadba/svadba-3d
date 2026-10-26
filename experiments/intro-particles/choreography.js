@@ -1,7 +1,8 @@
 import * as THREE from 'three';
 
 // One film score for autoplay and reversible manual scrubbing. Phases include
-// deliberate stillness over the home towns before the camera follows the stars.
+// a brief hold over the home towns before the camera follows the stars. The two
+// heart clouds share the same score and camera, including reverse scrubbing.
 export const STORY_PHASES = Object.freeze({
   formation: Object.freeze([0, .144]),
   overview: Object.freeze([.144, .18]),
@@ -9,11 +10,16 @@ export const STORY_PHASES = Object.freeze({
   origins: Object.freeze([.30, .39]),
   stars: Object.freeze([.37, .64]),
   retreat: Object.freeze([.39, .65]),
-  burst: Object.freeze([.64, .74]),
-  gather: Object.freeze([.735, .85]),
-  heart: Object.freeze([.85, .95]),
-  dissolve: Object.freeze([.95, .99]),
-  final: Object.freeze([.99, 1]),
+  burst: Object.freeze([.64, .735]),
+  gather: Object.freeze([.72, .795]),
+  twinGather: Object.freeze([.72, .795]),
+  twins: Object.freeze([.795, .87]),
+  join: Object.freeze([.87, .915]),
+  heart: Object.freeze([.915, .935]),
+  heartBurst: Object.freeze([.935, .955]),
+  dissolve: Object.freeze([.935, .995]),
+  reform: Object.freeze([.955, .995]),
+  final: Object.freeze([.995, 1]),
 });
 
 const clamp = THREE.MathUtils.clamp;
@@ -71,7 +77,7 @@ export function createChoreography({ homeDirection, startDirection, radius = 12 
     const farRadius = overview * 1.32;
     const approach = smoother(.18, .30, p);
     const retreat = smoother(.39, .65, p);
-    const returnToOverview = smoother(.95, 1, p);
+    const returnToOverview = smoother(.935, 1, p);
     const formationSettle = smoother(0, .144, p);
 
     // All orientation changes are spherical rotations outside the Earth.
@@ -98,7 +104,9 @@ export function createChoreography({ homeDirection, startDirection, radius = 12 
     pose.heartScale = Math.min(horizontalScale, verticalScale);
 
     const globeReveal = smooth(.08, .144, p);
-    const heartPresence = smooth(.70, .81, p) * (1 - smooth(.95, .995, p));
+    // Keep the actual globe subdued through the two-heart passage and the
+    // second burst. Geography returns under the particles as they form Earth.
+    const heartPresence = smooth(.70, .81, p) * (1 - smooth(.965, 1, p));
     pose.progress = p;
     pose.cameraRadius = cameraRadius;
     pose.globeReveal = globeReveal;
@@ -112,7 +120,7 @@ export function createChoreography({ homeDirection, startDirection, radius = 12 
     pose.formationRotation = -Math.PI * 4 * (1 - spin);
     pose.originReveal = smooth(.275, .30, p) * (1 - smooth(.39, .45, p));
     pose.originFocus = smooth(.21, .29, p) * (1 - smooth(.43, .50, p));
-    pose.finalReveal = smooth(.99, 1, p);
+    pose.finalReveal = smooth(.995, 1, p);
     pose.travel = smooth(.37, .64, p);
     return pose;
   }

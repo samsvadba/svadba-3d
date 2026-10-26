@@ -1,14 +1,16 @@
-# Isolated cinematic intro prototype
+# Shared cinematic intro and isolated prototype
 
 Open `intro-particles-test.html`. Production V3 is not imported or initialized.
 The prototype reads the existing configuration, geography, typography, monogram,
 input helper and theme tokens. Its Three.js scene, camera and controls are separate.
+Production `intro-particles-v3.js` uses these same particle/choreography helpers
+on the native V3 renderer, camera and globe, with its existing header and footer.
 
-One 35.6-second GSAP timeline starts after the scene and shaders are ready. `pacing.js`
+One 29-second GSAP timeline starts after the scene and shaders are ready. `pacing.js`
 gives the rotating cloud four seconds to gather, followed by one final second
 of gentle coasting on the completed globe. These are one continuous motion.
-The later narrative cue durations are preserved, shifted 1.6 seconds later;
-manual scrolling samples the identical reversible score. A first
+The close-up arrives at 7.5 s, the camera leaves the towns at 8.3 s and the stars
+collide at 13.3 s. Manual scrolling samples the identical reversible score. A first
 scene click/touch pauses exactly at its current progress; that entire initiating
 gesture is consumed. Further native scroll/pan seeks forward/backward through the
 same timeline. The manual instruction and accessible progress range appear only
@@ -33,10 +35,17 @@ Reduced motion opens this final navigation immediately; replay is an explicit op
 
 During formation, an analytic ray/sphere visibility fade follows the surface reveal.
 The still-transparent globe therefore cannot abruptly depth-cut the rotating cloud
-over America. Hardware depth testing returns for the unchanged explosion/heart.
+over America. The returning geographic cloud uses the same gradual visibility
+with the actual sphere opacity, so its rear points do not abruptly disappear.
 
 The particle shaders are original code: one shared GPU point cloud morphs between
-geographic formation, seeded explosion and a volumetric heart.
+geographic formation, seeded explosion, two growing volumetric hearts, their
+merger and a final shatter back onto the actual country-boundary geometry.
+Alternating heart samples form equally dense twins without consuming new random
+values. `sampleHeartPose` drives their shared GPU uniforms; their distinct centres
+float in depth, converge to zero and leave one heart for just 0.7 s. The final
+world-space morph reaches the original geographic positions before fading into
+the native globe. Production then reveals Journey labels without a new entrance.
 `original-heart.js` restores the first sampler and point sprite verbatim from
 `2f7b1ed75ab0cf6f43b0062870c23631586fdc8f`: approximately 82% shell / 18% interior,
 the original random sequence and soft point sprite. The heart alone now has a
@@ -50,11 +59,13 @@ the complete refined Y coordinate is then scaled ×1.04 to restore a little heig
 Z ×0.86 retains depth, with a 0.042-unit cleft and 0.016-unit tip correction.
 The resulting width/height ratio is about 1.08, inside the unchanged camera framing.
 The heart uses 10,000 points on constrained devices,
-22,000 on mobile and 33,000 on desktop. A slow 25-degree spatial turn and gentle
+22,000 on mobile and 33,000 on desktop, divided equally between the two hearts
+until their merger. A slow 25-degree spatial turn and gentle
 1.8% breathing reveal the original volume. Formation uses adaptive
 16,000 / 42,000 / 60,000 points, while explosion retains its existing
 12,000 / 30,000 / 45,000 budget; the impact briefly swirls the same particles into
-clouds before they gather. No new effect layer or solid heart mesh is introduced.
+clouds before they gather. All formation points return with a gradual opacity
+ramp during the final shatter. No solid heart mesh or duplicated scene is introduced.
 A second point batch renders brighter star cores/trails; a small plane renders
 the merger impulse.
 Star trails use a separate, smaller budget: they grow with traveled distance after
@@ -70,7 +81,10 @@ From the repository root:
     node experiments/intro-particles/tests.mjs
     node experiments/intro-particles/label-layout.test.mjs
     node experiments/intro-particles/continent-visibility.test.mjs
+    node experiments/intro-particles/heart-morph.test.mjs
     node experiments/intro-particles/playback.test.mjs
+    node intro-particles-v3.test.mjs
+    node origins-v3.test.mjs
     node experiments/intro-particles/build.mjs
     npm run build
 
