@@ -1,6 +1,6 @@
 // Origin markers are independent of destinations, progress and the Story sequence.
 export function createOrigins(root, origins, {THREE,gsap,reducedMotion,radius}) {
-  const layer=document.createElement('div');layer.className='origin-layer';
+  const layer=document.createElement('div');layer.className='origin-layer';layer.hidden=true;layer.inert=true;layer.setAttribute('aria-hidden','true');
   const lines=document.createElementNS('http://www.w3.org/2000/svg','svg');lines.classList.add('origin-leaders');layer.append(lines);
   const point=new THREE.Vector3(),normal=new THREE.Vector3(),direction=new THREE.Vector3(),projected=new THREE.Vector3();
   const moment={value:0};let timeline;
@@ -21,11 +21,21 @@ export function createOrigins(root, origins, {THREE,gsap,reducedMotion,radius}) 
   return {
     refreshLanguage(label){items.forEach(({origin,button})=>button.setAttribute('aria-label',`${origin.name} — ${origin.person}. ${label}`));},
     pulse(delay=0){timeline?.kill();moment.value=0;if(reducedMotion.matches)return;timeline=gsap.timeline().to(moment,{value:1,duration:.28,delay,ease:'sine.inOut'}).to(moment,{value:0,duration:.65,ease:'sine.inOut'});},
-    reset(){timeline?.kill();moment.value=0;layer.style.visibility='hidden';},
+    reset(){
+      timeline?.kill();moment.value=0;layer.hidden=true;layer.inert=true;layer.setAttribute('aria-hidden','true');layer.style.visibility='hidden';
+      // Children have explicit visibility after projection; hiding only their
+      // parent does not override it when the native render loop yields to Intro.
+      for(const {button,line} of items){
+        if(document.activeElement===button)button.blur();
+        button.style.opacity=0;button.style.visibility='hidden';button.style.pointerEvents='none';button.style.setProperty('--origin-pulse',1);button.tabIndex=-1;
+        button.setAttribute('aria-hidden','true');button.setAttribute('aria-expanded','false');line.style.opacity=0;
+      }
+    },
     get highlight(){return moment.value;},
     update(camera,group,width,height,overview,interactive){
       const reveal=Math.max(overview,moment.value*.8);
-      layer.style.visibility=reveal>.005?'visible':'hidden';
+      const visible=reveal>.005;
+      layer.hidden=!visible;layer.inert=!visible||!interactive;layer.setAttribute('aria-hidden',String(!visible));layer.style.visibility=visible?'visible':'hidden';
       lines.setAttribute('viewBox',`0 0 ${width} ${height}`);
       for(const item of items){
         point.copy(item.position);group.localToWorld(point);normal.copy(point).normalize();direction.copy(camera.position).sub(point).normalize();
