@@ -1,17 +1,29 @@
-# Isolated scroll-driven intro prototype
+# Isolated cinematic intro prototype
 
 Open `intro-particles-test.html`. Production V3 is not imported or initialized.
 The prototype reads the existing configuration, geography, typography, monogram,
 input helper and theme tokens. Its Three.js scene, camera and controls are separate.
 
-Scroll down/up to drive and reverse the camera, geographic stars, particle burst,
-volumetric heart and final reveal. The thin progress control is keyboard accessible.
-At the end, the center surface accepts drag/pinch/wheel; the bottom margin and
-“Back to our story” control let the visitor return to scrolling.
+One 40-second GSAP timeline starts after the scene and shaders are ready. A first
+scene click/touch pauses exactly at its current progress; that entire initiating
+gesture is consumed. Further native scroll/pan seeks forward/backward through the
+same timeline. The manual instruction and accessible progress range appear only
+when paused. The utility Play control resumes, without restarting the score.
+Background tabs and WebGL context loss suspend playback without changing progress.
+
+The opening GPU cloud gathers onto the actual existing country borders. The camera
+then holds over Hlohovec/Cífer before retreating along the asymmetric star flight.
+At the end, autoplay stops and the original globe accepts drag/pinch/wheel. The
+existing-style footer offers replay and the verified production Journey/Wedding
+routes. Scroll outside the globe surface, or use replay, to leave free exploration.
+Reduced motion opens this final navigation immediately; replay is an explicit opt-in.
 
 The particle shaders are original code: one shared GPU point cloud morphs between
-seeded explosion and implicit 3D heart coordinates. Two small point batches render
-star cores/trails. There is no animation clock or accumulating physics simulation.
+geographic formation, seeded explosion and parametric volumetric heart coordinates.
+The rounded heart combines a Bézier profile with a shell/interior loft. A second
+point batch renders star cores/trails; a small plane renders the merger impulse.
+Pulse, yaw and the traveling light wave are progress-based, so pausing freezes them
+and backward seeking reverses them. There is no accumulating physics simulation.
 9,000 points are used on mobile, 5,200 on constrained devices, 14,000 on desktop.
 The reference repository had no license, so none of its source was copied.
 
@@ -20,6 +32,7 @@ The reference repository had no license, so none of its source was copied.
 From the repository root:
 
     node experiments/intro-particles/tests.mjs
+    node experiments/intro-particles/playback.test.mjs
     node experiments/intro-particles/build.mjs
     npm run build
 

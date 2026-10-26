@@ -107,7 +107,8 @@ export async function createGlobe({ canvas, surface = canvas, onInteraction = ()
   const overviewMaterial = new THREE.LineBasicMaterial({
     color: 0x64685f, transparent: true, opacity: .26, depthWrite: false,
   });
-  group.add(new THREE.LineSegments(boundaryGeometry(countries), overviewMaterial));
+  const overviewGeometry = boundaryGeometry(countries);
+  group.add(new THREE.LineSegments(overviewGeometry, overviewMaterial));
 
   const detailLayers = [];
   let detailPromise, disposed = false, width = innerWidth, height = innerHeight;
@@ -227,6 +228,8 @@ export async function createGlobe({ canvas, surface = canvas, onInteraction = ()
     THREE, scene, camera, renderer, controls, group, radius: RADIUS,
     globeMesh, globeMaterial, overviewMaterial, wireMaterial, markerColor,
     latLonToVec3, overviewDistance, boundaryGeometry, ensureDetail,
+    // Read-only world-space samples from the actual existing country borders.
+    getFormationPositions: () => overviewGeometry.getAttribute('position').array,
     setTheme, resize, render, dispose, setInteractive, updateControls, projectSurface,
   };
 }

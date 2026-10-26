@@ -5,7 +5,9 @@ import config from '../../config-v3.js';
 import { monogram } from '../../brand-v3.js';
 import { bindGlobeInput } from '../../globe-input-v3.js';
 import { createGlobe } from './globe.js';
-import { createParticles } from './particles.js';
+import { createParticles, HEART_BOUNDS } from './particles.js';
+import { createChoreography } from './choreography.js';
+import { createPlayback } from './playback.js';
 import './style.css';
 
 gsap.registerPlugin(ScrollTrigger);
@@ -15,16 +17,18 @@ const smooth=(a,b,p)=>THREE.MathUtils.smoothstep(p,a,b);
 const read=(key,fallback)=>{try{return localStorage.getItem(key)||fallback;}catch{return fallback;}};
 const preferences={theme:read('sm-theme','light')==='dark'?'dark':'light',palette:read('sm-palette','classic')==='olive'?'olive':'classic',language:read('sm-language','sk')==='en'?'en':'sk'};
 const copy={
-  sk:{stages:['Dve cesty.','Tu sa začal náš príbeh.','K sebe.','Stále bližšie.','Jeden okamih.','Jeden spoločný príbeh.','Naše spoločné chvíle.'],scroll:'Posúvajte nadol. Príbeh ovládate vy.',explore:'Potiahnite glóbus. Dvoma prstami priblížte.',back:'Späť k príbehu ↑',progress:'Priebeh príbehu',error:'3D scénu sa nepodarilo spustiť. Skúste obnoviť stránku v prehliadači s WebGL.',context:'Obnovujeme 3D scénu…'},
-  en:{stages:['Two paths.','Where our story began.','Towards each other.','A little closer.','One moment.','One shared story.','Our shared moments.'],scroll:'Scroll to unfold our story.',explore:'Drag to rotate. Pinch with two fingers to zoom.',back:'Back to our story ↑',progress:'Story progress',error:'The 3D scene could not start. Please reload in a browser with WebGL.',context:'Restoring the 3D scene…'}
+  sk:{manual:'Posúvajte nahor alebo nadol. Príbeh ovládate vy.',play:'Pokračovať v úvode',pause:'Pozastaviť úvod',skip:'Preskočiť úvod ↘',replay:'Pozrieť úvod znova',journey:'Cesta',wedding:'Svadba',navigation:'Pokračovanie príbehu',globe:'Interaktívny glóbus. Potiahnite na otočenie, dvoma prstami priblížte.',progress:'Priebeh príbehu',error:'3D scénu sa nepodarilo spustiť. Svadobné informácie môžete otvoriť priamo.',context:'Obnovujeme 3D scénu…'},
+  en:{manual:'Scroll up or down. You are in control.',play:'Continue the intro',pause:'Pause the intro',skip:'Skip intro ↘',replay:'Watch intro again',journey:'Journey',wedding:'Wedding',navigation:'Continue our story',globe:'Interactive globe. Drag to rotate, pinch with two fingers to zoom.',progress:'Story progress',error:'The 3D scene could not start. You can open the wedding information directly.',context:'Restoring the 3D scene…'}
 };
-let globe,fx,trigger,progress=0,interactive=false,selected=-1,flight=null,frame=0,dirty=true,lastTime=0,themeFrame=0;
-let width=innerWidth,height=innerHeight,lastStage=-1,contextLost=false;
+let globe,fx,trigger,playback,choreography,pose,progress=0,mode='loading',interactive=false,flight=null,frame=0,dirty=true,lastTime=0,themeFrame=0;
+let width=innerWidth,height=innerHeight,lastStage=-1,contextLost=false,syncingScroll=false,syncToken=0;
+const manualAnchor={scroll:0,progress:0},ignoredPointers=new Set(),suspensions=new Set();
+let ignoreWheelUntil=0,exploreExit=null;
 const originalHeight=height;root.style.setProperty('--story-height',originalHeight+'px');
 const origins=config.origins.map(o=>({...o,position:null,label:null,mesh:null}));
 const cities=[];
-const direction=new THREE.Vector3(),startDirection=new THREE.Vector3(),homeDirection=new THREE.Vector3();
-const lookTarget=new THREE.Vector3(),merge=new THREE.Vector3(),basis=new THREE.Quaternion();
+const startDirection=new THREE.Vector3(),homeDirection=new THREE.Vector3();
+const exitRotation=new THREE.Quaternion(),exitDirection=new THREE.Vector3(),identity=new THREE.Quaternion();
 const originVectors=[],particleColor=new THREE.Color();
 const markerView=new THREE.Vector3();
 const theme={paper:'',ink:'',dark:false,olive:false};
@@ -65,21 +69,29 @@ function language(){
   root.lang=preferences.language;const d=copy[preferences.language];
   $('utility-language').textContent=preferences.language.toUpperCase();$('utility-language').title=$('utility-language').ariaLabel=config.ui[preferences.language].language;
   document.querySelector('label[for="story-progress"]').textContent=d.progress;
-  $('story-return').textContent=d.back;lastStage=-1;applyTheme();dirty=true;schedule();
+  $('story-replay').textContent=d.replay;$('story-journey').textContent=d.journey;$('story-wedding').textContent=d.wedding;
+  $('story-skip').textContent=d.skip;$('bottom-nav').ariaLabel=d.navigation;$('globe-interaction').ariaLabel=d.globe;
+  lastStage=-1;applyTheme();updateCopy(progress);dirty=true;schedule();
 }
 $('utility-mood').onclick=()=>chooseTheme('classic');$('utility-palette').onclick=()=>chooseTheme('olive');
 $('utility-language').onclick=()=>{preferences.language=preferences.language==='sk'?'en':'sk';save();language();};
 
-function stageIndex(p){return p<.11?0:p<.265?1:p<.38?2:p<.595?3:p<.70?4:p<.94?5:6;}
+function stageIndex(p){return p<.18?0:p<.37?1:p<.54?2:p<.64?3:p<.735?4:p<.99?5:6;}
 function updateCopy(p){
   const stage=stageIndex(p),d=copy[preferences.language];
-  if(stage!==lastStage){$('stage-copy').textContent=d.stages[stage];$('story-stage-number').textContent=String(stage+1).padStart(2,'0')+' / 07';lastStage=stage;}
-  $('stage-instruction').textContent=interactive?d.explore:d.scroll;
-  $('story-return').hidden=!interactive;
-  $('story-header').style.opacity=smooth(.94,1,p);
-  $('story-monogram').parentElement.setAttribute('aria-hidden',String(p<.94));
+  if(stage!==lastStage){$('story-stage-number').textContent=String(stage+1).padStart(2,'0')+' / 07';lastStage=stage;}
+  document.body.dataset.mode=mode;
+  $('stage-instruction').textContent=d.manual;
+  $('story-caption').hidden=mode!=='manual';$('story-timeline').hidden=mode!=='manual';
+  $('bottom-nav').hidden=mode!=='complete';$('story-skip').hidden=mode==='loading'||mode==='complete';
+  $('utility-story').hidden=mode==='complete';$('utility-story').disabled=!playback;
+  $('utility-story').title=$('utility-story').ariaLabel=mode==='auto'?d.pause:d.play;
+  $('utility-story').setAttribute('aria-pressed',String(mode==='auto'));
+  $('story-header').style.opacity=smooth(.99,1,p);
+  $('story-header').setAttribute('aria-hidden',String(p<.99));
   $('story-progress').value=String(Math.round(p*1000));
   $('story-stage').dataset.progress=p.toFixed(6);
+  $('story-stage').dataset.mode=mode;
 }
 
 function addMarkers(){
@@ -89,6 +101,7 @@ function addMarkers(){
     o.mesh.position.copy(o.position);globe.scene.add(o.mesh);
     o.label=document.createElement('div');o.label.className='origin-label';o.label.dataset.side=index?'left':'right';
     const strong=document.createElement('strong'),small=document.createElement('span');strong.textContent=o.name;small.textContent=o.person;o.label.append(strong,small);$('origin-labels').append(o.label);
+    o.line=document.createElementNS('http://www.w3.org/2000/svg','line');$('origin-connectors').append(o.line);
   }
   for(const [index,loc] of config.locations.entries()){
     const position=globe.latLonToVec3(loc.lat,loc.lon,globe.radius+.08);
@@ -106,18 +119,23 @@ function updateLabels(p){
     const worldPerPixel=2*Math.max(.01,-markerView.z)*Math.tan(THREE.MathUtils.degToRad(22.5))/height;
     mesh.scale.setScalar(2.5*worldPerPixel/radius);
   };
-  const alpha=smooth(.18,.23,p)*(1-smooth(.34,.45,p));
+  const alpha=pose?.originReveal||0;
+  $('origin-connectors').setAttribute('viewBox',`0 0 ${width} ${height}`);
   $('origin-labels').setAttribute('aria-hidden',String(alpha<.01));
   for(const [index,o] of origins.entries()){
     const point=globe.projectSurface(o.position),visible=alpha>.01&&point.visible;
     o.mesh.material.opacity=visible?alpha:0;o.mesh.visible=visible;sizeMarker(o.mesh,.009);
-    const x=THREE.MathUtils.clamp(point.x+(index?-34:34)+(index?-112:0),20,width-132);
-    const y=THREE.MathUtils.clamp(point.y+(index?38:-70),100,height-230);
+    const labelWidth=width<768?112:130;
+    const x=THREE.MathUtils.clamp(point.x+(index?-labelWidth-30:30),20,width-labelWidth-20);
+    const y=THREE.MathUtils.clamp(point.y+(index?48:-88),95,height-230);
     o.label.style.transform=`translate3d(${x}px,${y}px,0)`;o.label.style.opacity=visible?alpha:0;
+    for(const [key,value] of Object.entries({x1:point.x,y1:point.y,x2:index?x+labelWidth:x,y2:y+15}))o.line.setAttribute(key,value);
+    o.line.style.opacity=visible?String(alpha*.32):'0';
   }
-  const reveal=smooth(.955,1,p),slots={left:[],right:[]};
+  const reveal=pose?.finalReveal||0,slots={left:[],right:[]};
   const labelTop=height<560?80:140;
-  const labelBottom=Math.max(labelTop,Math.min(height-200,$('story-caption').getBoundingClientRect().top-52));
+  const footer=mode==='complete'?$('bottom-nav'):mode==='manual'?$('story-caption'):$('utility-controls');
+  const labelBottom=Math.max(labelTop,Math.min(height-200,footer.getBoundingClientRect().top-52));
   $('destination-connectors').setAttribute('viewBox',`0 0 ${width} ${height}`);
   for(const c of cities){
     const point=globe.projectSurface(c.position);c.point=point;
@@ -142,51 +160,118 @@ function updateLabels(p){
 }
 
 function cameraStory(p){
-  const overview=globe.overviewDistance(width,height);
-  const orient=smooth(.055,.19,p),approach=smooth(.12,.265,p),retreat=smooth(.265,.56,p);
-  direction.copy(startDirection).lerp(homeDirection,orient).normalize();
-  const zoom=approach*(1-retreat),radius=THREE.MathUtils.lerp(overview,globe.radius+.28,zoom);
-  globe.camera.position.copy(direction).multiplyScalar(radius);
-  lookTarget.copy(homeDirection).multiplyScalar(globe.radius*zoom);
-  globe.camera.lookAt(lookTarget);globe.camera.updateMatrixWorld();
-  // Every point on the camera path remains outside the Earth, including reversal.
-  const depth=overview-(globe.radius+8),worldHeight=2*depth*Math.tan(THREE.MathUtils.degToRad(22.5));
-  const scale=Math.min(worldHeight*(width/height)*.76/2.275,worldHeight*(height<560?.51:.61)/2.211);
-  merge.copy(homeDirection).multiplyScalar(globe.radius+8);
-  basis.copy(globe.camera.quaternion);
-  fx.update({progress:p,origins:originVectors,merge,heartScale:scale,color:particleColor,dark:theme.dark?1:0,basis});
-  globe.globeMaterial.opacity=1-.7*smooth(.66,.77,p)*(1-smooth(.91,.99,p));
+  pose=choreography.sample(p,{width,height,overviewDistance:globe.overviewDistance,heartBounds:HEART_BOUNDS});
+  if(!interactive){
+    globe.camera.position.copy(pose.position);
+    // Blend the last free-globe view back into the score when scrubbing upward.
+    // Spherical orientation + radial interpolation never crosses the Earth.
+    if(exploreExit&&p>.97){
+      const weight=smooth(.97,1,p),radius=THREE.MathUtils.lerp(pose.cameraRadius,exploreExit.radius,weight);
+      exitRotation.copy(identity).slerp(exploreExit.rotation,weight);
+      globe.camera.position.normalize().applyQuaternion(exitRotation).multiplyScalar(radius);
+    }
+    globe.camera.lookAt(pose.target);globe.camera.updateMatrixWorld();
+  }
+  fx.update({progress:p,origins:originVectors,merge:pose.merge,heartScale:pose.heartScale,color:particleColor,dark:displayedTheme.dark,basis:pose.basis,starBasis:pose.basis});
+  globe.globeMesh.visible=pose.globeReveal>.001;
+  globe.globeMaterial.opacity=pose.globeOpacity;
 }
 
 function renderStory(){
   if(!globe||contextLost)return;
-  const nextInteractive=progress>=.9999;
+  const nextInteractive=progress>=.999999;
   if(nextInteractive!==interactive){
     if(nextInteractive)cameraStory(progress);
     flight?.kill();flight=null;interactive=nextInteractive;globe.setInteractive(interactive);
     document.body.toggleAttribute('data-explore',interactive);$('globe-interaction').tabIndex=interactive?0:-1;
     if(interactive){globe.controls.target.set(0,0,0);globe.controls.update();}
   }
-  if(!interactive)cameraStory(progress);
-  else if(!flight)globe.updateControls(Math.min(.04,(performance.now()-lastTime)/1000||1/60));
+  if(interactive&&!flight)globe.updateControls(Math.min(.04,(performance.now()-lastTime)/1000||1/60));
+  cameraStory(progress);
   globe.camera.updateMatrixWorld();updateCopy(progress);updateLabels(progress);
-  globe.render(1-.9*smooth(.66,.77,progress)*(1-smooth(.91,.99,progress)));lastTime=performance.now();
+  globe.render(pose.geographyOpacity);lastTime=performance.now();
 }
-function schedule(){if(!frame)frame=requestAnimationFrame(tick);}
-function tick(){frame=0;if(!globe||contextLost)return;if(dirty||interactive||themeFrame>performance.now()){dirty=false;renderStory();}if(interactive||themeFrame>performance.now())schedule();}
+function schedule(){if(!frame&&!suspensions.size)frame=requestAnimationFrame(tick);}
+function tick(){frame=0;if(!globe||contextLost||suspensions.size)return;if(dirty||interactive||themeFrame>performance.now()){dirty=false;renderStory();}if(interactive||themeFrame>performance.now())schedule();}
 
 function focusCity(index){
-  if(!interactive)return;selected=index;flight?.kill();
+  if(!interactive)return;flight?.kill();
   const end=globe.latLonToVec3(cities[index].loc.lat,cities[index].loc.lon,1),start=globe.camera.position.clone().normalize(),distance=globe.camera.position.length(),motion={t:0};
+  const rotation=new THREE.Quaternion().setFromUnitVectors(start,end),turn=new THREE.Quaternion();
   globe.setInteractive(false);
   flight=gsap.to(motion,{t:1,duration:reduced.matches?0:1.8,ease:'sine.inOut',onUpdate:()=>{
     const radius=THREE.MathUtils.lerp(distance,Math.max(17,globe.radius*1.45),motion.t)+Math.sin(Math.PI*motion.t)*8;
-    globe.camera.position.copy(start).lerp(end,motion.t).normalize().multiplyScalar(radius);globe.camera.lookAt(0,0,0);dirty=true;schedule();
+    turn.copy(identity).slerp(rotation,motion.t);globe.camera.position.copy(start).applyQuaternion(turn).multiplyScalar(radius);globe.camera.lookAt(0,0,0);dirty=true;schedule();
   },onComplete:()=>{flight=null;globe.setInteractive(true);}});
 }
 
-$('story-progress').addEventListener('input',()=>{if(trigger)window.scrollTo({top:(Number($('story-progress').value)/1000)*trigger.end,behavior:'instant'});});
-$('story-return').onclick=()=>window.scrollTo({top:(trigger?.end||0)*.89,behavior:'instant'});
+function captureExploreExit(){
+  if(!interactive)return;
+  exitDirection.copy(globe.camera.position).normalize();
+  exploreExit={radius:globe.camera.position.length(),rotation:new THREE.Quaternion().setFromUnitVectors(homeDirection,exitDirection)};
+}
+function syncScroll(p=progress){
+  if(!trigger)return;
+  const token=++syncToken;syncingScroll=true;
+  window.scrollTo({top:p*trigger.end,behavior:'instant'});
+  manualAnchor.scroll=window.scrollY;manualAnchor.progress=p;
+  ScrollTrigger.update();
+  requestAnimationFrame(()=>{if(token===syncToken)syncingScroll=false;});
+}
+function pauseForManual(){
+  if(!playback||playback.mode==='complete')return;
+  playback.pause();syncScroll();dirty=true;schedule();
+}
+function resumeAutomatic(){
+  if(!playback)return;
+  syncScroll();playback.play();dirty=true;schedule();
+}
+function restart(){
+  if(!playback)return;
+  flight?.kill();flight=null;exploreExit=null;ignoredPointers.clear();
+  syncScroll(0);playback.restart();if(suspensions.size)playback.suspend();
+}
+$('utility-story').onclick=()=>playback?.mode==='auto'?pauseForManual():resumeAutomatic();
+$('story-replay').onclick=restart;
+$('story-skip').onclick=()=>playback?.finish();
+$('story-progress').addEventListener('input',()=>{
+  if(!playback)return;
+  const value=Number($('story-progress').value)/1000;
+  if(value<1)captureExploreExit();
+  playback.seek(value);syncScroll(value);
+});
+
+// The first scene gesture only takes control. touch-action:none was active at
+// pointerdown, so that entire touch cannot turn into an accidental native pan.
+const isUI=target=>target.closest('button,a,input,#utility-controls,#bottom-nav');
+$('story-stage').addEventListener('pointerdown',event=>{
+  if(isUI(event.target)||!playback)return;
+  if(playback.mode!=='auto'&&!ignoredPointers.size)return;
+  event.preventDefault();event.stopPropagation();ignoredPointers.add(event.pointerId);
+  try{$('story-stage').setPointerCapture(event.pointerId);}catch{}
+  if(playback.mode==='auto')pauseForManual();
+},{capture:true});
+$('story-stage').addEventListener('pointermove',event=>{
+  if(ignoredPointers.has(event.pointerId)){event.preventDefault();event.stopPropagation();}
+},{capture:true,passive:false});
+const endTakeover=event=>{
+  if(!ignoredPointers.delete(event.pointerId))return;
+  event.preventDefault();event.stopPropagation();
+  try{$('story-stage').releasePointerCapture(event.pointerId);}catch{}
+};
+for(const type of ['pointerup','pointercancel','lostpointercapture'])$('story-stage').addEventListener(type,endTakeover,{capture:true});
+$('story-stage').addEventListener('wheel',event=>{
+  if(isUI(event.target)||!playback)return;
+  const now=performance.now();
+  if(playback.mode==='auto'||now<ignoreWheelUntil){
+    event.preventDefault();ignoreWheelUntil=now+140;
+    if(playback.mode==='auto')pauseForManual();
+  }
+},{capture:true,passive:false});
+document.addEventListener('keydown',event=>{
+  if(playback?.mode!=='auto'||isUI(event.target))return;
+  if(['Escape','PageDown','PageUp','ArrowDown','ArrowUp',' '].includes(event.key)){event.preventDefault();pauseForManual();}
+});
 $('globe-interaction').addEventListener('keydown',event=>{
   if(!interactive||!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(event.key))return;
   event.preventDefault();const spherical=new THREE.Spherical().setFromVector3(globe.camera.position);
@@ -200,23 +285,69 @@ async function init(){
     globe=await createGlobe({canvas:$('story-canvas'),surface:$('globe-interaction'),onInteraction:()=>{flight?.kill();flight=null;dirty=true;schedule();}});
     bindGlobeInput($('globe-interaction'),{canInteract:()=>interactive&&!flight,canTap:()=>interactive&&!flight,onInteract:()=>{},onTap:target=>target?.click()});
     const weak=(navigator.deviceMemory||4)<=2||(navigator.hardwareConcurrency||4)<=2;
-    fx=createParticles({count:weak?5200:width<768?9000:14000,mobile:width<768});globe.scene.add(fx.group);
+    fx=createParticles({count:weak?5200:width<768?9000:14000,mobile:width<768,formationPositions:globe.getFormationPositions()});globe.scene.add(fx.group);
     globe.globeMaterial.transparent=true;
     homeDirection.copy(globe.latLonToVec3((origins[0].lat+origins[1].lat)/2,(origins[0].lon+origins[1].lon)/2,1));
-    startDirection.copy(globe.latLonToVec3(30,15,1));addMarkers();applyTheme();
-    await globe.ensureDetail();$('story-loading').hidden=true;
+    startDirection.copy(globe.latLonToVec3(30,15,1));
+    choreography=createChoreography({homeDirection,startDirection,radius:globe.radius});
+    addMarkers();applyTheme();
+    await globe.ensureDetail();
+    playback=createPlayback({gsap,duration:40,
+      onMode:next=>{mode=next;updateCopy(progress);dirty=true;schedule();},
+      onProgress:p=>{progress=p;dirty=true;schedule();},
+      onFinish:()=>syncScroll(1)
+    });
     trigger=ScrollTrigger.create({trigger:$('story-track'),start:'top top',end:()=>Math.max(1,$('story-track').offsetHeight-innerHeight),invalidateOnRefresh:true,onUpdate:self=>{
-      progress=self.progress;dirty=true;renderStory();schedule();
+      if(syncingScroll||mode==='auto'||mode==='loading'||ignoredPointers.size||suspensions.size)return;
+      let next=manualAnchor.progress+(window.scrollY-manualAnchor.scroll)/self.end;
+      if(window.scrollY<=0)next=0;
+      if(window.scrollY>=self.end-.5)next=1;
+      next=THREE.MathUtils.clamp(next,0,1);
+      if(next<1)captureExploreExit();
+      playback.seek(next);
     }});
-    progress=trigger.progress;renderStory();
-    $('story-canvas').addEventListener('webglcontextlost',event=>{event.preventDefault();contextLost=true;cancelAnimationFrame(frame);frame=0;$('story-loading').hidden=false;$('story-loading').textContent=copy[preferences.language].context;});
-    $('story-canvas').addEventListener('webglcontextrestored',()=>{contextLost=false;$('story-loading').hidden=true;dirty=true;schedule();});
-  }catch(error){$('story-loading').textContent=copy[preferences.language].error;console.error('Isolated intro prototype:',error);}
+    $('story-canvas').addEventListener('webglcontextlost',event=>{event.preventDefault();contextLost=true;suspend('context');$('story-loading').hidden=false;$('story-loading').textContent=copy[preferences.language].context;});
+    $('story-canvas').addEventListener('webglcontextrestored',()=>{contextLost=false;$('story-loading').hidden=true;unsuspend('context');});
+    // Compile the actual scene before starting the single score. Reduced motion
+    // opens the accessible final navigation; replay remains an explicit opt-in.
+    progress=0;renderStory();
+    await globe.renderer.compileAsync(globe.scene,globe.camera);
+    $('story-loading').hidden=true;
+    syncScroll(0);
+    if(document.hidden)suspend('hidden');
+    if(reduced.matches)playback.finish();else playback.start();
+    if(suspensions.size)playback.suspend();
+    dirty=true;schedule();
+  }catch(error){
+    mode='complete';updateCopy(1);$('story-replay').disabled=true;
+    $('story-loading').hidden=false;$('story-loading').textContent=copy[preferences.language].error;
+    console.error('Isolated intro prototype:',error);
+  }
+}
+function suspend(reason){
+  if(suspensions.has(reason))return;
+  suspensions.add(reason);playback?.suspend();flight?.pause();
+  cancelAnimationFrame(frame);frame=0;
+}
+function unsuspend(reason){
+  suspensions.delete(reason);
+  if(suspensions.size)return;
+  playback?.resume();flight?.resume();lastTime=performance.now();dirty=true;schedule();
 }
 let resizeFrame=0;
-window.addEventListener('resize',()=>{cancelAnimationFrame(resizeFrame);resizeFrame=requestAnimationFrame(()=>{width=innerWidth;height=innerHeight;globe?.resize(width,height);dirty=true;ScrollTrigger.refresh();schedule();});},{passive:true});
-window.addEventListener('orientationchange',()=>{root.style.setProperty('--story-height',innerHeight+'px');},{passive:true});
-document.addEventListener('visibilitychange',()=>{if(document.hidden){cancelAnimationFrame(frame);frame=0;}else{dirty=true;schedule();}});
-window.addEventListener('pagehide',()=>{flight?.kill();flight=null;if(interactive)globe?.setInteractive(true);cancelAnimationFrame(frame);frame=0;});
-window.addEventListener('pageshow',()=>{dirty=true;ScrollTrigger.refresh();schedule();});
+window.addEventListener('resize',()=>{cancelAnimationFrame(resizeFrame);resizeFrame=requestAnimationFrame(()=>{
+  const changedWidth=Math.abs(width-innerWidth)>40;
+  width=innerWidth;height=innerHeight;
+  // Keep the scroll score stable as Safari's address bar expands/collapses.
+  globe?.resize(width,height);
+  if(changedWidth){
+    root.style.setProperty('--story-height',height+'px');
+    syncingScroll=true;ScrollTrigger.refresh();syncScroll();
+  }
+  dirty=true;schedule();
+});},{passive:true});
+document.addEventListener('visibilitychange',()=>document.hidden?suspend('hidden'):unsuspend('hidden'));
+window.addEventListener('pagehide',()=>suspend('page'));
+window.addEventListener('pageshow',()=>{unsuspend('page');syncScroll();});
+reduced.addEventListener('change',()=>{if(reduced.matches)playback?.finish();});
 language();init();
