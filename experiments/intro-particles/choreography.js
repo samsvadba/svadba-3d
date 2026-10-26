@@ -105,9 +105,12 @@ export function createChoreography({ homeDirection, startDirection, radius = 12 
     pose.globeOpacity = globeReveal * (1 - .82 * heartPresence);
     pose.geographyOpacity = globeReveal * (1 - .94 * heartPresence);
     pose.formationProgress = smooth(0, .15, p);
-    // The geography and its forming cloud share one axial turn, settling before
-    // the camera approaches the fixed geographic origins. Fully reversible.
-    pose.formationRotation = -Math.PI * 2 * (1 - smoother(0, .18, p));
+    // Two shared axial turns, integrating a smoothly decreasing angular speed.
+    // Unlike a symmetric ease-in/out, this starts visibly rotating and then
+    // decelerates throughout. Velocity and acceleration both settle at zero.
+    // The cloud and geography stay synchronized, with no motion after approach.
+    const spin = clamp(p / .18, 0, 1);
+    pose.formationRotation = -Math.PI * 4 * (1 - spin) ** 3 * (1 + spin);
     pose.originReveal = smooth(.275, .30, p) * (1 - smooth(.39, .45, p));
     pose.originFocus = smooth(.21, .29, p) * (1 - smooth(.43, .50, p));
     pose.finalReveal = smooth(.99, 1, p);

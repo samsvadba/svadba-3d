@@ -13,8 +13,9 @@ same timeline. The manual instruction and accessible progress range appear only
 when paused. The utility Play control resumes, without restarting the score.
 Background tabs and WebGL context loss suspend playback without changing progress.
 
-The opening GPU cloud gathers onto the actual existing country borders, with one
-shared 360-degree axial rotation on the cloud and globe that settles before the approach.
+The opening GPU cloud gathers onto the actual existing country borders, with two
+shared axial turns (720 degrees) on the cloud and globe. Its angular speed decreases
+continuously, reaching zero velocity and acceleration before the unchanged approach.
 Slovakia is highlighted using only its existing geographic contour; there is no
 surface fill. Editorial origin labels stay outside its projected boundary, with
 the names above their towns. After a shorter hold, the camera retreats while one star arcs upward and
@@ -31,13 +32,17 @@ geographic formation, seeded explosion and a volumetric heart.
 the original random sequence and soft point sprite. The heart alone now has a
 1.2 CSS-pixel minimum point diameter and stronger seeded opacity, so it remains
 clear on light backgrounds without changing formation, stars or explosion.
+Normals from that same implicit surface emphasize the visible particle rim,
+with up to 25% larger points and 35% stronger opacity; interior particles remain
+unchanged. This is view-dependent shell shading, not a drawn outline or extra layer.
 Its width stays X ×0.90, while a smooth Y ×0.76–0.90 taper shortens the lower half;
+the complete refined Y coordinate is then scaled ×1.04 to restore a little height.
 Z ×0.86 retains depth, with a 0.042-unit cleft and 0.016-unit tip correction.
-The resulting width/height ratio is about 1.12, inside the unchanged camera framing.
-The heart uses 9,000 points on constrained devices,
-20,000 on mobile and 30,000 on desktop. A slow 25-degree spatial turn and gentle
+The resulting width/height ratio is about 1.08, inside the unchanged camera framing.
+The heart uses 10,000 points on constrained devices,
+22,000 on mobile and 33,000 on desktop. A slow 25-degree spatial turn and gentle
 1.8% breathing reveal the original volume. Formation/explosion use adaptive
-10,000 / 24,000 / 36,000 points; the impact briefly swirls the same particles into
+12,000 / 30,000 / 45,000 points; the impact briefly swirls the same particles into
 clouds before they gather. No new effect layer or solid heart mesh is introduced.
 A second point batch renders brighter star cores/trails; a small plane renders
 the merger impulse.

@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {heartPoint as originalHeartPoint, originalPointFragment} from './original-heart.js';
+import {heartField, heartPoint as originalHeartPoint, originalPointFragment} from './original-heart.js';
 
 // Auto-play and manual scrubbing both supply the same progress. No independent
 // clock, simulation step or geometry allocation exists in update().
@@ -25,7 +25,19 @@ function refineOriginalHeart([x, y, z]) {
   const cleft = .042 * Math.exp(-x * x / .025) * THREE.MathUtils.smoothstep(y, .55, .88);
   const tip = .016 * THREE.MathUtils.smoothstep(-y, .92, 1.11);
   const taper = THREE.MathUtils.lerp(.76, .90, THREE.MathUtils.smoothstep(y, -.18, .40));
-  return [x * .90, (y - cleft + tip) * taper - .08, z * .86];
+  return [x * .90, ((y - cleft + tip) * taper - .08) * 1.04, z * .86];
+}
+
+function heartSurfaceNormal([x, y, z]) {
+  // The original implicit surface supplies its own smooth normals. Shell points
+  // get a view-dependent rim emphasis; interior points retain the airy volume.
+  y += .13;
+  const q = x * x + y * y + 2.25 * z * z - 1, q2 = q * q, y2 = y * y, y3 = y2 * y;
+  const nx = (6 * x * q2 - 2 * x * y3) / .90;
+  const ny = (6 * y * q2 - 3 * x * x * y2 - .3375 * z * z * y2) / .86;
+  const nz = (13.5 * z * q2 - .225 * z * y3) / .86;
+  const length = Math.hypot(nx, ny, nz), shell = Math.abs(heartField(x, y, z)) < .0001 ? 1 : 0;
+  return length > 1e-10 ? [nx / length, ny / length, nz / length, shell] : [0, 0, 1, shell];
 }
 
 function geographicSamples(positions, count, random) {
@@ -83,6 +95,7 @@ const particleVertex = /* glsl */ `
   ${sharedVertex}
   attribute vec3 aHeart;
   attribute vec3 aHeartSeed;
+  attribute vec4 aHeartNormal;
   attribute float aHeartActive;
   attribute vec3 aExplosion;
   attribute vec3 aSeed;
@@ -158,6 +171,12 @@ const particleVertex = /* glsl */ `
     originalSize *= mix(1.0, 0.55, dissolve);
     float originalAlpha = smoothPhase(0.638, 0.652) * (1.0 - dissolve)
                           * mix(0.68, 1.0, aHeartSeed.y) * heartSparkle;
+    // Accentuate only the actual shell near the current silhouette, including
+    // its slight spatial turn. No solid outline or additional particle layer.
+    vec3 surfaceNormal = normalize(turn * aHeartNormal.xyz);
+    float rim = pow(1.0 - abs(surfaceNormal.z), 2.5) * aHeartNormal.w;
+    originalSize *= 1.0 + 0.25 * rim;
+    originalAlpha = min(1.0, originalAlpha * (1.0 + 0.35 * rim));
     gl_PointSize = mix(gl_PointSize, originalSize, gather);
     vAlpha = mix(vAlpha, originalAlpha * aHeartActive, gather);
     vSoftness = 0.0;
@@ -278,7 +297,7 @@ const flashFragment = /* glsl */ `
 
 /** Isolated, deterministic GPU effect for intro-particles-test.html. */
 export function createParticles({ count = 10000, mobile = false, formationPositions } = {}) {
-  const particleCount = Math.max(3000, Math.min(36000, Math.round(count)));
+  const particleCount = Math.max(3000, Math.min(45000, Math.round(count)));
   const random = randomSequence(0x534d2027);
   const group = new THREE.Group();
   group.name = 'intro-story-particles';
@@ -317,8 +336,9 @@ export function createParticles({ count = 10000, mobile = false, formationPositi
 
   const heart = new Float32Array(particleCount * 3);
   const heartSeeds = new Float32Array(particleCount * 3);
+  const heartNormals = new Float32Array(particleCount * 4);
   const heartActive = new Float32Array(particleCount);
-  const heartCount = Math.min(particleCount, particleCount <= 10000 ? 9000 : mobile ? 20000 : 30000);
+  const heartCount = Math.min(particleCount, particleCount <= 12000 ? 10000 : mobile ? 22000 : 33000);
   const explosion = new Float32Array(particleCount * 3);
   const seeds = new Float32Array(particleCount * 3);
   const scatter = new Float32Array(particleCount * 3);
@@ -328,7 +348,9 @@ export function createParticles({ count = 10000, mobile = false, formationPositi
   const heartRandom = randomSequence(0x534d2027);
   for (let i = 0; i < particleCount; i += 1) {
     advanceLegacyHeartSeed(random);
-    heart.set(refineOriginalHeart(originalHeartPoint(heartRandom)), i * 3);
+    const original = originalHeartPoint(heartRandom);
+    heart.set(refineOriginalHeart(original), i * 3);
+    heartNormals.set(heartSurfaceNormal(original), i * 4);
     heartRandom(); heartRandom(); // The original explosion direction's draws.
     heartSeeds.set([heartRandom(), heartRandom(), heartRandom()], i * 3);
     heartActive[i] = i < heartCount ? 1 : 0;
@@ -344,6 +366,7 @@ export function createParticles({ count = 10000, mobile = false, formationPositi
   geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(particleCount * 3), 3));
   geometry.setAttribute('aHeart', new THREE.BufferAttribute(heart, 3));
   geometry.setAttribute('aHeartSeed', new THREE.BufferAttribute(heartSeeds, 3));
+  geometry.setAttribute('aHeartNormal', new THREE.BufferAttribute(heartNormals, 4));
   geometry.setAttribute('aHeartActive', new THREE.BufferAttribute(heartActive, 1));
   geometry.setAttribute('aExplosion', new THREE.BufferAttribute(explosion, 3));
   geometry.setAttribute('aSeed', new THREE.BufferAttribute(seeds, 3));

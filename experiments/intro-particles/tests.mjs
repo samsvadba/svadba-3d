@@ -65,8 +65,8 @@ const slovakia = detail.features.find(feature=>feature.iso==='SVK');
 assert.ok(slovakia && slovakia.rings[0].length>100, 'Slovakia must use existing geographic data');
 assert.ok(!/countryFillGeometry|originFill/.test(globeSource), 'Slovakia must have an outline only, without a surface fill');
 
-for (const count of [10000, 24000, 36000]) {
-  const effect = createParticles({ count, mobile: count < 36000, formationPositions });
+for (const count of [12000, 30000, 45000]) {
+  const effect = createParticles({ count, mobile: count < 45000, formationPositions });
   const geometry = effect.group.children[0].geometry;
   for (const object of effect.group.children) {
     for (const [name, attribute] of Object.entries(object.geometry.attributes)) {
@@ -87,14 +87,16 @@ for (const count of [10000, 24000, 36000]) {
 
   const heart = geometry.getAttribute('aHeart');
   const heartSeeds = geometry.getAttribute('aHeartSeed');
+  const heartNormals = geometry.getAttribute('aHeartNormal');
+  assert.equal(heartNormals.itemSize, 4, 'Heart rim must use an existing shell normal and classification');
   const active = geometry.getAttribute('aHeartActive');
-  const expectedCount = count <= 10000 ? 9000 : count < 36000 ? 20000 : 30000;
+  const expectedCount = count <= 12000 ? 10000 : count < 45000 ? 22000 : 33000;
   assert.equal([...active.array].filter(Boolean).length, expectedCount, 'Adaptive heart density changed');
   assert.ok(!geometry.hasAttribute('aHeartMeta'), 'Later contour/cloud categories remain');
   assert.equal(effect.group.children[0].material.fragmentShader, originalPointFragment);
   assert.ok(!/lightWave|heartbeat|bodyWave|cloudStructure|glint/.test(effect.group.children[0].material.vertexShader), 'Later heart effects remain');
   const historical = originalRandom();
-  let interior = 0;
+  let interior = 0, rimShell = 0;
   for (let i = 0; i < count; i += 1) {
     let draws = 0;
     const original = heartPoint(() => { draws += 1; return historical(); });
@@ -102,28 +104,33 @@ for (const count of [10000, 24000, 36000]) {
     const expectedSeed = [historical(), historical(), historical()];
     for (let axis = 0; axis < 3; axis += 1) assert.ok(Math.abs(heartSeeds.array[i*3+axis]-expectedSeed[axis]) < 6e-8, 'Original brightness/size seed changed');
     const [x,y,z] = original;
+    assert.ok(Math.abs(Math.hypot(heartNormals.getX(i),heartNormals.getY(i),heartNormals.getZ(i))-1)<1e-7, 'Heart rim normal is not normalized');
+    assert.ok(heartNormals.getW(i)===0 || heartNormals.getW(i)===1, 'Heart rim shell mask is not binary');
+    if (draws===3) assert.equal(heartNormals.getW(i),1,'Original surface points lost rim classification');
     const cleft = .042 * Math.exp(-x*x/.025) * THREE.MathUtils.smoothstep(y,.55,.88);
     const tip = .016 * THREE.MathUtils.smoothstep(-y,.92,1.11);
     const taper = THREE.MathUtils.lerp(.76,.90,THREE.MathUtils.smoothstep(y,-.18,.40));
-    const expected = [x*.90,(y-cleft+tip)*taper-.08,z*.86];
+    const expected = [x*.90,((y-cleft+tip)*taper-.08)*1.04,z*.86];
     for (let axis = 0; axis < 3; axis += 1) assert.ok(Math.abs(heart.array[i*3+axis]-expected[axis]) < 1.2e-7, 'Heart differs from original samples plus the documented geometry refinement');
     assert.equal(active.getX(i), i < expectedCount ? 1 : 0);
     if (i < expectedCount) {
       if (draws === 4) interior += 1;
+      rimShell += heartNormals.getW(i);
       assert.ok(heartField(x,y+.13,z) < .00002, 'Original volumetric surface was lost');
     }
   }
   assert.ok(interior > expectedCount*.15 && interior < expectedCount*.21, 'Original 82% shell / 18% interior distribution changed');
+  assert.ok(rimShell>expectedCount*.80 && rimShell<expectedCount*.90, 'Rim emphasis leaks across the whole heart volume');
   const size = new THREE.Box3().setFromBufferAttribute(heart).getSize(new THREE.Vector3());
   assert.ok(size.x > 2.02 && size.x <= HEART_BOUNDS.width, 'Refined heart exceeds the unchanged horizontal framing');
-  assert.ok(size.y > 1.78 && size.y < 1.88, 'The lower heart taper is elongated again');
+  assert.ok(size.y > 1.85 && size.y < 1.96, 'The four-percent height restoration changed');
   assert.ok(size.z > 1.10 && size.z <= HEART_BOUNDS.depth, 'Original spatial volume was replaced by a flat or shallow cloud');
-  assert.ok(size.x / size.y > 1.08 && size.x / size.y < 1.18, 'Heart lost its balanced, shorter proportions');
+  assert.ok(size.x / size.y > 1.04 && size.x / size.y < 1.14, 'Heart lost its balanced proportions');
   effect.dispose();
   assert.equal(effect.group.children.length, 0);
 }
 
-const effect = createParticles({ count: 24000, mobile: true, formationPositions });
+const effect = createParticles({ count: 30000, mobile: true, formationPositions });
 const snapshots = effect.group.children.map(object => ({
   uuid: object.geometry.uuid,
   attributes: Object.fromEntries(Object.entries(object.geometry.attributes).map(([name, attribute]) => [name, attribute.array])),
@@ -131,6 +138,16 @@ const snapshots = effect.group.children.map(object => ({
 const homeDirection = latLonToVec3((config.origins[0].lat + config.origins[1].lat) / 2, (config.origins[0].lon + config.origins[1].lon) / 2, 1);
 const startDirection = latLonToVec3(30, 15, 1);
 const choreography = createChoreography({ homeDirection, startDirection, radius });
+let previousSpinStep = Infinity;
+let previousSpinAngle = choreography.sample(0, { width: 390, height: 844, overviewDistance }).formationRotation;
+for (let i = 1; i <= 1000; i += 1) {
+  const angle = choreography.sample(i / 1000 * .18, { width: 390, height: 844, overviewDistance }).formationRotation;
+  const step = angle - previousSpinAngle;
+  assert.ok(step >= 0 && step <= previousSpinStep + 1e-12, 'Opening spin must continuously decelerate');
+  previousSpinStep = step;
+  previousSpinAngle = angle;
+}
+assert.ok(previousSpinStep < 1e-7, 'Opening spin stops abruptly');
 const color = new THREE.Color('#303D29');
 const star = new THREE.Vector3(), projected = new THREE.Vector3();
 const earthCenter = new THREE.Vector3();
@@ -177,7 +194,7 @@ for (const [width, height] of viewports) {
     assert.ok(Math.abs(uniforms.uFormationRotation.value - pose.formationRotation) < 1e-12, 'Geography and particle formation have different axes');
     assert.ok(pose.formationRotation >= previousFormationRotation, 'Formation spin reverses during settling');
     previousFormationRotation = pose.formationRotation;
-    if (progress === 0) assert.equal(pose.formationRotation, -Math.PI * 2);
+    if (progress === 0) assert.equal(pose.formationRotation, -Math.PI * 4);
     if (progress >= .18) assert.ok(Math.abs(pose.formationRotation) < 1e-12, 'Formation rotation leaks into geographic coordinates');
     assert.ok(uniforms.uTrailSpread.value <= .030, 'Trail width scales into a close-up particle cloud');
     if (progress >= .367 && progress <= .415) {
@@ -246,10 +263,10 @@ for (const [width, height] of viewports) {
 }
 
 effect.dispose(); sourceGeometry.dispose();
-console.log('PASS — finite 10k / 24k / 36k GPU points; denser 9k / 20k / 30k hearts retain original sampler/sprite and seeded appearance.');
-console.log('PASS — 2f7b1ed sampler/sprite checksum preserved with shorter, balanced spatial heart proportions; opposite star arcs stay clear until their impact.');
+console.log('PASS — finite 12k / 30k / 45k GPU points; denser 10k / 22k / 33k hearts retain original sampler/sprite and seeded appearance.');
+console.log('PASS — 2f7b1ed sampler/sprite checksum preserved with four-percent taller balanced spatial heart proportions; opposite star arcs stay clear until their impact.');
 console.log('PASS — stable geometries/attributes; no independent clock; 1,001 forward/backward states identical across five viewports.');
 console.log(`PASS — origins ${separationKm.toFixed(2)} km apart; minimum camera radius ${minimumCamera.toFixed(3)}; minimum star radius ${minimumStarRadius.toFixed(3)}.`);
 console.log(`PASS — star depth ≥${minimumStarDepth.toFixed(2)}, edge clearance ≥${edgeMargin.toFixed(1)} px; fixed trajectory basis; clean final globe handoff.`);
 console.log(`PASS — distinct star cores remain ≥${minimumSeparateCores.toFixed(1)} px apart through p=.61, without crossing before the p=.64 merger.`);
-console.log('PASS — faster monotone pacing, synchronized 360° formation spin, Slovakia outline only, clean liftoff and narrow wakes.');
+console.log('PASS — unchanged pacing, synchronized 720° formation spin with continuous deceleration, Slovakia outline only, clean liftoff and narrow wakes.');

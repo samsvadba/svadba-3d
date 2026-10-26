@@ -291,7 +291,7 @@ async function init(){
     globe=await createGlobe({canvas:$('story-canvas'),surface:$('globe-interaction'),onInteraction:()=>{flight?.kill();flight=null;dirty=true;schedule();}});
     bindGlobeInput($('globe-interaction'),{canInteract:()=>interactive&&!flight,canTap:()=>interactive&&!flight,onInteract:()=>{},onTap:target=>target?.click()});
     const weak=(navigator.deviceMemory||4)<=2||(navigator.hardwareConcurrency||4)<=2;
-    fx=createParticles({count:weak?10000:width<768?24000:36000,mobile:width<768,formationPositions:globe.getFormationPositions()});globe.scene.add(fx.group);
+    fx=createParticles({count:weak?12000:width<768?30000:45000,mobile:width<768,formationPositions:globe.getFormationPositions()});globe.scene.add(fx.group);
     globe.globeMaterial.transparent=true;
     homeDirection.copy(globe.latLonToVec3((origins[0].lat+origins[1].lat)/2,(origins[0].lon+origins[1].lon)/2,1));
     startDirection.copy(globe.latLonToVec3(30,15,1));
