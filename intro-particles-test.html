@@ -16,12 +16,15 @@
     <canvas id="story-canvas" aria-label="Zemeguľa"></canvas>
     <div id="globe-interaction" aria-label="Interaktívny glóbus" tabindex="-1"><div id="destination-labels"></div></div>
     <header id="story-header"><div id="story-monogram" aria-hidden="true"></div><span>30 · 04 · 2027</span></header>
-    <div id="origin-labels" aria-hidden="true"></div>
+    <svg id="origin-connectors" aria-hidden="true"></svg><div id="origin-labels" aria-hidden="true"></div>
     <svg id="destination-connectors" aria-hidden="true"></svg>
-    <div id="story-caption"><p id="stage-copy"></p><span id="stage-instruction"></span><button id="story-return" type="button" hidden>Späť k príbehu ↑</button></div>
+    <button id="story-skip" class="nav-item" type="button" hidden>Preskočiť úvod ↘</button>
+    <div id="story-caption" hidden><span id="stage-instruction"></span></div>
     <p id="story-loading" role="status">Načítavame glóbus…</p>
-    <div id="story-timeline"><label class="sr-only" for="story-progress">Priebeh príbehu</label><input id="story-progress" type="range" min="0" max="1000" step="1" value="0"><span id="story-stage-number" aria-hidden="true">01 / 07</span></div>
+    <div id="story-timeline" hidden><label class="sr-only" for="story-progress">Priebeh príbehu</label><input id="story-progress" type="range" min="0" max="1000" step="1" value="0"><span id="story-stage-number" aria-hidden="true">01 / 07</span></div>
+    <nav id="bottom-nav" aria-label="Pokračovanie príbehu" hidden><div class="nav-labels"><button id="story-replay" class="nav-item" type="button">Pozrieť úvod znova</button><a id="story-journey" class="nav-item" href="./index-v3.html?view=journey">Cesta</a><a id="story-wedding" class="nav-item" href="./index-v3.html?view=wedding">Svadba</a></div><div class="nav-progress" aria-hidden="true"><span id="nav-fill"></span><i class="nav-dot active"></i><i class="nav-dot"></i><i class="nav-dot"></i></div></nav>
     <div id="utility-controls" role="group" aria-label="Globálne ovládanie">
+      <button id="utility-story" type="button" aria-label="Pozastaviť úvod" aria-pressed="false" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path class="intro-play-shape" d="m8 5 11 7-11 7Z"/><path class="intro-pause-shape" d="M8 5v14M16 5v14"/></svg></button>
       <button id="utility-mood" type="button" aria-label="Prepnúť na čiernu" aria-pressed="false"><svg class="moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 15A9 9 0 0 1 9 4a9 9 0 1 0 11 11Z"/></svg><svg class="sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 1v3m0 16v3M1 12h3m16 0h3M4 4l2 2m12 12 2 2M4 20l2-2M18 6l2-2"/></svg></button>
       <button id="utility-palette" type="button" aria-label="Prepnúť na Olive" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 0 0 18h1a2 2 0 0 0 1.4-3.4 1.5 1.5 0 0 1 1.1-2.6H18a3 3 0 0 0 3-3 9 9 0 0 0-9-9Z"/><circle cx="7.5" cy="10" r="1"/><circle cx="10.5" cy="6.7" r="1"/><circle cx="15" cy="7.2" r="1"/></svg></button>
       <button id="utility-language" type="button" aria-label="Switch to English">SK</button>
