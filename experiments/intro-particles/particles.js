@@ -216,11 +216,11 @@ const particleVertex = /* glsl */ `
              * sparkle * (0.88 + lightWave * 0.35);
     float brokenArc = sin(aHeartMeta.z * 106.81415
                           + sin(aHeartMeta.z * 31.415927) * 0.7);
-    float contourBreak = 0.08 + 0.92 * smoothstep(-0.75, -0.20, brokenArc);
+    float contourBreak = 0.50 + 0.50 * smoothstep(-0.75, -0.20, brokenArc);
     float contrast = aHeartMeta.y;
-    float contourAlpha = (0.38 + 0.68 * pow(contrast, 0.65)) * contourBreak;
-    float insideAlpha = 0.25 + 0.40 * pow(contrast, 1.2);
-    float outsideAlpha = 0.08 + 0.22 * contrast * contrast;
+    float contourAlpha = (0.55 + 0.65 * pow(contrast, 0.65)) * contourBreak;
+    float insideAlpha = 0.45 + 0.40 * pow(contrast, 1.2);
+    float outsideAlpha = 0.12 + 0.22 * contrast * contrast;
     float heartAlpha = contour * contourAlpha + interior * insideAlpha
                        + (1.0 - contour - interior) * outsideAlpha;
     vAlpha *= mix(1.0, heartAlpha * (1.0 + lightWave * 0.45), gather);
@@ -228,8 +228,8 @@ const particleVertex = /* glsl */ `
     float heartSize = contour * mix(0.80, 1.55, pow(contrast, 1.8))
                      + interior * mix(0.72, 1.02, contrast * contrast)
                      + (1.0 - contour - interior) * mix(0.48, 0.83, contrast);
-    float minimumSize = (contour * 0.70 + interior * 0.65
-                         + (1.0 - contour - interior) * 0.55) * uPixelRatio;
+    float minimumSize = (contour * 1.05 + interior * 0.95
+                         + (1.0 - contour - interior) * 0.65) * uPixelRatio;
     float fineSize = clamp(gl_PointSize * heartSize, minimumSize, 2.3 * uPixelRatio);
     fineSize = min(fineSize + haloSelection * uPixelRatio * 0.35, 2.4 * uPixelRatio);
     gl_PointSize = mix(gl_PointSize, fineSize, gather);
@@ -335,7 +335,7 @@ const pointFragment = /* glsl */ `
     float alpha = mix(disc, halo, vSoftness) * vAlpha;
     alpha *= mix(0.82, 1.0, uDark);
     if (vHeartStyle.x > 0.0) {
-      float fineDisc = 1.0 - smoothstep(0.10, 0.80, radius);
+      float fineDisc = 1.0 - smoothstep(0.18, 1.0, radius);
       float tinyHalo = exp(-radius * radius * 6.5)
                        * (1.0 - smoothstep(0.78, 1.0, radius));
       float heartProfile = mix(fineDisc, tinyHalo, vHeartStyle.y);
