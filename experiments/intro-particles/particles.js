@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {heartPoint as originalHeartPoint, originalPointFragment} from './original-heart.js';
 
 // Auto-play and manual scrubbing both supply the same progress. No independent
 // clock, simulation step or geometry allocation exists in update().
@@ -18,111 +19,12 @@ function advanceLegacyHeartSeed(random) {
   if (random() < .16) random();
 }
 
-function heartProfile(count) {
-  // Exact M/C/Z curve from the supplied heart-outline.svg. Uniform scaling
-  // preserves its naturally wider lobes, narrow cleft and slightly organic tip.
-  const path = `M 358.800 85.500
-    C 373.433 23.476 439.033 -1.301 492.471 16.471
-    C 519.501 25.461 543.420 45.338 556.793 70.358
-    C 567.933 91.201 571.756 115.612 567.800 137.661
-    C 558.906 187.239 510.684 224.871 466.102 254.028
-    C 443.886 268.557 422.575 280.982 402.413 296.456
-    C 378.875 314.522 356.904 336.744 341.500 367.000
-    C 311.763 308.680 265.417 282.459 219.703 246.741
-    C 178.097 214.233 137.014 173.858 136.535 123.657
-    C 136.419 111.455 138.701 98.673 142.895 87.259
-    C 147.685 74.223 154.969 62.972 163.936 53.141
-    C 180.480 35.002 202.755 21.697 228.186 15.019
-    C 248.912 9.576 271.735 8.536 292.554 15.476
-    C 324.172 26.015 351.167 54.959 358.800 85.500 Z`;
-  const coordinates = path.match(/-?\d+(?:\.\d+)?/g).map(Number);
-  const curves = [];
-  let previous = coordinates.slice(0, 2);
-  for (let i = 2; i < coordinates.length; i += 6) {
-    const curve = [previous, coordinates.slice(i, i + 2), coordinates.slice(i + 2, i + 4), coordinates.slice(i + 4, i + 6)];
-    curves.push(curve);
-    previous = curve[3];
-  }
-  const rawPoints = [];
-  for (const curve of curves) {
-    for (let i = 0; i < 96; i += 1) {
-      const t = i / 96, s = 1 - t;
-      rawPoints.push([0, 1].map(axis => curve[0][axis] * s ** 3 + 3 * curve[1][axis] * s * s * t + 3 * curve[2][axis] * s * t * t + curve[3][axis] * t ** 3));
-    }
-  }
-  const minX = Math.min(...rawPoints.map(point => point[0]));
-  const maxX = Math.max(...rawPoints.map(point => point[0]));
-  const minY = Math.min(...rawPoints.map(point => point[1]));
-  const maxY = Math.max(...rawPoints.map(point => point[1]));
-  const scale = 1.92 / (maxX - minX);
-  const centerX = (minX + maxX) * .5, centerY = (minY + maxY) * .5;
-  const points = [], lengths = [0];
-  let total = 0;
-  for (const rawPoint of rawPoints) {
-    const point = [(rawPoint[0] - centerX) * scale, (centerY - rawPoint[1]) * scale];
-    if (points.length) {
-      const previous = points[points.length - 1];
-      total += Math.hypot(point[0] - previous[0], point[1] - previous[1]);
-      lengths.push(total);
-    }
-    points.push(point);
-  }
-  const last = points[points.length - 1];
-  total += Math.hypot(points[0][0] - last[0], points[0][1] - last[1]);
-  points.push(points[0]); lengths.push(total);
-  const signedArea = points.reduce((sum, point, i) => i ? sum + points[i - 1][0] * point[1] - point[0] * points[i - 1][1] : sum, 0);
-  const winding = signedArea >= 0 ? 1 : -1;
-  const contourCount = Math.floor(count * 42 / 100);
-  const interiorCount = Math.floor(count * 50 / 100);
-  return (random, index) => {
-    const category = index < contourCount ? 0 : index < contourCount + interiorCount ? 1 : 2;
-    const groupStart = category === 0 ? 0 : category === 1 ? contourCount : contourCount + interiorCount;
-    const groupCount = category === 0 ? contourCount : category === 1 ? interiorCount : count - contourCount - interiorCount;
-    const contrast = random();
-    const arc = (index - groupStart + random() * .96) / groupCount;
-    const distance = arc * total;
-    let low = 0, high = lengths.length - 1;
-    while (low + 1 < high) {
-      const middle = (low + high) >> 1;
-      if (lengths[middle] < distance) low = middle; else high = middle;
-    }
-    const mix = (distance - lengths[low]) / Math.max(.00001, lengths[high] - lengths[low]);
-    let x = THREE.MathUtils.lerp(points[low][0], points[high][0], mix);
-    let y = THREE.MathUtils.lerp(points[low][1], points[high][1], mix);
-    const dx = points[high][0] - points[low][0], dy = points[high][1] - points[low][1];
-    const normalLength = Math.max(.00001, Math.hypot(dx, dy));
-    const nx = winding * dy / normalLength, ny = -winding * dx / normalLength;
-    let z;
-    if (category === 0) {
-      const layer = Math.floor(random() * 5) - 2;
-      if (random() < .35) {
-        // Crisp edge grains retain the approved SVG silhouette.
-        const offset = (random() + random() - 1) * .014;
-        x += nx * offset; y += ny * offset;
-      } else {
-        // Radial wisps stay inside even at the cleft/tip, unlike a fixed normal inset.
-        const inward = .97 - .10 * Math.pow(random(), .7);
-        x *= inward; y *= inward;
-      }
-      z = layer * .060 + (random() * 2 - 1) * .012;
-    } else if (category === 1) {
-      const inward = Math.pow(random(), .56) * (.94 + .025 * Math.sin(arc * 18.8495559));
-      x *= inward; y *= inward;
-      // Seven feathered layers, gently tapered at the edge; never a solid balloon.
-      const envelope = Math.sqrt(1 - inward * inward);
-      const layer = Math.floor(random() * 7) - 3;
-      z = (layer / 3 * .20 + (random() * 2 - 1) * .008) * envelope;
-    } else {
-      // An airy outside population, constrained to the unchanged camera envelope.
-      const xRoom = nx > 0 ? (1.038 - x) / nx : nx < 0 ? (-1.038 - x) / nx : Infinity;
-      const yRoom = ny > 0 ? (1.115 - y) / ny : ny < 0 ? (-1.115 - y) / ny : Infinity;
-      const offset = Math.min(.035 + Math.pow(random(), 1.4) * .075, Math.min(xRoom, yRoom) * .85);
-      x += nx * offset; y += ny * offset;
-      z = (random() * 2 - 1) * .16;
-    }
-    // x: contour/interior/ambient; y: individual size/contrast; z: contour arc.
-    return { position: [x, y, z], meta: [category, contrast, arc] };
-  };
+function refineOriginalHeart([x, y, z]) {
+  // Geometry only: a 10% narrower body, 4% shorter height and framing-safe depth.
+  // The tiny upper/lower corrections clean the cleft and soften the final tip.
+  const cleft = .028 * Math.exp(-x * x / .025) * THREE.MathUtils.smoothstep(y, .55, .88);
+  const tip = .018 * THREE.MathUtils.smoothstep(-y, .92, 1.11);
+  return [x * .90, (y - cleft + tip) * .96, z * .91];
 }
 
 function geographicSamples(positions, count, random) {
@@ -167,7 +69,6 @@ const sharedVertex = /* glsl */ `
   uniform float uFormationRotation;
   varying float vAlpha;
   varying float vSoftness;
-  varying vec2 vHeartStyle;
   float phase(float start, float end) {
     return clamp((uProgress - start) / (end - start), 0.0, 1.0);
   }
@@ -180,7 +81,8 @@ const sharedVertex = /* glsl */ `
 const particleVertex = /* glsl */ `
   ${sharedVertex}
   attribute vec3 aHeart;
-  attribute vec3 aHeartMeta;
+  attribute vec3 aHeartSeed;
+  attribute float aHeartActive;
   attribute vec3 aExplosion;
   attribute vec3 aSeed;
   attribute vec3 aFormation;
@@ -197,31 +99,12 @@ const particleVertex = /* glsl */ `
                    sin(driftPhase * 0.71)) * sin(burst * 3.14159265)
                    * uScale * 0.11;
 
-    float hold = phase(0.85, 0.95);
-    float heartbeat = pow(max(0.0, sin(hold * 6.2831853)), 3.0);
-    float pulse = 1.0 + heartbeat * 0.020;
-    // A shallow side-to-side reveal returns fully front-facing before dissolution.
-    float angle = sin(hold * 3.14159265) * 0.12217305;
+    // Original heart orientation; the current gather/dissolve timing stays intact.
+    float angle = -0.17 + smoothPhase(0.76, 0.9) * 0.26;
     mat3 turn = mat3(cos(angle), 0.0, -sin(angle),
                      0.0, 1.0, 0.0,
                      sin(angle), 0.0, cos(angle));
-    float holdEnvelope = sin(hold * 3.14159265);
-    float contour = 1.0 - step(0.5, aHeartMeta.x);
-    float interior = step(0.5, aHeartMeta.x) * (1.0 - step(1.5, aHeartMeta.x));
-    vec3 heartPoint = aHeart;
-    heartPoint.z += sin(aHeartMeta.z * 18.8495559 + hold * 6.2831853)
-                    * holdEnvelope * 0.012;
-    heartPoint.xy += vec2(sin(aHeart.y * 7.0 + hold * 6.2831853),
-                          cos(aHeart.x * 8.0 - hold * 6.2831853))
-                     * interior * holdEnvelope * 0.004;
-    vec3 heart = turn * heartPoint * uScale * pulse;
-    float arcDistance = abs(aHeartMeta.z - hold);
-    arcDistance = min(arcDistance, 1.0 - arcDistance);
-    float waveDistance = arcDistance * 42.0;
-    float bodyWaveDistance = (aHeart.y - mix(0.9, -0.9, hold)) * 9.0;
-    float bodyWave = exp(-bodyWaveDistance * bodyWaveDistance) * interior * 0.45;
-    float lightWave = (exp(-waveDistance * waveDistance) * (0.12 + contour * 0.88)
-                       + bodyWave) * holdEnvelope * gather * (1.0 - dissolve);
+    vec3 heart = turn * aHeart * uScale;
     vec3 localPosition = mix(flight, heart, gather);
     localPosition += (aExplosion * 1.5 + aHeart * 0.25)
                      * dissolve * dissolve * uScale;
@@ -252,34 +135,22 @@ const particleVertex = /* glsl */ `
     float sparkle = 0.76 + 0.24 * pow(0.5 + 0.5 * sin(driftPhase * 3.7), 6.0);
     gl_PointSize = clamp(size * uProjectionScale / max(0.5, -viewPosition.z),
                          0.95 * uPixelRatio, 2.6 * uPixelRatio);
-    gl_PointSize *= mix(1.0, 0.55, dissolve) * (1.0 + lightWave * 0.12);
+    gl_PointSize *= mix(1.0, 0.55, dissolve);
     vAlpha = (smoothPhase(0.638, 0.652) * (1.0 - dissolve)
              + formationAlpha) * mix(0.58, 1.0, aSeed.y)
-             * sparkle * (0.88 + lightWave * 0.35);
-    float brokenArc = sin(aHeartMeta.z * 106.81415
-                          + sin(aHeartMeta.z * 31.415927) * 0.7);
-    float contourBreak = 0.76 + 0.24 * smoothstep(-0.75, -0.20, brokenArc);
-    float contrast = aHeartMeta.y;
-    float contourAlpha = (0.66 + 0.62 * pow(contrast, 0.65)) * contourBreak;
-    float cloudStructure = 0.58 + 0.42 * pow(0.5 + 0.5 * sin(aHeart.x * 8.5 + sin(aHeart.y * 9.0 + aHeart.z * 8.0) * 0.8), 1.6);
-    float layerLight = mix(0.66, 1.0, clamp(0.5 + aHeart.z * 2.4, 0.0, 1.0));
-    float insideAlpha = (0.64 + 0.48 * pow(contrast, 1.2)) * cloudStructure * layerLight;
-    float outsideAlpha = 0.14 + 0.25 * contrast * contrast;
-    float heartAlpha = contour * contourAlpha + interior * insideAlpha
-                       + (1.0 - contour - interior) * outsideAlpha;
-    float glint = pow(0.5 + 0.5 * sin(hold * 18.8495559 + aSeed.x * 6.2831853), 12.0);
-    float heartShimmer = 0.84 + 0.40 * glint;
-    vAlpha *= mix(1.0, heartAlpha * heartShimmer * (1.0 + lightWave * 0.55), gather);
-    float haloSelection = (contour * 0.7 + interior) * step(0.93, contrast);
-    float heartSize = contour * mix(0.88, 1.65, pow(contrast, 1.8))
-                     + interior * mix(0.92, 1.80, contrast * contrast)
-                     + (1.0 - contour - interior) * mix(0.55, 1.0, contrast);
-    float minimumSize = (contour * 1.0 + interior * 1.0
-                         + (1.0 - contour - interior) * 0.65) * uPixelRatio;
-    float fineSize = clamp(gl_PointSize * heartSize, minimumSize, 2.6 * uPixelRatio);
-    fineSize = min(fineSize + haloSelection * (0.35 + glint * 0.4) * uPixelRatio, 3.0 * uPixelRatio);
-    gl_PointSize = mix(gl_PointSize, fineSize, gather);
-    vHeartStyle = vec2(gather, haloSelection * 0.55);
+             * sparkle * 0.88;
+    // Verbatim first-prototype point size, brightness and sparkle, applied only
+    // while gathering into the heart. Formation and explosion keep today's style.
+    float heartDriftPhase = uProgress * 12.0 + aHeartSeed.x * 6.2831853;
+    float heartSparkle = 0.76 + 0.24 * pow(0.5 + 0.5 * sin(heartDriftPhase * 3.7), 6.0);
+    float heartSize = mix(0.015, 0.038, aHeartSeed.z) * (uScale / 6.0);
+    float originalSize = clamp(heartSize * uProjectionScale / max(0.5, -viewPosition.z),
+                              0.7 * uPixelRatio, 3.2 * uPixelRatio);
+    originalSize *= mix(1.0, 0.55, dissolve);
+    float originalAlpha = smoothPhase(0.638, 0.652) * (1.0 - dissolve)
+                          * mix(0.38, 0.95, aHeartSeed.y) * heartSparkle;
+    gl_PointSize = mix(gl_PointSize, originalSize, gather);
+    vAlpha = mix(vAlpha, originalAlpha * aHeartActive, gather);
     vSoftness = 0.0;
   }
 `;
@@ -363,35 +234,10 @@ const starVertex = /* glsl */ `
                                        * pow(1.0 - aTail, 1.6) * 0.5
                                       : (aKind > 1.5 ? uStarHaloOpacity : 0.92));
     vSoftness = aKind > 1.5 ? 1.0 : 0.0;
-    vHeartStyle = vec2(0.0);
   }
 `;
 
-const pointFragment = /* glsl */ `
-  uniform vec3 uColor;
-  uniform float uDark;
-  varying float vAlpha;
-  varying float vSoftness;
-  varying vec2 vHeartStyle;
-  void main() {
-    float radius = length(gl_PointCoord - vec2(0.5)) * 2.0;
-    if (radius > 1.0 || vAlpha < 0.001) discard;
-    float disc = 1.0 - smoothstep(0.18, 1.0, radius);
-    float halo = exp(-radius * radius * 5.5) * (1.0 - smoothstep(0.75, 1.0, radius));
-    float alpha = mix(disc, halo, vSoftness) * vAlpha;
-    alpha *= mix(0.82, 1.0, uDark);
-    if (vHeartStyle.x > 0.0) {
-      float fineDisc = 1.0 - smoothstep(0.18, 1.0, radius);
-      float tinyHalo = exp(-radius * radius * 6.5)
-                       * (1.0 - smoothstep(0.78, 1.0, radius));
-      float heartProfile = mix(fineDisc, tinyHalo, vHeartStyle.y);
-      alpha = mix(alpha, heartProfile * vAlpha * mix(1.08, 1.0, uDark), vHeartStyle.x);
-    }
-    gl_FragColor = vec4(uColor, alpha);
-    #include <tonemapping_fragment>
-    #include <colorspace_fragment>
-  }
-`;
+const pointFragment = originalPointFragment;
 
 const flashVertex = /* glsl */ `
   varying vec2 vUv;
@@ -461,18 +307,22 @@ export function createParticles({ count = 10000, mobile = false, formationPositi
   };
 
   const heart = new Float32Array(particleCount * 3);
-  const heartMeta = new Float32Array(particleCount * 3);
+  const heartSeeds = new Float32Array(particleCount * 3);
+  const heartActive = new Float32Array(particleCount);
+  const heartCount = Math.min(particleCount, particleCount <= 8000 ? 5200 : mobile ? 9000 : 14000);
   const explosion = new Float32Array(particleCount * 3);
   const seeds = new Float32Array(particleCount * 3);
   const scatter = new Float32Array(particleCount * 3);
   const formation = geographicSamples(formationPositions, particleCount, random);
-  const sampleHeart = heartProfile(particleCount);
-  const heartRandom = randomSequence(0x48454152);
+  // Original seed and original per-point random sequence are independent of the
+  // current globe/explosion stream, so those approved stages stay byte-identical.
+  const heartRandom = randomSequence(0x534d2027);
   for (let i = 0; i < particleCount; i += 1) {
     advanceLegacyHeartSeed(random);
-    const heartSample = sampleHeart(heartRandom, i);
-    heart.set(heartSample.position, i * 3);
-    heartMeta.set(heartSample.meta, i * 3);
+    heart.set(refineOriginalHeart(originalHeartPoint(heartRandom)), i * 3);
+    heartRandom(); heartRandom(); // The original explosion direction's draws.
+    heartSeeds.set([heartRandom(), heartRandom(), heartRandom()], i * 3);
+    heartActive[i] = i < heartCount ? 1 : 0;
     const z = random() * 2 - 1;
     const angle = random() * Math.PI * 2;
     const ring = Math.sqrt(1 - z * z);
@@ -484,7 +334,8 @@ export function createParticles({ count = 10000, mobile = false, formationPositi
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(particleCount * 3), 3));
   geometry.setAttribute('aHeart', new THREE.BufferAttribute(heart, 3));
-  geometry.setAttribute('aHeartMeta', new THREE.BufferAttribute(heartMeta, 3));
+  geometry.setAttribute('aHeartSeed', new THREE.BufferAttribute(heartSeeds, 3));
+  geometry.setAttribute('aHeartActive', new THREE.BufferAttribute(heartActive, 1));
   geometry.setAttribute('aExplosion', new THREE.BufferAttribute(explosion, 3));
   geometry.setAttribute('aSeed', new THREE.BufferAttribute(seeds, 3));
   geometry.setAttribute('aFormation', new THREE.BufferAttribute(formation.result, 3));

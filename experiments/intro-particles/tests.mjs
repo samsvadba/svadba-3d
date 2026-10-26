@@ -1,6 +1,8 @@
 // Offline numerical checks: no browser, network or production mutations.
 // node experiments/intro-particles/tests.mjs
 import assert from 'node:assert/strict';
+import {createHash} from 'node:crypto';
+import {heartField,heartPoint,originalPointFragment} from './original-heart.js';
 import { readFile } from 'node:fs/promises';
 import * as THREE from 'three';
 import config from '../../config-v3.js';
@@ -9,54 +11,13 @@ import { createChoreography, STORY_PHASES } from './choreography.js';
 
 const globeSource = await readFile(new URL('./globe.js', import.meta.url), 'utf8');
 const countries = JSON.parse(await readFile(new URL('../../countries-v3.json', import.meta.url), 'utf8'));
-const heartSvg = await readFile(new URL('./heart-outline.svg', import.meta.url), 'utf8');
-const heartPath = heartSvg.match(/<path\b[^>]*\bd="([^"]+)"/s)?.[1];
-assert.ok(heartPath, 'Missing the supplied SVG heart fixture');
-const heartNumbers = heartPath.match(/[-+]?(?:\d*\.)?\d+/g).map(Number);
-assert.equal((heartNumbers.length - 2) % 6, 0, 'Unexpected cubic SVG path');
-const referenceRaw = [];
-let curveStart = heartNumbers.slice(0, 2);
-for (let offset = 2; offset < heartNumbers.length; offset += 6) {
-  const cubic = [curveStart, heartNumbers.slice(offset, offset + 2), heartNumbers.slice(offset + 2, offset + 4), heartNumbers.slice(offset + 4, offset + 6)];
-  for (let step = 0; step < 256; step += 1) {
-    const t = step / 256, s = 1 - t;
-    referenceRaw.push([0, 1].map(axis => s ** 3 * cubic[0][axis] + 3 * s * s * t * cubic[1][axis] + 3 * s * t * t * cubic[2][axis] + t ** 3 * cubic[3][axis]));
-  }
-  curveStart = cubic[3];
+// Historical code is copied verbatim from the first implementation, 2f7b1ed.
+const historicalHash = createHash('sha256').update([heartField.toString(), heartPoint.toString(), originalPointFragment].join('\n').replace(/\r\n/g, '\n')).digest('hex');
+assert.equal(historicalHash, 'f3cc9b8ab8f6c59d8354fb2b15e9c5dc433664977697a051bdfe1bbceb0391d0', 'The first sampler or sprite has changed');
+function originalRandom() {
+  let state = 0x534d2027;
+  return () => { state = (Math.imul(state,1664525)+1013904223)>>>0; return state/4294967296; };
 }
-const referenceX = referenceRaw.map(point => point[0]), referenceY = referenceRaw.map(point => point[1]);
-const referenceMinX = Math.min(...referenceX), referenceMaxX = Math.max(...referenceX);
-const referenceMinY = Math.min(...referenceY), referenceMaxY = Math.max(...referenceY);
-const referenceCenter = [(referenceMinX + referenceMaxX) / 2, (referenceMinY + referenceMaxY) / 2];
-const referenceScale = 1.92 / (referenceMaxX - referenceMinX);
-const referenceCurve = referenceRaw.map(([x, y]) => [(x - referenceCenter[0]) * referenceScale, (referenceCenter[1] - y) * referenceScale]);
-const referenceHeight = (referenceMaxY - referenceMinY) * referenceScale;
-const referenceNotch = [(heartNumbers[0] - referenceCenter[0]) * referenceScale, (referenceCenter[1] - heartNumbers[1]) * referenceScale];
-const referenceTip = referenceCurve.reduce((low, point) => point[1] < low[1] ? point : low, referenceCurve[0]);
-assert.ok(1.92 / referenceHeight > 1.21 && 1.92 / referenceHeight < 1.22, 'SVG proportions must be preserved with uniform scaling');
-const insideReference = ([x, y]) => {
-  let result = false;
-  for (let i = 0, j = referenceCurve.length - 1; i < referenceCurve.length; j = i++) {
-    const a = referenceCurve[i], b = referenceCurve[j];
-    if ((a[1] > y) !== (b[1] > y) && x < (b[0] - a[0]) * (y - a[1]) / (b[1] - a[1]) + a[0]) result = !result;
-  }
-  return result;
-};
-const referenceGrid = new Map(), gridSize = .06;
-const gridKey = (x, y) => `${Math.floor(x / gridSize)},${Math.floor(y / gridSize)}`;
-for (const point of referenceCurve) {
-  const key = gridKey(...point);
-  if (!referenceGrid.has(key)) referenceGrid.set(key, []);
-  referenceGrid.get(key).push(point);
-}
-const distanceToReference = ([x, y]) => {
-  let minimum = Infinity;
-  const column = Math.floor(x / gridSize), row = Math.floor(y / gridSize);
-  for (let dx = -3; dx <= 3; dx += 1) for (let dy = -3; dy <= 3; dy += 1) {
-    for (const point of referenceGrid.get(`${column + dx},${row + dy}`) || []) minimum = Math.min(minimum, Math.hypot(x - point[0], y - point[1]));
-  }
-  return minimum;
-};
 
 // Load existing pure geographic helpers without constructing a WebGL DOM.
 function functionSource(source, name) {
@@ -115,69 +76,38 @@ for (const count of [8000, 16000, 24000]) {
   }
 
   const heart = geometry.getAttribute('aHeart');
-  const heartMeta = geometry.getAttribute('aHeartMeta');
-  assert.ok(heartMeta && heartMeta.itemSize === 3, 'Heart populations need their own GPU metadata');
-  const box = new THREE.Box3().setFromBufferAttribute(heart);
-  const size = box.getSize(new THREE.Vector3());
-  assert.ok(size.x >= 1.90 && size.x <= HEART_BOUNDS.width);
-  assert.ok(size.y >= referenceHeight - .02 && size.y <= Math.min(1.85, HEART_BOUNDS.height), 'Heart lost the supplied SVG proportions or exceeds existing framing');
-  assert.ok(size.z >= .30 && size.z <= .46 && size.z / size.x < .25, 'Heart needs layered cloud depth while retaining its front-facing silhouette');
-  const groups = [[], [], []], contourBins = new Array(256);
-  let leftLobe = -Infinity, rightLobe = -Infinity, cleft = Infinity;
-  let lowTip = 0, tipX = 0, centralInterior = 0, front = 0, back = 0, nearPlane = 0, deepFront = 0, deepBack = 0;
+  const heartSeeds = geometry.getAttribute('aHeartSeed');
+  const active = geometry.getAttribute('aHeartActive');
+  const expectedCount = count <= 8000 ? 5200 : count < 24000 ? 9000 : 14000;
+  assert.equal([...active.array].filter(Boolean).length, expectedCount, 'First-prototype heart density changed');
+  assert.ok(!geometry.hasAttribute('aHeartMeta'), 'Later contour/cloud categories remain');
+  assert.equal(effect.group.children[0].material.fragmentShader, originalPointFragment);
+  assert.ok(!/lightWave|heartbeat|bodyWave|cloudStructure|glint/.test(effect.group.children[0].material.vertexShader), 'Later heart effects remain');
+  const historical = originalRandom();
+  let interior = 0;
   for (let i = 0; i < count; i += 1) {
-    const x = heart.getX(i), y = heart.getY(i), z = heart.getZ(i);
-    const category = heartMeta.getX(i), seed = heartMeta.getY(i), arc = heartMeta.getZ(i);
-    assert.ok(Number.isInteger(category) && category >= 0 && category <= 2, 'Unknown heart population');
-    assert.ok(seed >= 0 && seed <= 1 && arc >= 0 && arc <= 1, 'Heart metadata outside normalized range');
-    assert.ok(Math.abs(z) <= .23, 'Heart particle escapes its shallow layered depth envelope');
-    groups[category].push([x, y, z]);
-    if (category === 0) {
-      if (x < -.25 && x > -.85) leftLobe = Math.max(leftLobe, y);
-      if (x > .25 && x < .85) rightLobe = Math.max(rightLobe, y);
-      cleft = Math.min(cleft, Math.hypot(x - referenceNotch[0], y - referenceNotch[1]));
-      if (Math.abs(x - referenceTip[0]) < .14 && y < referenceTip[1] + .055) { lowTip += 1; tipX += x; }
-      const bin = Math.min(255, Math.floor(arc * 256));
-      contourBins[bin] ||= [x, y];
+    let draws = 0;
+    const original = heartPoint(() => { draws += 1; return historical(); });
+    historical(); historical(); // The original direction samples, then its seeds.
+    const expectedSeed = [historical(), historical(), historical()];
+    for (let axis = 0; axis < 3; axis += 1) assert.ok(Math.abs(heartSeeds.array[i*3+axis]-expectedSeed[axis]) < 6e-8, 'Original brightness/size seed changed');
+    const [x,y,z] = original;
+    const cleft = .028 * Math.exp(-x*x/.025) * THREE.MathUtils.smoothstep(y,.55,.88);
+    const tip = .018 * THREE.MathUtils.smoothstep(-y,.92,1.11);
+    const expected = [x*.90,(y-cleft+tip)*.96,z*.91];
+    for (let axis = 0; axis < 3; axis += 1) assert.ok(Math.abs(heart.array[i*3+axis]-expected[axis]) < 1.2e-7, 'Heart differs from original samples plus the documented geometry refinement');
+    assert.equal(active.getX(i), i < expectedCount ? 1 : 0);
+    if (i < expectedCount) {
+      if (draws === 4) interior += 1;
+      assert.ok(heartField(x,y+.13,z) < .00002, 'Original volumetric surface was lost');
     }
-    if (category === 1) {
-      assert.ok(Math.abs(z) <= .21, 'Interior became an inflated volume instead of layered clouds');
-      if (Math.hypot(x, y) < .25) centralInterior += 1;
-    }
-    if (z > .07) front += 1;
-    if (z < -.07) back += 1;
-    if (Math.abs(z) < .035) nearPlane += 1;
-    if (z > .12) deepFront += 1;
-    if (z < -.12) deepBack += 1;
   }
-  assert.equal(groups[0].length, Math.floor(count * .42), 'Near and inner contour must contain 42% of particles');
-  assert.equal(groups[1].length, Math.floor(count * .50), 'Cloud interior must contain 50% of particles');
-  assert.equal(groups[2].length, count - groups[0].length - groups[1].length, 'Ambient population must contain the remaining 8%');
-  assert.ok(leftLobe > .74 && rightLobe > .74, 'Rounded SVG upper lobes are missing');
-  assert.ok(cleft < .02 && referenceNotch[1] < leftLobe - .22 && referenceNotch[1] < rightLobe - .22, 'The supplied central cleft is not defined');
-  assert.ok(lowTip > count * .003, 'The supplied pointed lower tip is missing');
-  assert.ok(Math.abs(tipX / lowTip - referenceTip[0]) < .04, 'The SVG lower-tip asymmetry was lost');
-  assert.ok(centralInterior > count * .008 && centralInterior < count * .12, 'Interior became empty or a dense central blob');
-  assert.ok(front > count * .15 && back > count * .15, 'Cloud layers need meaningful foreground and background depth');
-  assert.ok(nearPlane > count * .12 && deepFront > count * .035 && deepBack > count * .035, 'Heart lost its layered middle, front or back particles');
-  assert.ok(contourBins.filter(Boolean).length > 248, 'Contour has visible gaps along its perimeter');
-  const contourDistances = groups[0].map(distanceToReference);
-  assert.ok(contourDistances.every(distance => distance < .15), 'Contour band differs from the uniformly scaled supplied SVG');
-  assert.ok(groups[0].filter(insideReference).length > groups[0].length * .70, 'Most contour particles should form the cloudy inner band');
-  assert.ok(contourDistances.filter(distance => distance > .02).length > groups[0].length * .40, 'Contour became a thin mechanical line instead of a cloudy inner band');
-  const nearEdgeBins = new Set();
-  for (let i = 0; i < count; i += 1) if (heartMeta.getX(i) === 0 && distanceToReference([heart.getX(i), heart.getY(i)]) < .018) {
-    nearEdgeBins.add(Math.min(255, Math.floor(heartMeta.getZ(i) * 256)));
-  }
-  assert.ok(nearEdgeBins.size > 234, 'The original SVG edge needs continuous near-contour coverage');
-  const contourBox = new THREE.Box2().setFromPoints(groups[0].map(([x, y]) => new THREE.Vector2(x, y)));
-  const contourSize = contourBox.getSize(new THREE.Vector2());
-  assert.ok(Math.abs(contourSize.x / contourSize.y - 1.92 / referenceHeight) < .09, 'Heart was stretched horizontally or vertically instead of uniformly scaled');
-  assert.ok(groups[1].filter(insideReference).length > groups[1].length * .93, 'Interior particles are not contained by the SVG silhouette');
-  assert.ok(groups[2].filter(point => !insideReference(point)).length > groups[2].length * .70, 'Ambient particles collapse into another filled heart');
-  const ambientSides = [0, 0, 0, 0];
-  for (const [x, y] of groups[2]) ambientSides[(y >= 0 ? 2 : 0) + (x >= 0 ? 1 : 0)] += 1;
-  assert.ok(ambientSides.every(total => total > groups[2].length * .10), 'Ambient particles cluster in only one part of the silhouette');
+  assert.ok(interior > expectedCount*.15 && interior < expectedCount*.21, 'Original 82% shell / 18% interior distribution changed');
+  const size = new THREE.Box3().setFromBufferAttribute(heart).getSize(new THREE.Vector3());
+  assert.ok(size.x > 2.02 && size.x <= HEART_BOUNDS.width, 'Refined heart exceeds the unchanged horizontal framing');
+  assert.ok(size.y > 2.08 && size.y <= HEART_BOUNDS.height, 'Refined proportions lost their height');
+  assert.ok(size.z > 1.18 && size.z <= HEART_BOUNDS.depth, 'Original spatial volume was replaced by a flat or shallow cloud');
+  assert.ok(size.x / size.y < .99, 'Heart became too wide');
   effect.dispose();
   assert.equal(effect.group.children.length, 0);
 }
@@ -295,8 +225,8 @@ for (const [width, height] of viewports) {
 }
 
 effect.dispose(); sourceGeometry.dispose();
-console.log('PASS — 8,000 / 16,000 / 24,000 finite GPU particles; actual country-border formation; 42/50/8 contour, cloud interior and ambient heart populations.');
-console.log('PASS — supplied SVG front silhouette, continuous edge coverage, asymmetric cleft/tip, fluffy inner band and meaningful shallow front/middle/back cloud layers.');
+console.log('PASS — finite GPU particles, original 5,200 / 9,000 / 14,000 heart density, original random samples and size/brightness seeds.');
+console.log('PASS — 2f7b1ed sampler/sprite checksum, original shell/interior volume, restrained geometry-only proportions; no later cloud or light-wave effects.');
 console.log('PASS — stable geometries/attributes; no independent clock; 1,001 forward/backward states identical across five viewports.');
 console.log(`PASS — origins ${separationKm.toFixed(2)} km apart; minimum camera radius ${minimumCamera.toFixed(3)}; minimum star radius ${minimumStarRadius.toFixed(3)}.`);
 console.log(`PASS — star depth ≥${minimumStarDepth.toFixed(2)}, edge clearance ≥${edgeMargin.toFixed(1)} px; fixed trajectory basis; clean final globe handoff.`);

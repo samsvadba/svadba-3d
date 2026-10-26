@@ -20,16 +20,18 @@ routes. Scroll outside the globe surface, or use replay, to leave free explorati
 Reduced motion opens this final navigation immediately; replay is an explicit opt-in.
 
 The particle shaders are original code: one shared GPU point cloud morphs between
-geographic formation, seeded explosion and a layered 2.5D heart silhouette.
-The heart samples the supplied `heart-outline.svg` Bézier path without stretching
-its proportions. 42% of its points follow the crisp edge and soft inward wisps,
-50% form a feathered seven-layer interior and 8% float just outside. The inner
-cloud has shallow depth up to ±0.21 local units, tapering toward the edge. A second
-point batch renders star cores/trails; a small plane renders the merger impulse.
-One gentle pulse, contour/body light waves, individual glints, shallow depth ripples and a 7-degree turn back to the
-front are progress-based, so pausing freezes them
-and backward seeking reverses them. There is no accumulating physics simulation.
-16,000 points are used on mobile, 8,000 on constrained devices, 24,000 on desktop.
+geographic formation, seeded explosion and a volumetric heart.
+`original-heart.js` restores the first sampler and point sprite verbatim from
+`2f7b1ed75ab0cf6f43b0062870c23631586fdc8f`: approximately 82% shell / 18% interior,
+the original random sequence, point sizes, brightness, sparkle and slow turn.
+Only geometry is refined: X ×0.90, Y ×0.96, Z ×0.91, a 0.028-unit cleft correction
+and a 0.018-unit tip correction. This keeps the original volume inside today's
+unchanged camera framing. The later outline/cloud layers, pulses and waves are removed.
+The heart uses the first budgets: 5,200 points on constrained devices, 9,000 on
+mobile and 14,000 on desktop. Only the heart fades to that density; formation and
+explosion retain their current 8,000 / 16,000 / 24,000 points and exact attributes.
+Current phase timing and reversible playback are unchanged. A second point batch
+renders star cores/trails; a small plane renders the merger impulse.
 Star trails use a separate, smaller budget: they grow with traveled distance after
 liftoff, instead of stacking the entire tail into one close-up particle blot.
 The reference repository had no license, so none of its source was copied.
