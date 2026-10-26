@@ -212,6 +212,11 @@ const starVertex = /* glsl */ `
     float loftPhase = clamp((progress - 0.50) / 0.14, 0.0, 1.0);
     float loft = sin(loftPhase * 3.14159265);
     position += up * uScale * (side > 0.0 ? 0.75 : 0.62) * loft * loft;
+    // Keep the two cores legible as separate stars through their high arc;
+    // converge only for the intentional merger, rather than crossing early.
+    float separation = smoothstep(0.50, 0.54, progress)
+                       * (1.0 - smoothstep(0.605, 0.64, progress));
+    position += right * side * uScale * 0.22 * separation;
     return position;
   }
   void main() {
@@ -445,6 +450,9 @@ export function createParticles({ count = 10000, mobile = false, formationPositi
       .addScaledVector(forward, Math.sin(t * Math.PI * 2) * envelope * uniforms.uScale.value * .075);
     const loft = Math.sin(THREE.MathUtils.clamp((progress - .50) / .14, 0, 1) * Math.PI);
     target.addScaledVector(up, uniforms.uScale.value * (side > 0 ? .75 : .62) * loft * loft);
+    const separation = THREE.MathUtils.smoothstep(progress, .50, .54)
+      * (1 - THREE.MathUtils.smoothstep(progress, .605, .64));
+    target.addScaledVector(right, side * uniforms.uScale.value * .22 * separation);
     return target;
   }
 

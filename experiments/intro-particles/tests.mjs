@@ -102,7 +102,9 @@ const choreography = createChoreography({ homeDirection, startDirection, radius 
 const color = new THREE.Color('#303D29');
 const star = new THREE.Vector3(), projected = new THREE.Vector3();
 const earthCenter = new THREE.Vector3();
+const starProjections = [new THREE.Vector3(), new THREE.Vector3()];
 let minimumCamera = Infinity, minimumStarRadius = Infinity, minimumStarDepth = Infinity, edgeMargin = Infinity;
+let minimumSeparateCores = Infinity;
 const viewports = [[390, 844], [430, 932], [844, 390], [1440, 720], [1440, 900]];
 
 function snapshot(camera, pose) {
@@ -148,6 +150,7 @@ for (const [width, height] of viewports) {
         minimumStarDepth = Math.min(minimumStarDepth, -projected.z);
         assert.ok(projected.z < -.1, 'Star crossed behind the camera');
         projected.copy(star).project(camera);
+        starProjections[index].copy(projected);
         assert.ok(Math.abs(projected.x) < 1 && Math.abs(projected.y) < 1, `Star left viewport ${width}×${height} p=${progress}`);
         edgeMargin = Math.min(edgeMargin, (1 - Math.abs(projected.x)) * width / 2, (1 - Math.abs(projected.y)) * height / 2);
         if (progress >= .50 && progress < .64) {
@@ -155,6 +158,16 @@ for (const [width, height] of viewports) {
           const projectedDistance = Math.hypot((projected.x - earthCenter.x) * width / 2, (projected.y - earthCenter.y) * height / 2);
           const projectedEarthRadius = radius / Math.sqrt(cameraRadius * cameraRadius - radius * radius) * height * camera.projectionMatrix.elements[5] / 2;
           greatestSilhouetteExcursion = Math.max(greatestSilhouetteExcursion, projectedDistance / projectedEarthRadius);
+        }
+      }
+      if (progress >= .50 && progress < .638) {
+        const dx = (starProjections[0].x - starProjections[1].x) * width / 2;
+        const dy = (starProjections[0].y - starProjections[1].y) * height / 2;
+        assert.ok(dx > 0, `Stars cross before the deliberate merger at ${width}×${height} p=${progress}`);
+        if (progress <= .61) {
+          const separation = Math.hypot(dx, dy);
+          minimumSeparateCores = Math.min(minimumSeparateCores, separation);
+          assert.ok(separation >= 20, `Star cores overlap early at ${width}×${height} p=${progress}`);
         }
       }
     }
@@ -178,3 +191,4 @@ console.log('PASS — 5,200 / 9,000 / 14,000 finite GPU particles; actual countr
 console.log('PASS — stable geometries/attributes; no independent clock; 1,001 forward/backward states identical across five viewports.');
 console.log(`PASS — origins ${separationKm.toFixed(2)} km apart; minimum camera radius ${minimumCamera.toFixed(3)}; minimum star radius ${minimumStarRadius.toFixed(3)}.`);
 console.log(`PASS — star depth ≥${minimumStarDepth.toFixed(2)}, edge clearance ≥${edgeMargin.toFixed(1)} px; fixed trajectory basis; clean final globe handoff.`);
+console.log(`PASS — distinct star cores remain ≥${minimumSeparateCores.toFixed(1)} px apart through p=.61, without crossing before the p=.64 merger.`);
