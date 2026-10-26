@@ -52,7 +52,7 @@ for (const point of referenceCurve) {
 const distanceToReference = ([x, y]) => {
   let minimum = Infinity;
   const column = Math.floor(x / gridSize), row = Math.floor(y / gridSize);
-  for (let dx = -1; dx <= 1; dx += 1) for (let dy = -1; dy <= 1; dy += 1) {
+  for (let dx = -3; dx <= 3; dx += 1) for (let dy = -3; dy <= 3; dy += 1) {
     for (const point of referenceGrid.get(`${column + dx},${row + dy}`) || []) minimum = Math.min(minimum, Math.hypot(x - point[0], y - point[1]));
   }
   return minimum;
@@ -121,16 +121,16 @@ for (const count of [8000, 16000, 24000]) {
   const size = box.getSize(new THREE.Vector3());
   assert.ok(size.x >= 1.90 && size.x <= HEART_BOUNDS.width);
   assert.ok(size.y >= referenceHeight - .02 && size.y <= Math.min(1.85, HEART_BOUNDS.height), 'Heart lost the supplied SVG proportions or exceeds existing framing');
-  assert.ok(size.z > .15 && size.z <= .24, 'Heart should have shallow 2.5D depth, not the former inflated volume');
+  assert.ok(size.z >= .30 && size.z <= .46 && size.z / size.x < .25, 'Heart needs layered cloud depth while retaining its front-facing silhouette');
   const groups = [[], [], []], contourBins = new Array(256);
   let leftLobe = -Infinity, rightLobe = -Infinity, cleft = Infinity;
-  let lowTip = 0, tipX = 0, centralInterior = 0, front = 0, back = 0;
+  let lowTip = 0, tipX = 0, centralInterior = 0, front = 0, back = 0, nearPlane = 0, deepFront = 0, deepBack = 0;
   for (let i = 0; i < count; i += 1) {
     const x = heart.getX(i), y = heart.getY(i), z = heart.getZ(i);
     const category = heartMeta.getX(i), seed = heartMeta.getY(i), arc = heartMeta.getZ(i);
     assert.ok(Number.isInteger(category) && category >= 0 && category <= 2, 'Unknown heart population');
     assert.ok(seed >= 0 && seed <= 1 && arc >= 0 && arc <= 1, 'Heart metadata outside normalized range');
-    assert.ok(Math.abs(z) <= .12, 'Heart particle escapes its shallow depth envelope');
+    assert.ok(Math.abs(z) <= .23, 'Heart particle escapes its shallow layered depth envelope');
     groups[category].push([x, y, z]);
     if (category === 0) {
       if (x < -.25 && x > -.85) leftLobe = Math.max(leftLobe, y);
@@ -141,25 +141,35 @@ for (const count of [8000, 16000, 24000]) {
       contourBins[bin] ||= [x, y];
     }
     if (category === 1) {
-      assert.ok(Math.abs(z) <= .07, 'Interior is too thick for an airy 2.5D heart');
+      assert.ok(Math.abs(z) <= .21, 'Interior became an inflated volume instead of layered clouds');
       if (Math.hypot(x, y) < .25) centralInterior += 1;
     }
-    if (z > .035) front += 1;
-    if (z < -.035) back += 1;
+    if (z > .07) front += 1;
+    if (z < -.07) back += 1;
+    if (Math.abs(z) < .035) nearPlane += 1;
+    if (z > .12) deepFront += 1;
+    if (z < -.12) deepBack += 1;
   }
-  assert.equal(groups[0].length, Math.floor(count * .58), 'Contour must contain 58% of particles');
-  assert.equal(groups[1].length, Math.floor(count * .32), 'Airy interior must contain 32% of particles');
-  assert.equal(groups[2].length, count - groups[0].length - groups[1].length, 'Ambient population must contain the remaining 10%');
+  assert.equal(groups[0].length, Math.floor(count * .42), 'Near and inner contour must contain 42% of particles');
+  assert.equal(groups[1].length, Math.floor(count * .50), 'Cloud interior must contain 50% of particles');
+  assert.equal(groups[2].length, count - groups[0].length - groups[1].length, 'Ambient population must contain the remaining 8%');
   assert.ok(leftLobe > .74 && rightLobe > .74, 'Rounded SVG upper lobes are missing');
   assert.ok(cleft < .02 && referenceNotch[1] < leftLobe - .22 && referenceNotch[1] < rightLobe - .22, 'The supplied central cleft is not defined');
   assert.ok(lowTip > count * .003, 'The supplied pointed lower tip is missing');
   assert.ok(Math.abs(tipX / lowTip - referenceTip[0]) < .04, 'The SVG lower-tip asymmetry was lost');
-  assert.ok(centralInterior > count * .004 && centralInterior < count * .07, 'Interior became empty or a dense central blob');
-  assert.ok(front > count * .15 && back > count * .15, 'Shallow heart needs particles on both sides of its depth plane');
+  assert.ok(centralInterior > count * .008 && centralInterior < count * .12, 'Interior became empty or a dense central blob');
+  assert.ok(front > count * .15 && back > count * .15, 'Cloud layers need meaningful foreground and background depth');
+  assert.ok(nearPlane > count * .12 && deepFront > count * .035 && deepBack > count * .035, 'Heart lost its layered middle, front or back particles');
   assert.ok(contourBins.filter(Boolean).length > 248, 'Contour has visible gaps along its perimeter');
   const contourDistances = groups[0].map(distanceToReference);
-  assert.ok(contourDistances.every(distance => distance < .055), 'Contour differs from the uniformly scaled supplied SVG');
-  assert.ok(contourDistances.filter(distance => distance > .009).length > groups[0].length * .15, 'Contour became a thin mechanical single-width line');
+  assert.ok(contourDistances.every(distance => distance < .15), 'Contour band differs from the uniformly scaled supplied SVG');
+  assert.ok(groups[0].filter(insideReference).length > groups[0].length * .70, 'Most contour particles should form the cloudy inner band');
+  assert.ok(contourDistances.filter(distance => distance > .02).length > groups[0].length * .40, 'Contour became a thin mechanical line instead of a cloudy inner band');
+  const nearEdgeBins = new Set();
+  for (let i = 0; i < count; i += 1) if (heartMeta.getX(i) === 0 && distanceToReference([heart.getX(i), heart.getY(i)]) < .018) {
+    nearEdgeBins.add(Math.min(255, Math.floor(heartMeta.getZ(i) * 256)));
+  }
+  assert.ok(nearEdgeBins.size > 234, 'The original SVG edge needs continuous near-contour coverage');
   const contourBox = new THREE.Box2().setFromPoints(groups[0].map(([x, y]) => new THREE.Vector2(x, y)));
   const contourSize = contourBox.getSize(new THREE.Vector2());
   assert.ok(Math.abs(contourSize.x / contourSize.y - 1.92 / referenceHeight) < .09, 'Heart was stretched horizontally or vertically instead of uniformly scaled');
@@ -285,8 +295,8 @@ for (const [width, height] of viewports) {
 }
 
 effect.dispose(); sourceGeometry.dispose();
-console.log('PASS — 8,000 / 16,000 / 24,000 finite GPU particles; actual country-border formation; 58/32/10 contour, airy interior and ambient heart populations.');
-console.log('PASS — supplied SVG silhouette, uniform aspect ratio, asymmetric cleft/tip, shallow depth, variable contour band and distributed exterior particles.');
+console.log('PASS — 8,000 / 16,000 / 24,000 finite GPU particles; actual country-border formation; 42/50/8 contour, cloud interior and ambient heart populations.');
+console.log('PASS — supplied SVG front silhouette, continuous edge coverage, asymmetric cleft/tip, fluffy inner band and meaningful shallow front/middle/back cloud layers.');
 console.log('PASS — stable geometries/attributes; no independent clock; 1,001 forward/backward states identical across five viewports.');
 console.log(`PASS — origins ${separationKm.toFixed(2)} km apart; minimum camera radius ${minimumCamera.toFixed(3)}; minimum star radius ${minimumStarRadius.toFixed(3)}.`);
 console.log(`PASS — star depth ≥${minimumStarDepth.toFixed(2)}, edge clearance ≥${edgeMargin.toFixed(1)} px; fixed trajectory basis; clean final globe handoff.`);

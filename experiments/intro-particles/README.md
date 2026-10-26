@@ -22,10 +22,11 @@ Reduced motion opens this final navigation immediately; replay is an explicit op
 The particle shaders are original code: one shared GPU point cloud morphs between
 geographic formation, seeded explosion and a layered 2.5D heart silhouette.
 The heart samples the supplied `heart-outline.svg` Bézier path without stretching
-its proportions. 58% of its points follow soft contour layers, 32% form a varied,
-airy interior and 10% float just outside. Depth stays within ±0.11 local units. A second
+its proportions. 42% of its points follow the crisp edge and soft inward wisps,
+50% form a feathered seven-layer interior and 8% float just outside. The inner
+cloud has shallow depth up to ±0.21 local units, tapering toward the edge. A second
 point batch renders star cores/trails; a small plane renders the merger impulse.
-One gentle pulse, a contour light wave, shallow depth ripples and a 5-degree turn back to the
+One gentle pulse, contour/body light waves, individual glints, shallow depth ripples and a 7-degree turn back to the
 front are progress-based, so pausing freezes them
 and backward seeking reverses them. There is no accumulating physics simulation.
 16,000 points are used on mobile, 8,000 on constrained devices, 24,000 on desktop.

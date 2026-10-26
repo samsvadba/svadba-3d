@@ -72,8 +72,8 @@ function heartProfile(count) {
   points.push(points[0]); lengths.push(total);
   const signedArea = points.reduce((sum, point, i) => i ? sum + points[i - 1][0] * point[1] - point[0] * points[i - 1][1] : sum, 0);
   const winding = signedArea >= 0 ? 1 : -1;
-  const contourCount = Math.floor(count * .58);
-  const interiorCount = Math.floor(count * .32);
+  const contourCount = Math.floor(count * 42 / 100);
+  const interiorCount = Math.floor(count * 50 / 100);
   return (random, index) => {
     const category = index < contourCount ? 0 : index < contourCount + interiorCount ? 1 : 2;
     const groupStart = category === 0 ? 0 : category === 1 ? contourCount : contourCount + interiorCount;
@@ -95,21 +95,30 @@ function heartProfile(count) {
     let z;
     if (category === 0) {
       const layer = Math.floor(random() * 5) - 2;
-      const band = .012 + .026 * Math.pow(random(), .7);
-      const offset = (random() + random() - 1) * band;
-      x += nx * offset; y += ny * offset;
-      z = layer * .044 + (random() * 2 - 1) * .007;
+      if (random() < .35) {
+        // Crisp edge grains retain the approved SVG silhouette.
+        const offset = (random() + random() - 1) * .014;
+        x += nx * offset; y += ny * offset;
+      } else {
+        // Radial wisps stay inside even at the cleft/tip, unlike a fixed normal inset.
+        const inward = .97 - .10 * Math.pow(random(), .7);
+        x *= inward; y *= inward;
+      }
+      z = layer * .060 + (random() * 2 - 1) * .012;
     } else if (category === 1) {
-      const inward = Math.sqrt(random()) * (.88 + .055 * Math.sin(arc * 18.8495559));
+      const inward = Math.pow(random(), .56) * (.94 + .025 * Math.sin(arc * 18.8495559));
       x *= inward; y *= inward;
-      z = (random() * 2 - 1) * .065;
+      // Seven feathered layers, gently tapered at the edge; never a solid balloon.
+      const envelope = Math.sqrt(1 - inward * inward);
+      const layer = Math.floor(random() * 7) - 3;
+      z = (layer / 3 * .20 + (random() * 2 - 1) * .008) * envelope;
     } else {
       // An airy outside population, constrained to the unchanged camera envelope.
       const xRoom = nx > 0 ? (1.038 - x) / nx : nx < 0 ? (-1.038 - x) / nx : Infinity;
       const yRoom = ny > 0 ? (1.115 - y) / ny : ny < 0 ? (-1.115 - y) / ny : Infinity;
       const offset = Math.min(.035 + Math.pow(random(), 1.4) * .075, Math.min(xRoom, yRoom) * .85);
       x += nx * offset; y += ny * offset;
-      z = (random() * 2 - 1) * .11;
+      z = (random() * 2 - 1) * .16;
     }
     // x: contour/interior/ambient; y: individual size/contrast; z: contour arc.
     return { position: [x, y, z], meta: [category, contrast, arc] };
@@ -190,24 +199,29 @@ const particleVertex = /* glsl */ `
 
     float hold = phase(0.85, 0.95);
     float heartbeat = pow(max(0.0, sin(hold * 6.2831853)), 3.0);
-    float pulse = 1.0 + heartbeat * 0.016;
+    float pulse = 1.0 + heartbeat * 0.020;
     // A shallow side-to-side reveal returns fully front-facing before dissolution.
-    float angle = sin(hold * 3.14159265) * 0.08726646;
+    float angle = sin(hold * 3.14159265) * 0.12217305;
     mat3 turn = mat3(cos(angle), 0.0, -sin(angle),
                      0.0, 1.0, 0.0,
                      sin(angle), 0.0, cos(angle));
     float holdEnvelope = sin(hold * 3.14159265);
-    vec3 heartPoint = aHeart;
-    heartPoint.z += sin(aHeartMeta.z * 18.8495559 + hold * 6.2831853)
-                    * holdEnvelope * 0.007;
-    vec3 heart = turn * heartPoint * uScale * pulse;
     float contour = 1.0 - step(0.5, aHeartMeta.x);
     float interior = step(0.5, aHeartMeta.x) * (1.0 - step(1.5, aHeartMeta.x));
+    vec3 heartPoint = aHeart;
+    heartPoint.z += sin(aHeartMeta.z * 18.8495559 + hold * 6.2831853)
+                    * holdEnvelope * 0.012;
+    heartPoint.xy += vec2(sin(aHeart.y * 7.0 + hold * 6.2831853),
+                          cos(aHeart.x * 8.0 - hold * 6.2831853))
+                     * interior * holdEnvelope * 0.004;
+    vec3 heart = turn * heartPoint * uScale * pulse;
     float arcDistance = abs(aHeartMeta.z - hold);
     arcDistance = min(arcDistance, 1.0 - arcDistance);
     float waveDistance = arcDistance * 42.0;
-    float lightWave = exp(-waveDistance * waveDistance) * holdEnvelope
-                      * gather * (1.0 - dissolve) * (0.12 + contour * 0.88);
+    float bodyWaveDistance = (aHeart.y - mix(0.9, -0.9, hold)) * 9.0;
+    float bodyWave = exp(-bodyWaveDistance * bodyWaveDistance) * interior * 0.45;
+    float lightWave = (exp(-waveDistance * waveDistance) * (0.12 + contour * 0.88)
+                       + bodyWave) * holdEnvelope * gather * (1.0 - dissolve);
     vec3 localPosition = mix(flight, heart, gather);
     localPosition += (aExplosion * 1.5 + aHeart * 0.25)
                      * dissolve * dissolve * uScale;
@@ -244,23 +258,26 @@ const particleVertex = /* glsl */ `
              * sparkle * (0.88 + lightWave * 0.35);
     float brokenArc = sin(aHeartMeta.z * 106.81415
                           + sin(aHeartMeta.z * 31.415927) * 0.7);
-    float contourBreak = 0.68 + 0.32 * smoothstep(-0.75, -0.20, brokenArc);
+    float contourBreak = 0.76 + 0.24 * smoothstep(-0.75, -0.20, brokenArc);
     float contrast = aHeartMeta.y;
-    float contourAlpha = (0.55 + 0.65 * pow(contrast, 0.65)) * contourBreak;
-    float cloudStructure = 0.48 + 0.52 * pow(0.5 + 0.5 * sin(aHeart.x * 8.5 + sin(aHeart.y * 9.0) * 0.8), 1.6);
-    float insideAlpha = (0.40 + 0.40 * pow(contrast, 1.2)) * cloudStructure;
-    float outsideAlpha = 0.12 + 0.22 * contrast * contrast;
+    float contourAlpha = (0.66 + 0.62 * pow(contrast, 0.65)) * contourBreak;
+    float cloudStructure = 0.58 + 0.42 * pow(0.5 + 0.5 * sin(aHeart.x * 8.5 + sin(aHeart.y * 9.0 + aHeart.z * 8.0) * 0.8), 1.6);
+    float layerLight = mix(0.66, 1.0, clamp(0.5 + aHeart.z * 2.4, 0.0, 1.0));
+    float insideAlpha = (0.64 + 0.48 * pow(contrast, 1.2)) * cloudStructure * layerLight;
+    float outsideAlpha = 0.14 + 0.25 * contrast * contrast;
     float heartAlpha = contour * contourAlpha + interior * insideAlpha
                        + (1.0 - contour - interior) * outsideAlpha;
-    vAlpha *= mix(1.0, heartAlpha * (1.0 + lightWave * 0.45), gather);
-    float haloSelection = contour * step(0.96, contrast);
-    float heartSize = contour * mix(0.80, 1.55, pow(contrast, 1.8))
-                     + interior * mix(0.72, 1.02, contrast * contrast)
-                     + (1.0 - contour - interior) * mix(0.48, 0.83, contrast);
-    float minimumSize = (contour * 1.05 + interior * 0.95
+    float glint = pow(0.5 + 0.5 * sin(hold * 18.8495559 + aSeed.x * 6.2831853), 12.0);
+    float heartShimmer = 0.84 + 0.40 * glint;
+    vAlpha *= mix(1.0, heartAlpha * heartShimmer * (1.0 + lightWave * 0.55), gather);
+    float haloSelection = (contour * 0.7 + interior) * step(0.93, contrast);
+    float heartSize = contour * mix(0.88, 1.65, pow(contrast, 1.8))
+                     + interior * mix(0.92, 1.80, contrast * contrast)
+                     + (1.0 - contour - interior) * mix(0.55, 1.0, contrast);
+    float minimumSize = (contour * 1.0 + interior * 1.0
                          + (1.0 - contour - interior) * 0.65) * uPixelRatio;
-    float fineSize = clamp(gl_PointSize * heartSize, minimumSize, 2.3 * uPixelRatio);
-    fineSize = min(fineSize + haloSelection * uPixelRatio * 0.35, 2.4 * uPixelRatio);
+    float fineSize = clamp(gl_PointSize * heartSize, minimumSize, 2.6 * uPixelRatio);
+    fineSize = min(fineSize + haloSelection * (0.35 + glint * 0.4) * uPixelRatio, 3.0 * uPixelRatio);
     gl_PointSize = mix(gl_PointSize, fineSize, gather);
     vHeartStyle = vec2(gather, haloSelection * 0.55);
     vSoftness = 0.0;
