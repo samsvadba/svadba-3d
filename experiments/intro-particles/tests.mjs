@@ -67,9 +67,10 @@ for (let milliseconds=0;milliseconds<=5000;milliseconds+=5) {
     'Opening retiming interrupts the shared cloud/globe motion');
 }
 // The five-second formation stays intact; the towns/retreat are now concise,
-// leaving the latter passage for two hearts, a brief union and geographic reform.
+// leaving the latter passage for heart-marker flight, impact and geographic reform.
 assert.deepEqual(STORY_PHASES.twins, [.795,.87]);
-assert.deepEqual(STORY_PHASES.join, [.87,.915]);
+assert.deepEqual(STORY_PHASES.heartImpact, [.87,.895]);
+assert.deepEqual(STORY_PHASES.heartRegather, [.895,.915]);
 assert.deepEqual(STORY_PHASES.heart, [.915,.935]);
 assert.deepEqual(STORY_PHASES.reform, [.955,.995]);
 let previousScore = -1;
@@ -141,10 +142,10 @@ for (const count of [16000, 42000, 60000]) {
   assert.ok(size.z > 1.10 && size.z <= HEART_BOUNDS.depth, 'Original spatial volume was replaced by a flat or shallow cloud');
   assert.ok(size.x / size.y > 1.04 && size.x / size.y < 1.14, 'Heart lost its balanced proportions');
   const burstBudget=count<=16000?12000:count<60000?30000:45000;
-  for (const progress of [0,.105,.179,.18,.64,.90,.93499,.935,.97,.999,1,.05]) {
+  for (const progress of [0,.105,.179,.18,.64,.795,.83,.86999,.87,.90,.93499,.935,.97,.999,1,.05]) {
     effect.update({progress,origins,merge:new THREE.Vector3(0,0,20),color:new THREE.Color('#303D29')});
     assert.equal(geometry.drawRange.start,0);
-    assert.equal(geometry.drawRange.count,progress<.18||progress>=.935?count:burstBudget,'Formation points must return only for the final shatter/geographic reform');
+    assert.equal(geometry.drawRange.count,progress<.18||progress>=.935?count:progress>=.795&&progress<.87?360:burstBudget,'Only the two compact marker contours are drawn between their formation and impact');
   }
   effect.dispose();
   assert.equal(effect.group.children.length, 0);

@@ -5,24 +5,43 @@ import {heartField, heartPoint as originalHeartPoint, originalPointFragment} fro
 // clock, simulation step or geometry allocation exists in update().
 export const HEART_BOUNDS = Object.freeze({ width: 2.08, height: 2.24, depth: 1.24 });
 
-// Two poses share the same sampled heart and point sprite. They grow and float
-// independently, then converge on exactly one pose before the final shatter.
-// The renderer and numerical checks use these same allocation-free uniforms.
+// Small heart markers loop through space and strike at the centre with actual
+// approach velocity. Their size is derived from the camera in onBeforeRender.
+// The original large heart is formed from the impact, never by scaling twins up.
 export function sampleHeartPose(progress, side, target = {center:new THREE.Vector3(),scale:1,angle:0}) {
   const p = THREE.MathUtils.clamp(progress, 0, 1);
-  const flight = THREE.MathUtils.smoothstep(p, .755, .87);
-  const join = THREE.MathUtils.smootherstep(p, .87, .915);
+  const flight = THREE.MathUtils.clamp((p - .775) / .095, 0, 1);
   const angle = flight * Math.PI;
+  const wave = Math.sin(angle);
   target.center.set(
-    side * (.53 + .025 * Math.sin(angle)),
-    side * .22 * Math.cos(angle * 1.6),
-    side * .12 * Math.sin(angle * 2),
-  ).multiplyScalar(1 - join);
+    side * (.52 * (1 - flight ** 3) + .22 * Math.sin(angle * 2) * wave),
+    side * (.22 * (1 - flight) + .40 * Math.sin(angle * 3) * wave),
+    side * .18 * Math.sin(angle * 2) * wave,
+  );
+  if (p >= .87) target.center.set(0, 0, 0);
   const breath = 1 + .018 * Math.sin(THREE.MathUtils.clamp((p - .915) / .020, 0, 1) * Math.PI);
-  target.scale = THREE.MathUtils.lerp(.32 + .16 * flight, 1, join) * breath;
-  const sharedTurn = -.22 + THREE.MathUtils.smoothstep(p, .87, .935) * .44;
-  target.angle = THREE.MathUtils.lerp(side * (.10 + .12 * Math.sin(angle)), sharedTurn, join);
+  target.scale = breath;
+  const sharedTurn = (-.22 + THREE.MathUtils.smoothstep(p, .895, .935) * .44)
+    * THREE.MathUtils.smoothstep(p, .87, .882);
+  target.angle = p < .87 ? side * .16 * Math.sin(angle * 2) : sharedTurn;
   return target;
+}
+
+function createHeartMarkerSamples() {
+  // The native globe badge's exact four Bezier curves, sampled once as points.
+  const point = (x, y) => new THREE.Vector3((x - 12) / 9, (12 - y) / 9, 0);
+  const path = new THREE.CurvePath();
+  for (const c of [
+    [12,20,12,20,3,14.5,3,8.5], [3,8.5,3,3.8,9,2.8,12,7],
+    [12,7,15,2.8,21,3.2,21,8.5], [21,8.5,21,14.5,12,20,12,20],
+  ]) path.add(new THREE.CubicBezierCurve3(point(c[0],c[1]),point(c[2],c[3]),point(c[4],c[5]),point(c[6],c[7])));
+  return Array.from({length:180}, (_, i) => {
+    const outline = i < 156;
+    const sample = path.getPointAt(outline ? i / 156 : (i - 156) / 24);
+    if (!outline) sample.multiplyScalar(.2 + .45 * ((i * .61803398875) % 1));
+    sample.z = Math.sin(i * 2.39996323) * (outline ? .025 : .04);
+    return {point:sample,alpha:outline ? 1 : .16};
+  });
 }
 function randomSequence(seed) {
   let state = seed >>> 0;
@@ -124,11 +143,14 @@ const particleVertex = /* glsl */ `
   attribute vec3 aFormation;
   attribute vec3 aScatter;
   attribute float aHeartSide;
+  attribute vec3 aMarker;
+  attribute float aMarkerActive;
   uniform vec3 uHeartCenterA;
   uniform vec3 uHeartCenterB;
   uniform float uHeartAngleA;
   uniform float uHeartAngleB;
   uniform float uHeartScale;
+  uniform float uMarkerScale;
   float formationVisibility(vec3 position, vec3 eye, float radius, float surface) {
     vec3 ray = position - eye;
     float distance = max(length(ray), 0.0001);
@@ -144,6 +166,9 @@ const particleVertex = /* glsl */ `
     float burst = phase(0.64, 0.735);
     float expansion = 1.0 - pow(1.0 - burst, 3.0);
     float gather = smoothPhase(0.72, 0.795);
+    float heartImpact = phase(0.87, 0.895);
+    float impactReveal = smoothPhase(0.87, 0.882);
+    float bigGather = smoothPhase(0.895, 0.915);
     float shatter = smoothPhase(0.935, 0.955);
     float reform = smoothPhase(0.955, 0.995);
     float finishFade = 1.0 - smoothPhase(0.995, 1.0);
@@ -160,16 +185,25 @@ const particleVertex = /* glsl */ `
     flight += vec3(cos(cloudAngle), sin(cloudAngle), sin(cloudAngle * 0.73 + aSeed.z * 6.2831853))
               * cloud * uScale * (0.08 + aSeed.z * 0.12);
 
-    // Alternating samples form two equally dense hearts. Their complete poses
-    // converge, so the merger leaves one coherent cloud rather than two layers.
+    // Compact native-style heart contours fly separately. They stay small right
+    // up to the strike; the original full heart forms only out of its debris.
     float heartSide = step(0.0, aHeartSide);
     float angle = mix(uHeartAngleB, uHeartAngleA, heartSide);
     mat3 turn = mat3(cos(angle), 0.0, -sin(angle),
                      0.0, 1.0, 0.0,
                      sin(angle), 0.0, cos(angle));
     vec3 heartCenter = mix(uHeartCenterB, uHeartCenterA, heartSide);
-    vec3 heart = (turn * aHeart * uHeartScale + heartCenter) * uScale;
-    vec3 localPosition = mix(flight, heart, gather);
+    vec3 marker = turn * aMarker * uMarkerScale * uScale;
+    vec3 heart = turn * aHeart * uHeartScale * uScale;
+    vec3 localPosition = mix(flight, marker + heartCenter * uScale, gather);
+    if (uProgress >= 0.87) {
+      float impactExpansion = 1.0 - pow(1.0 - heartImpact, 3.0);
+      vec3 debris = marker * (1.0 - impactExpansion)
+                    + aExplosion * impactExpansion * uScale * (0.78 + aSeed.y * 0.32);
+      debris += vec3(sin(driftPhase), cos(driftPhase * 0.83), sin(driftPhase * 0.71))
+                * sin(heartImpact * 3.14159265) * uScale * 0.07;
+      localPosition = mix(debris, heart, bigGather);
+    }
     localPosition += (aExplosion * 1.35 + aHeart * 0.18)
                      * shatter * shatter * uScale;
     vec3 worldPosition = uMerge + uBasis * localPosition;
@@ -230,8 +264,15 @@ const particleVertex = /* glsl */ `
     float rim = pow(1.0 - abs(surfaceNormal.z), 2.5) * aHeartNormal.w;
     originalSize *= 1.0 + 0.25 * rim;
     originalAlpha = min(1.0, originalAlpha * (1.0 + 0.35 * rim));
-    gl_PointSize = mix(gl_PointSize, originalSize, gather);
-    vAlpha = mix(vAlpha, originalAlpha * aHeartActive, gather);
+    float markerSize = (aMarkerActive > 0.5 ? 1.15 : 0.75) * uPixelRatio;
+    float markerAlpha = aMarkerActive * mix(0.74, 0.94, aHeartSeed.y) * heartSparkle;
+    if (uProgress < 0.87) {
+      gl_PointSize = mix(gl_PointSize, markerSize, gather);
+      vAlpha = mix(vAlpha, markerAlpha, gather);
+    } else {
+      gl_PointSize = mix(mix(markerSize, gl_PointSize, impactReveal), originalSize, bigGather);
+      vAlpha = mix(mix(markerAlpha, vAlpha, impactReveal), originalAlpha * aHeartActive, bigGather);
+    }
     if (uProgress >= 0.935) {
       // Extra globe points start at zero opacity when drawRange is restored;
       // their gradual arrival enriches the shatter without a density pop.
@@ -345,7 +386,8 @@ const flashFragment = /* glsl */ `
   uniform float uDark;
   varying vec2 vUv;
   void main() {
-    float t = clamp((uProgress - 0.638) / 0.052, 0.0, 1.0);
+    float t = uProgress < 0.8 ? clamp((uProgress - 0.638) / 0.052, 0.0, 1.0)
+                             : clamp((uProgress - 0.868) / 0.030, 0.0, 1.0);
     float pulse = sin(t * 3.14159265);
     float radius = length(vUv - vec2(0.5)) * 2.0;
     float glow = exp(-radius * radius * 9.0 / max(0.07, pulse));
@@ -374,6 +416,7 @@ export function createParticles({ count = 10000, mobile = false, formationPositi
   const drawingSize = new THREE.Vector2();
   const right = new THREE.Vector3(), up = new THREE.Vector3(), forward = new THREE.Vector3();
   const normal = new THREE.Vector3();
+  const markerView = new THREE.Vector3();
   const heartPoseA = {center:new THREE.Vector3(),scale:1,angle:0};
   const heartPoseB = {center:new THREE.Vector3(),scale:1,angle:0};
   const uniforms = {
@@ -399,6 +442,7 @@ export function createParticles({ count = 10000, mobile = false, formationPositi
     uHeartAngleA: { value: 0 },
     uHeartAngleB: { value: 0 },
     uHeartScale: { value: 1 },
+    uMarkerScale: { value: .05 },
     uGlobeRadius: { value: 12 },
     uTrailReveal: { value: 0 },
     uTrailSpread: { value: .012 },
@@ -415,6 +459,9 @@ export function createParticles({ count = 10000, mobile = false, formationPositi
   const heartNormals = new Float32Array(particleCount * 4);
   const heartActive = new Float32Array(particleCount);
   const heartSides = new Float32Array(particleCount);
+  const markerPoints = new Float32Array(particleCount * 3);
+  const markerActive = new Float32Array(particleCount);
+  const markerSamples = createHeartMarkerSamples();
   const heartCount = Math.min(particleCount, particleCount <= 16000 ? 10000 : mobile ? 22000 : 33000);
   const explosion = new Float32Array(particleCount * 3);
   const seeds = new Float32Array(particleCount * 3);
@@ -433,6 +480,11 @@ export function createParticles({ count = 10000, mobile = false, formationPositi
     heartSeeds.set([heartRandom(), heartRandom(), heartRandom()], i * 3);
     heartActive[i] = i < heartCount ? 1 : 0;
     heartSides[i] = i % 2 ? -1 : 1;
+    const markerSample = markerSamples[Math.floor(i / 2)];
+    if (markerSample) {
+      markerPoints.set(markerSample.point.toArray(), i * 3);
+      markerActive[i] = markerSample.alpha;
+    }
     const z = random() * 2 - 1;
     const angle = random() * Math.PI * 2;
     const ring = Math.sqrt(1 - z * z);
@@ -448,6 +500,8 @@ export function createParticles({ count = 10000, mobile = false, formationPositi
   geometry.setAttribute('aHeartNormal', new THREE.BufferAttribute(heartNormals, 4));
   geometry.setAttribute('aHeartActive', new THREE.BufferAttribute(heartActive, 1));
   geometry.setAttribute('aHeartSide', new THREE.BufferAttribute(heartSides, 1));
+  geometry.setAttribute('aMarker', new THREE.BufferAttribute(markerPoints, 3));
+  geometry.setAttribute('aMarkerActive', new THREE.BufferAttribute(markerActive, 1));
   geometry.setAttribute('aExplosion', new THREE.BufferAttribute(explosion, 3));
   geometry.setAttribute('aSeed', new THREE.BufferAttribute(seeds, 3));
   geometry.setAttribute('aFormation', new THREE.BufferAttribute(formation.result, 3));
@@ -518,6 +572,10 @@ export function createParticles({ count = 10000, mobile = false, formationPositi
     renderer.getDrawingBufferSize(drawingSize);
     uniforms.uProjectionScale.value = drawingSize.y * camera.projectionMatrix.elements[5] * 0.5;
     uniforms.uPixelRatio.value = renderer.getPixelRatio();
+    markerView.copy(uniforms.uMerge.value).applyMatrix4(camera.matrixWorldInverse);
+    // A 22 CSS-pixel heart, independent of screen size, DPR and camera distance.
+    uniforms.uMarkerScale.value = 22 * Math.max(.5, -markerView.z) * uniforms.uPixelRatio.value
+      / Math.max(.001, uniforms.uProjectionScale.value * 2 * uniforms.uScale.value);
   }
   particles.onBeforeRender = projectionUniforms;
   stars.onBeforeRender = projectionUniforms;
@@ -598,14 +656,14 @@ export function createParticles({ count = 10000, mobile = false, formationPositi
       forward.set(0, 0, 1).applyQuaternion(starBasis);
       configureCurve(origins[0], 1, uniforms.uAnchorA.value, uniforms.uControlAA.value, uniforms.uControlAB.value, heartScale);
       configureCurve(origins[1], -1, uniforms.uAnchorB.value, uniforms.uControlBA.value, uniforms.uControlBB.value, heartScale);
-      geometry.setDrawRange(0, p < .18 || p >= .935 ? particleCount : burstCount);
+      geometry.setDrawRange(0, p < .18 || p >= .935 ? particleCount : p >= .795 && p < .87 ? 360 : burstCount);
       // A transparent sphere must not hard-occlude the forming continents.
       // Use the gradual ray/sphere fade above until the solid globe takes over;
       // restore normal hardware depth for the unchanged explosion and heart.
       material.depthTest = p >= .18 && (p < .935 || p >= 1);
       particles.visible = (formation.available && p < .18) || (p > .637 && p < 1);
       stars.visible = p > .366 && p < .661;
-      flash.visible = p > .638 && p < .690;
+      flash.visible = (p > .638 && p < .690) || (p > .868 && p < .898);
       flash.position.copy(merge);
       flash.quaternion.copy(basis);
       flash.scale.setScalar(heartScale * 0.72);

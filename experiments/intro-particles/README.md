@@ -39,11 +39,14 @@ over America. The returning geographic cloud uses the same gradual visibility
 with the actual sphere opacity, so its rear points do not abruptly disappear.
 
 The particle shaders are original code: one shared GPU point cloud morphs between
-geographic formation, seeded explosion, two growing volumetric hearts, their
-merger and a final shatter back onto the actual country-boundary geometry.
-Alternating heart samples form equally dense twins without consuming new random
-values. `sampleHeartPose` drives their shared GPU uniforms; their distinct centres
-float in depth, converge to zero and leave one heart for just 0.7 s. The final
+geographic formation, seeded explosion, two small heart markers, their impact
+and a final shatter back onto the actual country-boundary geometry.
+The native globe badge's exact Bezier outline is sampled into 180 fine points per
+marker. Camera projection keeps them about 22 CSS pixels wide regardless of DPR
+or viewport; they never grow into full-sized twin hearts. `sampleHeartPose` drives
+their opposing looping paths and preserves approach velocity at the collision.
+The impact produces a second particle burst, which reforms the original large
+heart for just 0.7 s. The final
 world-space morph reaches the original geographic positions before fading into
 the native globe. Production then reveals Journey labels without a new entrance.
 `original-heart.js` restores the first sampler and point sprite verbatim from
@@ -59,8 +62,8 @@ the complete refined Y coordinate is then scaled ×1.04 to restore a little heig
 Z ×0.86 retains depth, with a 0.042-unit cleft and 0.016-unit tip correction.
 The resulting width/height ratio is about 1.08, inside the unchanged camera framing.
 The heart uses 10,000 points on constrained devices,
-22,000 on mobile and 33,000 on desktop, divided equally between the two hearts
-until their merger. A slow 25-degree spatial turn and gentle
+22,000 on mobile and 33,000 on desktop for the large heart. The small-marker phase
+draws only 360 points in total, avoiding an opaque blob at icon size. A slow 25-degree spatial turn and gentle
 1.8% breathing reveal the original volume. Formation uses adaptive
 16,000 / 42,000 / 60,000 points, while explosion retains its existing
 12,000 / 30,000 / 45,000 budget; the impact briefly swirls the same particles into
