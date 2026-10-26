@@ -46,13 +46,38 @@ function boundaryGeometry(rings) {
   );
 }
 
-function countryFillGeometry(rings) {
-  const ring = rings[0].slice();
-  if (ring.length > 1 && ring[0][0] === ring.at(-1)[0] && ring[0][1] === ring.at(-1)[1]) ring.pop();
-  const contour = ring.map(([lon, lat]) => new THREE.Vector2(lon, lat));
-  const positions = ring.flatMap(([lon, lat]) => latLonToVec3(lat, lon, RADIUS + .025).toArray());
-  const indices = THREE.ShapeUtils.triangulateShape(contour, []).flat();
-  return new THREE.BufferGeometry().setAttribute('position', new THREE.Float32BufferAttribute(positions, 3)).setIndex(indices);
+// Prefer opposing editorial positions, with a side fallback on short screens.
+// The complete text block stays outside the actual projected country boundary.
+export function placeOriginLabel(options) {
+  const { index, point, country, labelWidth, labelHeight, width, height, bottom, occupied = [] } = options;
+  const margin = width < 768 ? 20 : 30, top = height < 560 ? 64 : 90;
+  const maxX = Math.max(margin, width - labelWidth - margin);
+  const maxY = Math.max(top, bottom - labelHeight), gap = 22;
+  const box = country || { minX: point.x - 12, maxX: point.x + 12, minY: point.y - 12, maxY: point.y + 12 };
+  const above = box.minY - gap - labelHeight, below = box.maxY + gap;
+  const right = box.maxX + gap, left = box.minX - gap - labelWidth;
+  const candidates = index ? [
+    [point.x - labelWidth - 30, below], [left, point.y + 20],
+    [left, point.y - labelHeight / 2], [point.x - labelWidth / 2, below],
+    [right, point.y + 20],
+  ] : [
+    [point.x + 30, above], [right, point.y - labelHeight * .65],
+    [point.x - labelWidth / 2, above], [left, point.y - labelHeight * .65],
+    [point.x + 30, below],
+  ];
+  const obstacles = [{ minX: box.minX - gap, maxX: box.maxX + gap, minY: box.minY - gap, maxY: box.maxY + gap }, ...occupied];
+  let best, bestScore = Infinity;
+  candidates.forEach(([desiredX, desiredY], order) => {
+    const x = clamp(desiredX, margin, maxX), y = clamp(desiredY, top, maxY);
+    let overlap = 0;
+    for (const obstacle of obstacles) {
+      overlap += Math.max(0, Math.min(x + labelWidth, obstacle.maxX) - Math.max(x, obstacle.minX))
+        * Math.max(0, Math.min(y + labelHeight, obstacle.maxY) - Math.max(y, obstacle.minY));
+    }
+    const score = overlap * 1000 + order * 10 + Math.hypot(x - desiredX, y - desiredY) * .01;
+    if (score < bestScore) { bestScore = score; best = { x, y, minX: x, maxX: x + labelWidth, minY: y, maxY: y + labelHeight }; }
+  });
+  return best;
 }
 
 export async function createGlobe({ canvas, surface = canvas, onInteraction = () => {} }) {
@@ -120,7 +145,6 @@ export async function createGlobe({ canvas, surface = canvas, onInteraction = ()
   group.add(new THREE.LineSegments(overviewGeometry, overviewMaterial));
 
   const detailLayers = [];
-  let originFill = null;
   let detailPromise, disposed = false, width = innerWidth, height = innerHeight;
   let theme = { paper: '#f5f4f0', ink: '#292a28', olive: false, dark: false };
   const paper = new THREE.Color(), ink = new THREE.Color();
@@ -139,7 +163,6 @@ export async function createGlobe({ canvas, surface = canvas, onInteraction = ()
       layer.material.color.setRGB(.392 * (1 - n) + .69 * n, .408 * (1 - n) + .70 * n, .373 * (1 - n) + .65 * n).lerp(ink, palette);
       layer.baseColor.copy(layer.material.color);
     }
-    if (originFill) originFill.material.color.copy(ink);
     renderer.setClearColor(paper, 1);
   }
 
@@ -152,11 +175,6 @@ export async function createGlobe({ canvas, surface = canvas, onInteraction = ()
         const line = new THREE.LineSegments(boundaryGeometry(feature.rings), material);
         line.visible = false; group.add(line);
         detailLayers.push({ iso: feature.iso, line, material, baseColor: new THREE.Color() });
-        if (feature.iso === 'SVK') {
-          originFill = new THREE.Mesh(countryFillGeometry(feature.rings), new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false, side: THREE.DoubleSide }));
-          originFill.visible = false;
-          group.add(originFill);
-        }
       }
       setTheme(theme);
     }).catch(() => { /* Existing overview boundaries remain a complete fallback. */ });
@@ -215,6 +233,26 @@ export async function createGlobe({ canvas, surface = canvas, onInteraction = ()
     };
   }
 
+  const countryBounds = { minX: 0, maxX: 0, minY: 0, maxY: 0 };
+  function projectCountryBounds(iso = 'SVK') {
+    const positions = detailLayers.find(layer => layer.iso === iso)?.line.geometry.attributes.position;
+    if (!positions) return null;
+    countryBounds.minX = countryBounds.minY = Infinity;
+    countryBounds.maxX = countryBounds.maxY = -Infinity;
+    group.updateMatrixWorld(true);
+    for (let i = 0; i < positions.count; i++) {
+      world.fromBufferAttribute(positions, i); group.localToWorld(world);
+      normal.copy(world).normalize(); direction.copy(camera.position).sub(world).normalize();
+      if (normal.dot(direction) <= .025) continue;
+      projected.copy(world).project(camera);
+      if (projected.z < -1 || projected.z > 1) continue;
+      const x = (projected.x + 1) * width / 2, y = (1 - projected.y) * height / 2;
+      countryBounds.minX = Math.min(countryBounds.minX, x); countryBounds.maxX = Math.max(countryBounds.maxX, x);
+      countryBounds.minY = Math.min(countryBounds.minY, y); countryBounds.maxY = Math.max(countryBounds.maxY, y);
+    }
+    return Number.isFinite(countryBounds.minX) ? countryBounds : null;
+  }
+
   function render(visibility = 1, originFocus = 0) {
     camera.updateMatrixWorld(); group.updateMatrixWorld(true);
     const detail = smoothstep((36 - camera.position.length()) / 18, 0, 1);
@@ -231,10 +269,6 @@ export async function createGlobe({ canvas, surface = canvas, onInteraction = ()
         layer.material.color.copy(layer.baseColor).lerp(ink, focus);
       }
       layer.line.visible = layer.material.opacity > .002;
-    }
-    if (originFill) {
-      originFill.material.opacity = .075 * focus * geographyVisibility;
-      originFill.visible = originFill.material.opacity > .001;
     }
     renderer.render(scene, camera);
   }
@@ -256,6 +290,6 @@ export async function createGlobe({ canvas, surface = canvas, onInteraction = ()
     latLonToVec3, overviewDistance, boundaryGeometry, ensureDetail,
     // Read-only world-space samples from the actual existing country borders.
     getFormationPositions: () => overviewGeometry.getAttribute('position').array,
-    setTheme, resize, render, dispose, setInteractive, updateControls, projectSurface,
+    setTheme, resize, render, dispose, setInteractive, updateControls, projectSurface, projectCountryBounds,
   };
 }

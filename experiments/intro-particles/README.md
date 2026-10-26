@@ -15,9 +15,9 @@ Background tabs and WebGL context loss suspend playback without changing progres
 
 The opening GPU cloud gathers onto the actual existing country borders, with one
 shared 360-degree axial rotation on the cloud and globe that settles before the approach.
-Slovakia is highlighted using its existing geographic rings, with a subtle surface
-fill and darker contour. Editorial origin labels give the names priority over the
-towns. After a shorter hold, the camera retreats while one star arcs upward and
+Slovakia is highlighted using only its existing geographic contour; there is no
+surface fill. Editorial origin labels stay outside its projected boundary, with
+the names above their towns. After a shorter hold, the camera retreats while one star arcs upward and
 the other downward, curving back together only for their impact.
 At the end, autoplay stops and the original globe accepts drag/pinch/wheel. The
 existing-style footer offers replay and the verified production Journey/Wedding
@@ -28,10 +28,13 @@ The particle shaders are original code: one shared GPU point cloud morphs betwee
 geographic formation, seeded explosion and a volumetric heart.
 `original-heart.js` restores the first sampler and point sprite verbatim from
 `2f7b1ed75ab0cf6f43b0062870c23631586fdc8f`: approximately 82% shell / 18% interior,
-the original random sequence, point sizes, brightness and sparkle.
-Only geometry is refined: X ×0.90, Y ×0.96, Z ×0.91, a 0.028-unit cleft correction
-and a 0.018-unit tip correction. This keeps the original volume inside today's
-unchanged camera framing. The heart now uses 9,000 points on constrained devices,
+the original random sequence and soft point sprite. The heart alone now has a
+1.2 CSS-pixel minimum point diameter and stronger seeded opacity, so it remains
+clear on light backgrounds without changing formation, stars or explosion.
+Its width stays X ×0.90, while a smooth Y ×0.76–0.90 taper shortens the lower half;
+Z ×0.86 retains depth, with a 0.042-unit cleft and 0.016-unit tip correction.
+The resulting width/height ratio is about 1.12, inside the unchanged camera framing.
+The heart uses 9,000 points on constrained devices,
 20,000 on mobile and 30,000 on desktop. A slow 25-degree spatial turn and gentle
 1.8% breathing reveal the original volume. Formation/explosion use adaptive
 10,000 / 24,000 / 36,000 points; the impact briefly swirls the same particles into
@@ -49,6 +52,7 @@ every motion remains a function of score progress. Camera framing is unchanged.
 From the repository root:
 
     node experiments/intro-particles/tests.mjs
+    node experiments/intro-particles/label-layout.test.mjs
     node experiments/intro-particles/playback.test.mjs
     node experiments/intro-particles/build.mjs
     npm run build

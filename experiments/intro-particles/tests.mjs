@@ -63,10 +63,7 @@ for (let i=0;i<=10000;i++) { const score=toStoryProgress(i/10000); assert.ok(sco
 const detail = JSON.parse(await readFile(new URL('../../geography-detail-v3.json', import.meta.url), 'utf8'));
 const slovakia = detail.features.find(feature=>feature.iso==='SVK');
 assert.ok(slovakia && slovakia.rings[0].length>100, 'Slovakia must use existing geographic data');
-const fillGeometry = new Function('THREE','RADIUS','latLonToVec3',`return (${functionSource(globeSource,'countryFillGeometry')});`)(THREE,radius,latLonToVec3)(slovakia.rings);
-const fillPosition=fillGeometry.getAttribute('position'), fillPoint=new THREE.Vector3(), triangle=new THREE.Vector3();
-for(let i=0;i<fillGeometry.index.count;i+=3){triangle.set(0,0,0);for(let j=0;j<3;j++)triangle.add(fillPoint.fromBufferAttribute(fillPosition,fillGeometry.index.getX(i+j)));triangle.multiplyScalar(1/3);assert.ok(triangle.length()>radius,'Slovakia fill sinks under globe');}
-fillGeometry.dispose();
+assert.ok(!/countryFillGeometry|originFill/.test(globeSource), 'Slovakia must have an outline only, without a surface fill');
 
 for (const count of [10000, 24000, 36000]) {
   const effect = createParticles({ count, mobile: count < 36000, formationPositions });
@@ -105,9 +102,10 @@ for (const count of [10000, 24000, 36000]) {
     const expectedSeed = [historical(), historical(), historical()];
     for (let axis = 0; axis < 3; axis += 1) assert.ok(Math.abs(heartSeeds.array[i*3+axis]-expectedSeed[axis]) < 6e-8, 'Original brightness/size seed changed');
     const [x,y,z] = original;
-    const cleft = .028 * Math.exp(-x*x/.025) * THREE.MathUtils.smoothstep(y,.55,.88);
-    const tip = .018 * THREE.MathUtils.smoothstep(-y,.92,1.11);
-    const expected = [x*.90,(y-cleft+tip)*.96,z*.91];
+    const cleft = .042 * Math.exp(-x*x/.025) * THREE.MathUtils.smoothstep(y,.55,.88);
+    const tip = .016 * THREE.MathUtils.smoothstep(-y,.92,1.11);
+    const taper = THREE.MathUtils.lerp(.76,.90,THREE.MathUtils.smoothstep(y,-.18,.40));
+    const expected = [x*.90,(y-cleft+tip)*taper-.08,z*.86];
     for (let axis = 0; axis < 3; axis += 1) assert.ok(Math.abs(heart.array[i*3+axis]-expected[axis]) < 1.2e-7, 'Heart differs from original samples plus the documented geometry refinement');
     assert.equal(active.getX(i), i < expectedCount ? 1 : 0);
     if (i < expectedCount) {
@@ -118,9 +116,9 @@ for (const count of [10000, 24000, 36000]) {
   assert.ok(interior > expectedCount*.15 && interior < expectedCount*.21, 'Original 82% shell / 18% interior distribution changed');
   const size = new THREE.Box3().setFromBufferAttribute(heart).getSize(new THREE.Vector3());
   assert.ok(size.x > 2.02 && size.x <= HEART_BOUNDS.width, 'Refined heart exceeds the unchanged horizontal framing');
-  assert.ok(size.y > 2.08 && size.y <= HEART_BOUNDS.height, 'Refined proportions lost their height');
-  assert.ok(size.z > 1.18 && size.z <= HEART_BOUNDS.depth, 'Original spatial volume was replaced by a flat or shallow cloud');
-  assert.ok(size.x / size.y < .99, 'Heart became too wide');
+  assert.ok(size.y > 1.78 && size.y < 1.88, 'The lower heart taper is elongated again');
+  assert.ok(size.z > 1.10 && size.z <= HEART_BOUNDS.depth, 'Original spatial volume was replaced by a flat or shallow cloud');
+  assert.ok(size.x / size.y > 1.08 && size.x / size.y < 1.18, 'Heart lost its balanced, shorter proportions');
   effect.dispose();
   assert.equal(effect.group.children.length, 0);
 }
@@ -249,9 +247,9 @@ for (const [width, height] of viewports) {
 
 effect.dispose(); sourceGeometry.dispose();
 console.log('PASS — finite 10k / 24k / 36k GPU points; denser 9k / 20k / 30k hearts retain original sampler/sprite and seeded appearance.');
-console.log('PASS — 2f7b1ed sampler/sprite checksum and spatial heart proportions preserved; opposite star arcs stay clear until their impact.');
+console.log('PASS — 2f7b1ed sampler/sprite checksum preserved with shorter, balanced spatial heart proportions; opposite star arcs stay clear until their impact.');
 console.log('PASS — stable geometries/attributes; no independent clock; 1,001 forward/backward states identical across five viewports.');
 console.log(`PASS — origins ${separationKm.toFixed(2)} km apart; minimum camera radius ${minimumCamera.toFixed(3)}; minimum star radius ${minimumStarRadius.toFixed(3)}.`);
 console.log(`PASS — star depth ≥${minimumStarDepth.toFixed(2)}, edge clearance ≥${edgeMargin.toFixed(1)} px; fixed trajectory basis; clean final globe handoff.`);
 console.log(`PASS — distinct star cores remain ≥${minimumSeparateCores.toFixed(1)} px apart through p=.61, without crossing before the p=.64 merger.`);
-console.log('PASS — faster monotone pacing, synchronized 360° formation spin, Slovakia focus/fill, clean liftoff and narrow wakes.');
+console.log('PASS — faster monotone pacing, synchronized 360° formation spin, Slovakia outline only, clean liftoff and narrow wakes.');

@@ -20,11 +20,12 @@ function advanceLegacyHeartSeed(random) {
 }
 
 function refineOriginalHeart([x, y, z]) {
-  // Geometry only: a 10% narrower body, 4% shorter height and framing-safe depth.
-  // The tiny upper/lower corrections clean the cleft and soften the final tip.
-  const cleft = .028 * Math.exp(-x * x / .025) * THREE.MathUtils.smoothstep(y, .55, .88);
-  const tip = .018 * THREE.MathUtils.smoothstep(-y, .92, 1.11);
-  return [x * .90, (y - cleft + tip) * .96, z * .91];
+  // Retain the original shell/interior samples, with fuller lobes and a shorter
+  // lower taper. Compress the long lower half rather than widening the heart.
+  const cleft = .042 * Math.exp(-x * x / .025) * THREE.MathUtils.smoothstep(y, .55, .88);
+  const tip = .016 * THREE.MathUtils.smoothstep(-y, .92, 1.11);
+  const taper = THREE.MathUtils.lerp(.76, .90, THREE.MathUtils.smoothstep(y, -.18, .40));
+  return [x * .90, (y - cleft + tip) * taper - .08, z * .86];
 }
 
 function geographicSamples(positions, count, random) {
@@ -146,16 +147,17 @@ const particleVertex = /* glsl */ `
     vAlpha = (smoothPhase(0.638, 0.652) * (1.0 - dissolve)
              + formationAlpha) * mix(0.58, 1.0, aSeed.y)
              * sparkle * 0.88;
-    // Verbatim first-prototype point size, brightness and sparkle, applied only
-    // while gathering into the heart. Formation and explosion keep today's style.
+    // Keep the original soft point sprite and seeded variation. Subpixel points
+    // were washing out on light backgrounds: strengthen the heart alone in CSS
+    // pixel units, independent of device DPR and without enlarging the cloud.
     float heartDriftPhase = uProgress * 12.0 + aHeartSeed.x * 6.2831853;
-    float heartSparkle = 0.76 + 0.24 * pow(0.5 + 0.5 * sin(heartDriftPhase * 3.7), 6.0);
-    float heartSize = mix(0.015, 0.038, aHeartSeed.z) * (uScale / 6.0);
+    float heartSparkle = 0.87 + 0.13 * pow(0.5 + 0.5 * sin(heartDriftPhase * 3.7), 6.0);
+    float heartSize = mix(0.024, 0.050, aHeartSeed.z) * (uScale / 6.0);
     float originalSize = clamp(heartSize * uProjectionScale / max(0.5, -viewPosition.z),
-                              0.7 * uPixelRatio, 3.2 * uPixelRatio);
+                              1.2 * uPixelRatio, 3.2 * uPixelRatio);
     originalSize *= mix(1.0, 0.55, dissolve);
     float originalAlpha = smoothPhase(0.638, 0.652) * (1.0 - dissolve)
-                          * mix(0.38, 0.95, aHeartSeed.y) * heartSparkle;
+                          * mix(0.68, 1.0, aHeartSeed.y) * heartSparkle;
     gl_PointSize = mix(gl_PointSize, originalSize, gather);
     vAlpha = mix(vAlpha, originalAlpha * aHeartActive, gather);
     vSoftness = 0.0;

@@ -4,7 +4,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import config from '../../config-v3.js';
 import { monogram } from '../../brand-v3.js';
 import { bindGlobeInput } from '../../globe-input-v3.js';
-import { createGlobe } from './globe.js';
+import { createGlobe, placeOriginLabel } from './globe.js';
 import { createParticles, HEART_BOUNDS } from './particles.js';
 import { createChoreography } from './choreography.js';
 import { createPlayback } from './playback.js';
@@ -121,16 +121,19 @@ function updateLabels(p){
     mesh.scale.setScalar(2.5*worldPerPixel/radius);
   };
   const alpha=pose?.originReveal||0;
+  const originCountry=alpha>.01?globe.projectCountryBounds('SVK'):null,occupied=[];
+  const originFooter=mode==='manual'?$('story-caption'):$('utility-controls');
+  const originBottom=Math.min(height-85,originFooter.getBoundingClientRect().top-22);
   $('origin-connectors').setAttribute('viewBox',`0 0 ${width} ${height}`);
   $('origin-labels').setAttribute('aria-hidden',String(alpha<.01));
   for(const [index,o] of origins.entries()){
     const point=globe.projectSurface(o.position),visible=alpha>.01&&point.visible;
     o.mesh.material.opacity=visible?alpha:0;o.mesh.visible=visible;sizeMarker(o.mesh,.009);
-    const labelWidth=width<768?118:148;
-    const x=THREE.MathUtils.clamp(point.x+(index?-labelWidth-30:30),20,width-labelWidth-20);
-    const y=THREE.MathUtils.clamp(point.y+(index?48:-88),95,height-230);
+    const labelWidth=width<768?118:148,labelHeight=width<768?72:80;
+    const placement=placeOriginLabel({index,point,country:originCountry,labelWidth,labelHeight,width,height,bottom:originBottom,occupied});
+    const {x,y}=placement;if(visible)occupied.push(placement);
     o.label.style.transform=`translate3d(${x}px,${y}px,0)`;o.label.style.opacity=visible?alpha:0;
-    for(const [key,value] of Object.entries({x1:point.x,y1:point.y,x2:index?x+labelWidth:x,y2:y+15}))o.line.setAttribute(key,value);
+    for(const [key,value] of Object.entries({x1:point.x,y1:point.y,x2:THREE.MathUtils.clamp(point.x,x-6,x+labelWidth+6),y2:THREE.MathUtils.clamp(point.y,y-8,y+labelHeight+8)}))o.line.setAttribute(key,value);
     o.line.style.opacity=visible?String(alpha*.32):'0';
   }
   const reveal=pose?.finalReveal||0,slots={left:[],right:[]};
