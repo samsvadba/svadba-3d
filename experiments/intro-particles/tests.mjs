@@ -9,6 +9,54 @@ import { createChoreography, STORY_PHASES } from './choreography.js';
 
 const globeSource = await readFile(new URL('./globe.js', import.meta.url), 'utf8');
 const countries = JSON.parse(await readFile(new URL('../../countries-v3.json', import.meta.url), 'utf8'));
+const heartSvg = await readFile(new URL('./heart-outline.svg', import.meta.url), 'utf8');
+const heartPath = heartSvg.match(/<path\b[^>]*\bd="([^"]+)"/s)?.[1];
+assert.ok(heartPath, 'Missing the supplied SVG heart fixture');
+const heartNumbers = heartPath.match(/[-+]?(?:\d*\.)?\d+/g).map(Number);
+assert.equal((heartNumbers.length - 2) % 6, 0, 'Unexpected cubic SVG path');
+const referenceRaw = [];
+let curveStart = heartNumbers.slice(0, 2);
+for (let offset = 2; offset < heartNumbers.length; offset += 6) {
+  const cubic = [curveStart, heartNumbers.slice(offset, offset + 2), heartNumbers.slice(offset + 2, offset + 4), heartNumbers.slice(offset + 4, offset + 6)];
+  for (let step = 0; step < 256; step += 1) {
+    const t = step / 256, s = 1 - t;
+    referenceRaw.push([0, 1].map(axis => s ** 3 * cubic[0][axis] + 3 * s * s * t * cubic[1][axis] + 3 * s * t * t * cubic[2][axis] + t ** 3 * cubic[3][axis]));
+  }
+  curveStart = cubic[3];
+}
+const referenceX = referenceRaw.map(point => point[0]), referenceY = referenceRaw.map(point => point[1]);
+const referenceMinX = Math.min(...referenceX), referenceMaxX = Math.max(...referenceX);
+const referenceMinY = Math.min(...referenceY), referenceMaxY = Math.max(...referenceY);
+const referenceCenter = [(referenceMinX + referenceMaxX) / 2, (referenceMinY + referenceMaxY) / 2];
+const referenceScale = 1.92 / (referenceMaxX - referenceMinX);
+const referenceCurve = referenceRaw.map(([x, y]) => [(x - referenceCenter[0]) * referenceScale, (referenceCenter[1] - y) * referenceScale]);
+const referenceHeight = (referenceMaxY - referenceMinY) * referenceScale;
+const referenceNotch = [(heartNumbers[0] - referenceCenter[0]) * referenceScale, (referenceCenter[1] - heartNumbers[1]) * referenceScale];
+const referenceTip = referenceCurve.reduce((low, point) => point[1] < low[1] ? point : low, referenceCurve[0]);
+assert.ok(1.92 / referenceHeight > 1.21 && 1.92 / referenceHeight < 1.22, 'SVG proportions must be preserved with uniform scaling');
+const insideReference = ([x, y]) => {
+  let result = false;
+  for (let i = 0, j = referenceCurve.length - 1; i < referenceCurve.length; j = i++) {
+    const a = referenceCurve[i], b = referenceCurve[j];
+    if ((a[1] > y) !== (b[1] > y) && x < (b[0] - a[0]) * (y - a[1]) / (b[1] - a[1]) + a[0]) result = !result;
+  }
+  return result;
+};
+const referenceGrid = new Map(), gridSize = .06;
+const gridKey = (x, y) => `${Math.floor(x / gridSize)},${Math.floor(y / gridSize)}`;
+for (const point of referenceCurve) {
+  const key = gridKey(...point);
+  if (!referenceGrid.has(key)) referenceGrid.set(key, []);
+  referenceGrid.get(key).push(point);
+}
+const distanceToReference = ([x, y]) => {
+  let minimum = Infinity;
+  const column = Math.floor(x / gridSize), row = Math.floor(y / gridSize);
+  for (let dx = -1; dx <= 1; dx += 1) for (let dy = -1; dy <= 1; dy += 1) {
+    for (const point of referenceGrid.get(`${column + dx},${row + dy}`) || []) minimum = Math.min(minimum, Math.hypot(x - point[0], y - point[1]));
+  }
+  return minimum;
+};
 
 // Load existing pure geographic helpers without constructing a WebGL DOM.
 function functionSource(source, name) {
@@ -71,54 +119,52 @@ for (const count of [8000, 16000, 24000]) {
   assert.ok(heartMeta && heartMeta.itemSize === 3, 'Heart populations need their own GPU metadata');
   const box = new THREE.Box3().setFromBufferAttribute(heart);
   const size = box.getSize(new THREE.Vector3());
-  assert.ok(size.x >= 1.98 && size.x <= HEART_BOUNDS.width);
-  assert.ok(size.y > 2.10 && size.y <= HEART_BOUNDS.height, 'Heart lost its elongated silhouette or exceeds existing framing');
-  assert.ok(size.z > .18 && size.z <= .28, 'Heart should have shallow 2.5D depth, not the former inflated volume');
+  assert.ok(size.x >= 1.90 && size.x <= HEART_BOUNDS.width);
+  assert.ok(size.y >= referenceHeight - .02 && size.y <= Math.min(1.85, HEART_BOUNDS.height), 'Heart lost the supplied SVG proportions or exceeds existing framing');
+  assert.ok(size.z > .15 && size.z <= .24, 'Heart should have shallow 2.5D depth, not the former inflated volume');
   const groups = [[], [], []], contourBins = new Array(256);
-  let leftLobe = -Infinity, rightLobe = -Infinity, cleft = -Infinity;
-  let lowTip = 0, centralInterior = 0, front = 0, back = 0;
+  let leftLobe = -Infinity, rightLobe = -Infinity, cleft = Infinity;
+  let lowTip = 0, tipX = 0, centralInterior = 0, front = 0, back = 0;
   for (let i = 0; i < count; i += 1) {
     const x = heart.getX(i), y = heart.getY(i), z = heart.getZ(i);
     const category = heartMeta.getX(i), seed = heartMeta.getY(i), arc = heartMeta.getZ(i);
     assert.ok(Number.isInteger(category) && category >= 0 && category <= 2, 'Unknown heart population');
     assert.ok(seed >= 0 && seed <= 1 && arc >= 0 && arc <= 1, 'Heart metadata outside normalized range');
-    assert.ok(Math.abs(z) <= .14, 'Heart particle escapes its shallow depth envelope');
+    assert.ok(Math.abs(z) <= .12, 'Heart particle escapes its shallow depth envelope');
     groups[category].push([x, y, z]);
     if (category === 0) {
       if (x < -.25 && x > -.85) leftLobe = Math.max(leftLobe, y);
       if (x > .25 && x < .85) rightLobe = Math.max(rightLobe, y);
-      if (Math.abs(x) < .055 && y > 0) cleft = Math.max(cleft, y);
-      if (Math.abs(x) < .16 && y < -.98) lowTip += 1;
+      cleft = Math.min(cleft, Math.hypot(x - referenceNotch[0], y - referenceNotch[1]));
+      if (Math.abs(x - referenceTip[0]) < .14 && y < referenceTip[1] + .055) { lowTip += 1; tipX += x; }
       const bin = Math.min(255, Math.floor(arc * 256));
       contourBins[bin] ||= [x, y];
     }
     if (category === 1) {
-      assert.ok(Math.abs(z) <= .075, 'Interior is too thick for an airy 2.5D heart');
+      assert.ok(Math.abs(z) <= .07, 'Interior is too thick for an airy 2.5D heart');
       if (Math.hypot(x, y) < .25) centralInterior += 1;
     }
     if (z > .035) front += 1;
     if (z < -.035) back += 1;
   }
-  assert.equal(groups[0].length, Math.floor(count * .60), 'Contour must contain 60% of particles');
-  assert.equal(groups[1].length, Math.floor(count * .25), 'Airy interior must contain 25% of particles');
-  assert.equal(groups[2].length, count - groups[0].length - groups[1].length, 'Ambient population must contain the remaining 15%');
-  assert.ok(leftLobe > 1.01 && rightLobe > 1.01, 'Rounded upper lobes are missing');
-  assert.ok(cleft < leftLobe - .36 && cleft < rightLobe - .36, 'The narrow central cleft is not defined');
-  assert.ok(lowTip > count * .003, 'The elongated lower tip is missing');
-  assert.ok(centralInterior > count * .003 && centralInterior < count * .04, 'Interior became empty or a dense central blob');
+  assert.equal(groups[0].length, Math.floor(count * .58), 'Contour must contain 58% of particles');
+  assert.equal(groups[1].length, Math.floor(count * .32), 'Airy interior must contain 32% of particles');
+  assert.equal(groups[2].length, count - groups[0].length - groups[1].length, 'Ambient population must contain the remaining 10%');
+  assert.ok(leftLobe > .74 && rightLobe > .74, 'Rounded SVG upper lobes are missing');
+  assert.ok(cleft < .02 && referenceNotch[1] < leftLobe - .22 && referenceNotch[1] < rightLobe - .22, 'The supplied central cleft is not defined');
+  assert.ok(lowTip > count * .003, 'The supplied pointed lower tip is missing');
+  assert.ok(Math.abs(tipX / lowTip - referenceTip[0]) < .04, 'The SVG lower-tip asymmetry was lost');
+  assert.ok(centralInterior > count * .004 && centralInterior < count * .07, 'Interior became empty or a dense central blob');
   assert.ok(front > count * .15 && back > count * .15, 'Shallow heart needs particles on both sides of its depth plane');
-  const contour = contourBins.filter(Boolean);
-  assert.ok(contour.length > 248, 'Contour has visible gaps along its perimeter');
-  const inside = ([x, y]) => {
-    let result = false;
-    for (let i = 0, j = contour.length - 1; i < contour.length; j = i++) {
-      const a = contour[i], b = contour[j];
-      if ((a[1] > y) !== (b[1] > y) && x < (b[0] - a[0]) * (y - a[1]) / (b[1] - a[1]) + a[0]) result = !result;
-    }
-    return result;
-  };
-  assert.ok(groups[1].filter(inside).length > groups[1].length * .93, 'Interior particles are not contained by the heart silhouette');
-  assert.ok(groups[2].filter(point => !inside(point)).length > groups[2].length * .70, 'Ambient particles collapse into another filled heart');
+  assert.ok(contourBins.filter(Boolean).length > 248, 'Contour has visible gaps along its perimeter');
+  const contourDistances = groups[0].map(distanceToReference);
+  assert.ok(contourDistances.every(distance => distance < .055), 'Contour differs from the uniformly scaled supplied SVG');
+  assert.ok(contourDistances.filter(distance => distance > .009).length > groups[0].length * .15, 'Contour became a thin mechanical single-width line');
+  const contourBox = new THREE.Box2().setFromPoints(groups[0].map(([x, y]) => new THREE.Vector2(x, y)));
+  const contourSize = contourBox.getSize(new THREE.Vector2());
+  assert.ok(Math.abs(contourSize.x / contourSize.y - 1.92 / referenceHeight) < .09, 'Heart was stretched horizontally or vertically instead of uniformly scaled');
+  assert.ok(groups[1].filter(insideReference).length > groups[1].length * .93, 'Interior particles are not contained by the SVG silhouette');
+  assert.ok(groups[2].filter(point => !insideReference(point)).length > groups[2].length * .70, 'Ambient particles collapse into another filled heart');
   const ambientSides = [0, 0, 0, 0];
   for (const [x, y] of groups[2]) ambientSides[(y >= 0 ? 2 : 0) + (x >= 0 ? 1 : 0)] += 1;
   assert.ok(ambientSides.every(total => total > groups[2].length * .10), 'Ambient particles cluster in only one part of the silhouette');
@@ -239,8 +285,8 @@ for (const [width, height] of viewports) {
 }
 
 effect.dispose(); sourceGeometry.dispose();
-console.log('PASS — 8,000 / 16,000 / 24,000 finite GPU particles; actual country-border formation; 60/25/15 contour, airy interior and ambient heart populations.');
-console.log('PASS — shallow 2.5D silhouette, rounded lobes, narrow cleft, elongated tip, continuous outline and distributed exterior particles.');
+console.log('PASS — 8,000 / 16,000 / 24,000 finite GPU particles; actual country-border formation; 58/32/10 contour, airy interior and ambient heart populations.');
+console.log('PASS — supplied SVG silhouette, uniform aspect ratio, asymmetric cleft/tip, shallow depth, variable contour band and distributed exterior particles.');
 console.log('PASS — stable geometries/attributes; no independent clock; 1,001 forward/backward states identical across five viewports.');
 console.log(`PASS — origins ${separationKm.toFixed(2)} km apart; minimum camera radius ${minimumCamera.toFixed(3)}; minimum star radius ${minimumStarRadius.toFixed(3)}.`);
 console.log(`PASS — star depth ≥${minimumStarDepth.toFixed(2)}, edge clearance ≥${edgeMargin.toFixed(1)} px; fixed trajectory basis; clean final globe handoff.`);

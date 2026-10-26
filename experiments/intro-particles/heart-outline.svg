@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="700" height="400" viewBox="0 0 700 400" preserveAspectRatio="xMidYMid meet">
+  <title>Srdce – vyčistená krivka z dodanej predlohy</title>
+  <desc>Single closed path measured from the source image. Original aspect ratio and asymmetry retained; multiple pen strokes and the tail below the tip removed. Scale uniformly; do not stretch X and Y independently. Source: user-provided IMG_5067(1).jpeg, 700 by 400 pixels.</desc>
+  <path id="heart-shape" d="M 358.800 85.500
+  C 373.433 23.476 439.033 -1.301 492.471 16.471
+  C 519.501 25.461 543.420 45.338 556.793 70.358
+  C 567.933 91.201 571.756 115.612 567.800 137.661
+  C 558.906 187.239 510.684 224.871 466.102 254.028
+  C 443.886 268.557 422.575 280.982 402.413 296.456
+  C 378.875 314.522 356.904 336.744 341.500 367.000
+  C 311.763 308.680 265.417 282.459 219.703 246.741
+  C 178.097 214.233 137.014 173.858 136.535 123.657
+  C 136.419 111.455 138.701 98.673 142.895 87.259
+  C 147.685 74.223 154.969 62.972 163.936 53.141
+  C 180.480 35.002 202.755 21.697 228.186 15.019
+  C 248.912 9.576 271.735 8.536 292.554 15.476
+  C 324.172 26.015 351.167 54.959 358.800 85.500
+  Z" fill="none" stroke="#ed1710" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/>
+</svg>

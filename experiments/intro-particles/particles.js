@@ -19,34 +19,61 @@ function advanceLegacyHeartSeed(random) {
 }
 
 function heartProfile(count) {
-  // A deliberate 2.5D redraw: rounded lobes, a narrow V cleft and flowing sides
-  // tapering into a slender tip. Only the cleft and tip are intentional cusps.
-  const left = [
-    [[0, .48], [-.12, .78], [-.29, 1.02], [-.51, 1.02]],
-    [[-.51, 1.02], [-.73, 1.02], [-1, .80], [-1, .48]],
-    [[-1, .48], [-1, .16], [-.82, -.10], [-.61, -.34]],
-    [[-.61, -.34], [-.40, -.58], [-.11, -.92], [0, -1.12]],
-  ];
-  const curves = [...left, ...left.slice().reverse().map(curve => curve.slice().reverse().map(([x, y]) => [-x, y]))];
+  // Exact M/C/Z curve from the supplied heart-outline.svg. Uniform scaling
+  // preserves its naturally wider lobes, narrow cleft and slightly organic tip.
+  const path = `M 358.800 85.500
+    C 373.433 23.476 439.033 -1.301 492.471 16.471
+    C 519.501 25.461 543.420 45.338 556.793 70.358
+    C 567.933 91.201 571.756 115.612 567.800 137.661
+    C 558.906 187.239 510.684 224.871 466.102 254.028
+    C 443.886 268.557 422.575 280.982 402.413 296.456
+    C 378.875 314.522 356.904 336.744 341.500 367.000
+    C 311.763 308.680 265.417 282.459 219.703 246.741
+    C 178.097 214.233 137.014 173.858 136.535 123.657
+    C 136.419 111.455 138.701 98.673 142.895 87.259
+    C 147.685 74.223 154.969 62.972 163.936 53.141
+    C 180.480 35.002 202.755 21.697 228.186 15.019
+    C 248.912 9.576 271.735 8.536 292.554 15.476
+    C 324.172 26.015 351.167 54.959 358.800 85.500 Z`;
+  const coordinates = path.match(/-?\d+(?:\.\d+)?/g).map(Number);
+  const curves = [];
+  let previous = coordinates.slice(0, 2);
+  for (let i = 2; i < coordinates.length; i += 6) {
+    const curve = [previous, coordinates.slice(i, i + 2), coordinates.slice(i + 2, i + 4), coordinates.slice(i + 4, i + 6)];
+    curves.push(curve);
+    previous = curve[3];
+  }
+  const rawPoints = [];
+  for (const curve of curves) {
+    for (let i = 0; i < 96; i += 1) {
+      const t = i / 96, s = 1 - t;
+      rawPoints.push([0, 1].map(axis => curve[0][axis] * s ** 3 + 3 * curve[1][axis] * s * s * t + 3 * curve[2][axis] * s * t * t + curve[3][axis] * t ** 3));
+    }
+  }
+  const minX = Math.min(...rawPoints.map(point => point[0]));
+  const maxX = Math.max(...rawPoints.map(point => point[0]));
+  const minY = Math.min(...rawPoints.map(point => point[1]));
+  const maxY = Math.max(...rawPoints.map(point => point[1]));
+  const scale = 1.92 / (maxX - minX);
+  const centerX = (minX + maxX) * .5, centerY = (minY + maxY) * .5;
   const points = [], lengths = [0];
   let total = 0;
-  for (const curve of curves) {
-    for (let i = 0; i < 64; i += 1) {
-      const t = i / 64, s = 1 - t;
-      const point = [0, 1].map(axis => curve[0][axis] * s ** 3 + 3 * curve[1][axis] * s * s * t + 3 * curve[2][axis] * s * t * t + curve[3][axis] * t ** 3);
-      if (points.length) {
-        const previous = points[points.length - 1];
-        total += Math.hypot(point[0] - previous[0], point[1] - previous[1]);
-        lengths.push(total);
-      }
-      points.push(point);
+  for (const rawPoint of rawPoints) {
+    const point = [(rawPoint[0] - centerX) * scale, (centerY - rawPoint[1]) * scale];
+    if (points.length) {
+      const previous = points[points.length - 1];
+      total += Math.hypot(point[0] - previous[0], point[1] - previous[1]);
+      lengths.push(total);
     }
+    points.push(point);
   }
   const last = points[points.length - 1];
   total += Math.hypot(points[0][0] - last[0], points[0][1] - last[1]);
   points.push(points[0]); lengths.push(total);
-  const contourCount = Math.floor(count * .60);
-  const interiorCount = Math.floor(count * .25);
+  const signedArea = points.reduce((sum, point, i) => i ? sum + points[i - 1][0] * point[1] - point[0] * points[i - 1][1] : sum, 0);
+  const winding = signedArea >= 0 ? 1 : -1;
+  const contourCount = Math.floor(count * .58);
+  const interiorCount = Math.floor(count * .32);
   return (random, index) => {
     const category = index < contourCount ? 0 : index < contourCount + interiorCount ? 1 : 2;
     const groupStart = category === 0 ? 0 : category === 1 ? contourCount : contourCount + interiorCount;
@@ -61,27 +88,28 @@ function heartProfile(count) {
     }
     const mix = (distance - lengths[low]) / Math.max(.00001, lengths[high] - lengths[low]);
     let x = THREE.MathUtils.lerp(points[low][0], points[high][0], mix);
-    let y = THREE.MathUtils.lerp(points[low][1], points[high][1], mix) + .05;
+    let y = THREE.MathUtils.lerp(points[low][1], points[high][1], mix);
     const dx = points[high][0] - points[low][0], dy = points[high][1] - points[low][1];
     const normalLength = Math.max(.00001, Math.hypot(dx, dy));
-    const nx = dy / normalLength, ny = -dx / normalLength;
+    const nx = winding * dy / normalLength, ny = -winding * dx / normalLength;
     let z;
     if (category === 0) {
       const layer = Math.floor(random() * 5) - 2;
-      const offset = (random() * 2 - 1) * .018 - Math.abs(layer) * .0015;
+      const band = .012 + .026 * Math.pow(random(), .7);
+      const offset = (random() + random() - 1) * band;
       x += nx * offset; y += ny * offset;
-      z = layer * .055 + (random() * 2 - 1) * .008;
+      z = layer * .044 + (random() * 2 - 1) * .007;
     } else if (category === 1) {
-      const inward = Math.sqrt(random()) * .925;
-      x *= inward; y = (y - .05) * inward + .05;
-      z = (random() * 2 - 1) * .07;
+      const inward = Math.sqrt(random()) * (.88 + .055 * Math.sin(arc * 18.8495559));
+      x *= inward; y *= inward;
+      z = (random() * 2 - 1) * .065;
     } else {
       // An airy outside population, constrained to the unchanged camera envelope.
       const xRoom = nx > 0 ? (1.038 - x) / nx : nx < 0 ? (-1.038 - x) / nx : Infinity;
       const yRoom = ny > 0 ? (1.115 - y) / ny : ny < 0 ? (-1.115 - y) / ny : Infinity;
-      const offset = Math.min(.022 + Math.pow(random(), 1.4) * .13, Math.min(xRoom, yRoom) * .85);
+      const offset = Math.min(.035 + Math.pow(random(), 1.4) * .075, Math.min(xRoom, yRoom) * .85);
       x += nx * offset; y += ny * offset;
-      z = (random() * 2 - 1) * .13;
+      z = (random() * 2 - 1) * .11;
     }
     // x: contour/interior/ambient; y: individual size/contrast; z: contour arc.
     return { position: [x, y, z], meta: [category, contrast, arc] };
@@ -161,10 +189,10 @@ const particleVertex = /* glsl */ `
                    * uScale * 0.11;
 
     float hold = phase(0.85, 0.95);
-    float heartbeat = pow(max(0.0, sin(hold * 12.5663706)), 3.0);
-    float pulse = 1.0 + heartbeat * 0.018;
+    float heartbeat = pow(max(0.0, sin(hold * 6.2831853)), 3.0);
+    float pulse = 1.0 + heartbeat * 0.016;
     // A shallow side-to-side reveal returns fully front-facing before dissolution.
-    float angle = sin(hold * 3.14159265) * 0.12217305;
+    float angle = sin(hold * 3.14159265) * 0.08726646;
     mat3 turn = mat3(cos(angle), 0.0, -sin(angle),
                      0.0, 1.0, 0.0,
                      sin(angle), 0.0, cos(angle));
@@ -216,10 +244,11 @@ const particleVertex = /* glsl */ `
              * sparkle * (0.88 + lightWave * 0.35);
     float brokenArc = sin(aHeartMeta.z * 106.81415
                           + sin(aHeartMeta.z * 31.415927) * 0.7);
-    float contourBreak = 0.50 + 0.50 * smoothstep(-0.75, -0.20, brokenArc);
+    float contourBreak = 0.68 + 0.32 * smoothstep(-0.75, -0.20, brokenArc);
     float contrast = aHeartMeta.y;
     float contourAlpha = (0.55 + 0.65 * pow(contrast, 0.65)) * contourBreak;
-    float insideAlpha = 0.45 + 0.40 * pow(contrast, 1.2);
+    float cloudStructure = 0.48 + 0.52 * pow(0.5 + 0.5 * sin(aHeart.x * 8.5 + sin(aHeart.y * 9.0) * 0.8), 1.6);
+    float insideAlpha = (0.40 + 0.40 * pow(contrast, 1.2)) * cloudStructure;
     float outsideAlpha = 0.12 + 0.22 * contrast * contrast;
     float heartAlpha = contour * contourAlpha + interior * insideAlpha
                        + (1.0 - contour - interior) * outsideAlpha;
