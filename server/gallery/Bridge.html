@@ -1,0 +1,19 @@
+<!doctype html><html><head><base target="_top"><meta charset="utf-8"></head><body>
+<script>
+// google.script.run is available only inside this HTML Service document.
+const channel = <?= JSON.stringify(channel) ?>;
+const parentOrigin = 'https://samsvadba.github.io';
+const inFlight = new Set();
+window.addEventListener('message', event => {
+  const message = event.data;
+  if (event.source !== window.top || event.origin !== parentOrigin || !channel || message?.channel !== channel || message.type !== 'gallery:call') return;
+  if (!['status','list','upload','media'].includes(message.action) || typeof message.id !== 'string' || inFlight.has(message.id) || inFlight.size >= 4) return;
+  inFlight.add(message.id);
+  const reply = result => {
+    inFlight.delete(message.id);
+    window.top.postMessage({ type:'gallery:result', channel, id:message.id, result }, parentOrigin);
+  };
+  google.script.run.withSuccessHandler(reply).withFailureHandler(() => reply({ok:false,error:{code:'STORAGE'}})).galleryCall(message.action,message.data || {});
+});
+if (channel) window.top.postMessage({ type:'gallery:ready', channel },parentOrigin);
+</script></body></html>
