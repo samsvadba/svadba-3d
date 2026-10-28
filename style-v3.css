@@ -46,6 +46,7 @@ body[data-state="memory"] #label-layer .city-label{visibility:visible}
 /* Optional destination video: one lazy-loaded fullscreen scene, currently Tokyo only. */
 #destination-video-scene{position:fixed;inset:0;z-index:80;width:100vw;height:100dvh;overflow:hidden;background:var(--paper);opacity:0;visibility:hidden;color:var(--video-ink)}
 #destination-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center}
+#destination-video-particles{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
 .destination-video-shade{position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,rgba(0,0,0,.15),transparent 22%,transparent 65%,rgba(0,0,0,.32))}
 .destination-video-caption{position:absolute;left:max(7vw,24px);bottom:max(8dvh,calc(env(safe-area-inset-bottom) + 24px));text-shadow:var(--video-caption-shadow)}
 .destination-video-caption h2{font:400 clamp(42px,6vw,76px)/1 'Cormorant Garamond',serif;letter-spacing:.08em;text-transform:uppercase;margin:0 0 12px}
@@ -57,7 +58,7 @@ body[data-state="memory"] #label-layer .city-label{visibility:visible}
 body[data-fullscreen-video] #persistent-header,body[data-fullscreen-video] #bottom-nav{visibility:hidden}
 /* Persistent global utilities, beneath the existing story navigation. */
 :root{color:var(--ink);background:var(--paper)}
-html[data-theme="dark"]{--paper:#20221f;--ink:#ece9df;--line:#56594f;--connector:#c1c4b8;--selected-border:#aeb3a2;--media-paper:#292c26;--origin:#c48b94;color-scheme:dark}
+html[data-theme="dark"]{--paper:#000;--ink:#fff;--line:#56594f;--connector:#c1c4b8;--selected-border:#aeb3a2;--media-paper:#292c26;--origin:#c48b94;color-scheme:dark}
 body,#journey-scene,#final-transition-screen,.city-label,.memory{transition:background-color .45s,color .45s,border-color .45s}
 #bottom-nav{bottom:calc(env(safe-area-inset-bottom) + 72px)}
 #journey-instruction{bottom:185px}

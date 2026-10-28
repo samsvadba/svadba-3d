@@ -12,8 +12,12 @@
 .gallery-close,.gallery-photo-close{width:48px;height:48px;border:1px solid var(--line);border-radius:50%;display:grid;place-items:center;flex-shrink:0}
 .gallery-close svg,.gallery-photo-close svg{width:23px;height:23px}
 .gallery-scroll{overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;flex:1;min-height:0;padding:18px max(4vw,16px) calc(var(--gallery-nav-height,65px) + env(safe-area-inset-bottom) + 62px);scroll-padding-bottom:calc(var(--gallery-nav-height,65px) + env(safe-area-inset-bottom) + 62px)}
-#wedding-gallery #bottom-nav{z-index:2;bottom:calc(env(safe-area-inset-bottom) + 22px);color:var(--ink);visibility:visible;isolation:isolate}
-#wedding-gallery #bottom-nav::before{content:"";position:absolute;z-index:-1;inset:-14px -26px calc(-22px - env(safe-area-inset-bottom));background:var(--paper)}
+#wedding-gallery #bottom-nav{z-index:2;bottom:calc(env(safe-area-inset-bottom) + 72px);color:var(--ink);visibility:visible;isolation:isolate}
+#wedding-gallery #bottom-nav::before{content:"";position:absolute;z-index:-1;inset:-14px -26px calc(-72px - env(safe-area-inset-bottom));background:var(--paper);transition:background-color .5s}
+#wedding-gallery #utility-controls{z-index:3;visibility:visible;pointer-events:auto;color:var(--ink)}
+#wedding-gallery #utility-controls button{font-size:10px;line-height:normal;letter-spacing:.08em}
+#wedding-gallery #utility-controls svg{width:19px;height:19px;stroke-width:1.1}
+#wedding-gallery #utility-toast{z-index:4}
 #wedding-gallery #bottom-nav .nav-progress{background:var(--nav-track)}
 #wedding-gallery #bottom-nav #nav-fill,#wedding-gallery #bottom-nav .nav-dot.active{background:var(--ink)}
 #wedding-gallery #bottom-nav .nav-dot{border-color:var(--nav-border);background:var(--paper)}

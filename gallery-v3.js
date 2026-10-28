@@ -101,20 +101,29 @@ export function createGallery({ config = {}, getLanguage = () => 'sk', onOpen = 
   const mobileCamera = 'capture' in cameraInput && matchMedia('(pointer: coarse)').matches;
   cameraButton.hidden = !mobileCamera;
   const nav = document.getElementById('bottom-nav');
+  const utilities = document.getElementById('utility-controls');
+  const utilityToast = document.getElementById('utility-toast');
   const navHome = document.createComment('gallery navigation return point');
-  let navInert = false, routed = false;
+  const utilitiesHome = document.createComment('gallery utilities return point');
+  const toastHome = document.createComment('gallery toast return point');
+  let navInert = false, utilitiesInert = false, routed = false;
   const navResize = new ResizeObserver(() => {
-    if (dialog.open && nav?.parentNode === dialog) dialog.style.setProperty('--gallery-nav-height', `${nav.getBoundingClientRect().height}px`);
+    if (dialog.open && nav?.parentNode === dialog) dialog.style.setProperty('--gallery-nav-height', `${nav.getBoundingClientRect().height + (utilities?.getBoundingClientRect().height || 0)}px`);
   });
   if (nav) navResize.observe(nav);
+  if (utilities) navResize.observe(utilities);
   function dockNavigation() {
     if (!nav) return;
     navInert = nav.inert; nav.before(navHome); dialog.append(nav); nav.inert = false;
-    dialog.style.setProperty('--gallery-nav-height', `${nav.getBoundingClientRect().height}px`);
+    if (utilities) { utilitiesInert = utilities.inert; utilities.before(utilitiesHome); dialog.append(utilities); utilities.inert = false; }
+    if (utilityToast) { utilityToast.before(toastHome); dialog.append(utilityToast); }
+    dialog.style.setProperty('--gallery-nav-height', `${nav.getBoundingClientRect().height + (utilities?.getBoundingClientRect().height || 0)}px`);
   }
   function restoreNavigation() {
     if (!navHome.parentNode) return;
     navHome.replaceWith(nav); nav.inert = navInert; nav.hidden = false;
+    if (utilitiesHome.parentNode) { utilitiesHome.replaceWith(utilities); utilities.inert = utilitiesInert; utilities.hidden = false; }
+    if (toastHome.parentNode) toastHome.replaceWith(utilityToast);
   }
   // Close synchronously in capture phase, before the original section handler runs.
   nav?.addEventListener('click', event => {
@@ -235,6 +244,7 @@ export function createGallery({ config = {}, getLanguage = () => 'sk', onOpen = 
     selected = index; lightboxReturn = origin || lightboxReturn;
     lightbox.hidden = false; shell.inert = true;
     if (nav) { nav.hidden = true; nav.inert = true; }
+    if (utilities) { utilities.hidden = true; utilities.inert = true; }
     const photo = photos[index];
     photoFailed = false;
     $('.gallery-photo-error').hidden = true; $('.gallery-original').hidden = true;
@@ -256,7 +266,8 @@ export function createGallery({ config = {}, getLanguage = () => 'sk', onOpen = 
   largeImage.onload = () => { if (!photoFailed) largeImage.hidden = false; };
   function closePhoto(restore = true) {
     lightbox.hidden = true; shell.inert = false; selected = -1; largeImage.removeAttribute('src');
-    if (nav) { nav.hidden = false; nav.inert = false; }
+    if (dialog.open && nav) { nav.hidden = false; nav.inert = false; }
+    if (dialog.open && utilities) { utilities.hidden = false; utilities.inert = false; }
     if (restore && lightboxReturn?.isConnected) lightboxReturn.focus();
   }
   function renderQueueItem(item) {

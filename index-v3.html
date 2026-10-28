@@ -1,7 +1,7 @@
 <!doctype html>
-<html lang="sk">
+<html lang="sk" data-theme="dark" data-palette="classic">
 <head>
-<meta charset="UTF-8"><script>document.documentElement.dataset.intro=["video","lineart"].includes(new URLSearchParams(location.search).get("intro"))?new URLSearchParams(location.search).get("intro"):"particles";try{document.documentElement.dataset.theme=localStorage.getItem("sm-theme")==="dark"?"dark":"light";document.documentElement.dataset.palette=localStorage.getItem("sm-palette")==="olive"?"olive":"classic";document.documentElement.lang=localStorage.getItem("sm-language")==="en"?"en":"sk"}catch{}</script><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#f5f4f0"><meta name="description" content="Náš spoločný príbeh pokračuje. Tešíme sa, že náš svadobný deň prežijete s nami.">
+<meta charset="UTF-8"><script>document.documentElement.dataset.intro=["video","lineart"].includes(new URLSearchParams(location.search).get("intro"))?new URLSearchParams(location.search).get("intro"):"particles";try{document.documentElement.lang=localStorage.getItem("sm-language")==="en"?"en":"sk"}catch{}</script><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#000000"><meta name="description" content="Náš spoločný príbeh pokračuje. Tešíme sa, že náš svadobný deň prežijete s nami.">
 <title>Simona &amp; Martin | 30. 04. 2027</title>
 <link rel="canonical" href="https://samsvadba.github.io/svadba-3d/index-v3.html">
 <link rel="icon" type="image/svg+xml" href="/svadba-3d/favicon.svg">
@@ -24,11 +24,13 @@
 <meta name="twitter:image:alt" content="Svadobné oznámenie Simona &amp; Martin">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400&family=Allura&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-<style>html{--paper:#f5f4f0;--ink:#292a28}html[data-theme="dark"]{--paper:#20221f;--ink:#ece9df}html[data-palette="olive"]{--paper:#F4EBDC;--ink:#303D29}html[data-palette="olive"][data-theme="dark"]{--paper:#303D29;--ink:#F4EBDC}body{margin:0;background:var(--paper);color:var(--ink)}#interactive-preloader{position:fixed;inset:0;z-index:100;background:var(--paper);display:grid;place-content:center}[hidden]{display:none!important}
+<style>html{--paper:#f5f4f0;--ink:#292a28}html[data-theme="dark"]{--paper:#000;--ink:#fff}html[data-palette="olive"]{--paper:#F4EBDC;--ink:#303D29}html[data-palette="olive"][data-theme="dark"]{--paper:#303D29;--ink:#F4EBDC}body{margin:0;background:var(--paper);color:var(--ink)}#interactive-preloader{position:fixed;inset:0;z-index:100;background:var(--paper);display:grid;place-content:center}[hidden]{display:none!important}
+#entry-screen{position:fixed;inset:0;z-index:110;display:grid;place-items:center;background:var(--paper);color:var(--ink)}#entry-button{display:inline-flex;align-items:center;justify-content:center;gap:30px;min-height:54px;padding:17px 35px;border:1px solid currentColor;background:none;color:inherit;font:400 11px 'DM Sans',sans-serif;letter-spacing:.22em;text-transform:uppercase;cursor:pointer}#entry-button svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.1}body[data-entry-pending] #persistent-header,body[data-entry-pending] #bottom-nav,body[data-entry-pending] #utility-controls{visibility:hidden}
 html[data-intro="particles"]{--intro-ink:var(--ink);--intro-muted:var(--ink)}html[data-intro="particles"] #interactive-preloader{display:none}#story-startup-cloud{position:fixed;inset:0;display:block;width:100%;height:100%;z-index:20;pointer-events:none;background:var(--paper);opacity:1;transition:opacity .45s ease}#story-startup-cloud.is-ready{opacity:0}@media(prefers-reduced-motion:reduce){#story-startup-cloud{transition:none}}
 </style>
 </head>
-<body class="loading" data-state="loading">
+<body class="loading" data-state="loading" data-entry-pending="true">
+<section id="entry-screen" role="dialog" aria-modal="true" aria-label="Simona &amp; Martin"><button id="entry-button" type="button" aria-label="Vstúpiť a spustiť príbeh s hudbou"><span id="entry-button-text">VSTÚPIŤ</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 18 18 6M6 6h12v12"/></svg></button></section>
 <canvas id="story-startup-cloud" aria-hidden="true"></canvas>
 <script>
 // A static first paint, not a second animation. The WebGL score takes over only
@@ -69,9 +71,9 @@ html[data-intro="particles"]{--intro-ink:var(--ink);--intro-muted:var(--ink)}htm
 })();
 </script>
 
-<div id="interactive-preloader" aria-label="Načítavanie"><span class="preloader-monogram" aria-hidden="true"></span><div id="loading-ring"><span id="preloader-percentage" role="status">0%</span></div><button id="pl-skip-btn">Preskočiť</button></div>
+<div id="interactive-preloader" aria-label="Načítavanie" inert><span class="preloader-monogram" aria-hidden="true"></span><div id="loading-ring"><span id="preloader-percentage" role="status">0%</span></div><button id="pl-skip-btn">Preskočiť</button></div>
 <header id="persistent-header" inert><button id="header-home" aria-label="Simona a Martin — späť na intro"></button><span class="header-subtitle">A journey of us</span><span class="header-date">30 · 04 · 2027</span></header>
-<main id="app">
+<main id="app" inert>
 <section id="intro-overlay" class="screen" aria-label="Intro" inert>
 <div class="intro-media"><video id="intro-video-bg" autoplay muted loop playsinline preload="metadata" hidden></video></div>
 <div id="intro-copy" aria-hidden="true"><p class="sub-line">Dve cesty.</p><p class="sub-line">Jeden spoločný príbeh.</p></div>
@@ -98,14 +100,15 @@ html[data-intro="particles"]{--intro-ink:var(--ink);--intro-muted:var(--ink)}htm
 <section id="wedding-scene" class="screen" aria-label="Svadba" aria-hidden="true" inert></section>
 </main>
 <section id="destination-video-scene" role="dialog" aria-modal="true" aria-labelledby="destination-video-title" aria-hidden="true" inert>
-<video id="destination-video" autoplay muted playsinline preload="metadata"></video>
+<video id="destination-video" muted playsinline preload="auto"></video>
+<canvas id="destination-video-particles" aria-hidden="true" hidden></canvas>
 <div class="destination-video-shade" aria-hidden="true"></div>
 <div class="destination-video-caption"><p id="destination-video-progress"></p><h2 id="destination-video-title"></h2><p id="destination-video-country"></p><a id="destination-video-highlight" target="_blank" rel="noopener noreferrer" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.35" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="4.5"/><circle cx="12" cy="12" r="4"/><circle cx="17.3" cy="6.8" r=".7" fill="currentColor" stroke="none"/></svg><span id="destination-video-highlight-text">Pozrieť viac z tejto cesty</span></a></div><button id="destination-video-next" class="destination-next" type="button" disabled></button>
 <button id="destination-video-close" class="icon-button" aria-label="Späť na Journey"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
 <p id="destination-video-status" role="status"></p><button id="destination-video-retry" hidden>Prehrať video</button>
 </section>
 <nav id="bottom-nav" aria-label="Navigácia príbehu" inert><div class="nav-labels"><button id="nav-intro" class="nav-item" aria-current="step">INTRO</button><button id="nav-journey" class="nav-item">JOURNEY <span id="journey-count"></span></button><button id="nav-wedding" class="nav-item">WEDDING</button></div><div class="nav-progress" aria-hidden="true"><span id="nav-fill"></span><i class="nav-dot active"></i><i class="nav-dot"></i><i class="nav-dot"></i></div></nav>
-<div id="utility-controls" role="group" aria-label="Globálne ovládanie">
+<div id="utility-controls" role="group" aria-label="Globálne ovládanie" inert>
 <button id="story-play" type="button" aria-label="Prehrať náš príbeh" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="story-play-shape" d="m8 5 11 7-11 7Z"/><path class="story-pause-shape" d="M8 5v14M16 5v14"/></svg></button>
 <button id="utility-sound" aria-label="Zapnúť hudbu" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4Z"/><path class="sound-on" d="M15 8q5 4 0 8m3-11q8 7 0 14"/><path class="sound-off" d="m16 9 6 6m0-6-6 6"/></svg></button>
 <button id="utility-gallery" aria-label="Pridať a pozrieť fotky"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h16v16H5zM2 7v15h15M7 15l4-5 4 4 3-3 2 4"/><circle cx="16" cy="7" r="1"/></svg></button>

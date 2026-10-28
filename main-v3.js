@@ -7,6 +7,7 @@ import { createWedding } from './wedding-v3.js';
 import { createOrigins } from './origins-v3.js';
 import { bindGlobeInput } from './globe-input-v3.js';
 import { createGallery } from './gallery-v3.js';
+import { createDestinationBuffer, createDestinationParticles, destinationVideoUrl } from './destination-media-v3.js';
 
 // Reference architecture: WeddingApp config, separate fullscreen screens,
 // interruptible GSAP section timelines, OrbitControls, flyToAndShow,
@@ -52,6 +53,9 @@ const clamp = (n,a,b) => Math.max(a,Math.min(b,n));
 const smoothstep = (a,b,n) => {const t=clamp((n-a)/(b-a),0,1);return t*t*(3-2*t);};
 const fullscreenVideo = { active:false, closing:false, timeline:null, externalHold:false, resumeStory:false };
 const videoScene=$('destination-video-scene'), destinationVideo=$('destination-video');
+const destinationBuffer=createDestinationBuffer(locations,{enabled:!navigator.connection?.saveData&&!/^(slow-)?2g$/.test(navigator.connection?.effectiveType||'')});
+const destinationParticles=createDestinationParticles($('destination-video-particles'),{reducedMotion,getColor:()=>getParticleTheme().ink.getStyle()});
+let destinationSourceFallback=false;
 const androidInstagram = /Android/i.test(navigator.userAgent);
 let instagramCopy, instagramCopyHelp, instagramCopyField;
 if(androidInstagram){
@@ -107,6 +111,7 @@ async function copyInstagramHighlight(event){
 
 function resetFullscreenVideo() {
   fullscreenVideo.timeline?.kill();
+  destinationParticles.stop();
   videoScene.style.removeProperty('--destination-backdrop');
   gsap.killTweensOf(destinationVideo);
   destinationVideo.pause();
@@ -136,8 +141,10 @@ function prepareFullscreenVideo(loc) {
       videoScene.style.setProperty('--destination-backdrop', 'url("'+backdrop+'")');
     }
   }
-  destinationVideo.muted=true;destinationVideo.defaultMuted=true;
-  destinationVideo.src=loc.fullscreenVideo;destinationVideo.load();
+  destinationVideo.muted=true;destinationVideo.defaultMuted=true;destinationVideo.volume=0;
+  destinationVideo.autoplay=false;destinationVideo.preload='auto';
+  destinationSourceFallback=false;
+  destinationVideo.src=destinationBuffer.sourceFor(loc);destinationVideo.load();
   $('destination-video-title').textContent=cityName(loc);
   $('destination-video-country').textContent=countryText(loc);
   const highlight=$('destination-video-highlight');
@@ -146,7 +153,7 @@ function prepareFullscreenVideo(loc) {
   if(loc.instagramHighlight)highlight.href=loc.instagramHighlight;
   else highlight.removeAttribute('href');
   refreshInstagramCopy();
-  $('destination-video-status').textContent=t('videoLoading');
+  $('destination-video-status').textContent='';
   $('destination-video-retry').textContent=t('play');
   $('destination-video-retry').hidden=true;
   gsap.set(destinationVideo,{opacity:0,scale:reducedMotion.matches?1:1.035});
@@ -164,6 +171,7 @@ function playFullscreenVideo() {
 
 function openFullscreenVideo() {
   fullscreenVideo.active=true;
+  destinationParticles.start();
   syncMusic();$('utility-controls').inert=true;
   document.body.dataset.fullscreenVideo='true';
   videoScene.inert=false;videoScene.setAttribute('aria-hidden','false');
@@ -186,10 +194,18 @@ function closeFullscreenVideo(afterOverview=null) {
 destinationVideo.addEventListener('playing',()=>{
   if(!fullscreenVideo.active||fullscreenVideo.closing||fullscreenVideo.externalHold){destinationVideo.pause();return;}
   $('destination-video-status').textContent='';$('destination-video-retry').hidden=true;
+  destinationParticles.reveal(destinationVideo);
+  musicVideoRecoveryUntil=performance.now()+2000;musicVideoRecoveryUsed=false;
+  syncMusic();
   gsap.to(destinationVideo,{opacity:1,scale:1,duration:duration(1.1),ease:'power2.out'});
 });
 destinationVideo.addEventListener('error',()=>{
   if(!destinationVideo.hasAttribute('src'))return;
+  if(destinationVideo.getAttribute('src').startsWith('blob:')&&!destinationSourceFallback){
+    destinationSourceFallback=true;destinationVideo.src=destinationVideoUrl(locations[currentIndex].fullscreenVideo);destinationVideo.load();
+    if(fullscreenVideo.active)playFullscreenVideo();return;
+  }
+  destinationParticles.stop();
   $('destination-video-status').textContent=t('videoError');
   $('destination-video-retry').hidden=false;
 });
@@ -224,6 +240,7 @@ videoScene.addEventListener('keydown',event=>{
 
 function setState(next) {
   state = next;
+  if(next==='wedding')destinationBuffer.clear();
   if(next==='intro'||next==='wedding'){pauseStory();}
   syncStoryUI();
   document.body.dataset.state = next;
@@ -1034,6 +1051,8 @@ function flyToAndShow(index, travel=false) {
   loadGeographicDetail();
   setActiveNav('journey');
   const loc = locations[index];
+  if(loc.fullscreenVideo)prepareFullscreenVideo(loc);
+  destinationBuffer.plan(index+1,loc);
   if(storyActive&&loc.key==='trnava')originMarkers?.pulse(travel?2.05:1.5);
   updateDestinationNavigation();
   gsap.set($('journey-instruction'), { autoAlpha: 0 });
@@ -1048,7 +1067,7 @@ function flyToAndShow(index, travel=false) {
     journeyMotion.focus=1;
     if(loc.fullscreenVideo){
       visited.add(index);markerData[index].element.classList.add('visited');setActiveNav('journey');
-      prepareFullscreenVideo(loc);destinationReady=true;updateDestinationNavigation();
+      destinationReady=true;updateDestinationNavigation();
       openFullscreenVideo();announce(`${cityName(loc)}, ${countryText(loc)}. ${t('videoMemory')}`);return;
     }
     if (loc.type === 'instagram') {
@@ -1227,14 +1246,14 @@ bindGlobeInput(globeSurface, {
 // Independent, persistent utility preferences; audio is never loaded without a source.
 function readPreference(key,fallback){try{return localStorage.getItem(key)||fallback;}catch{return fallback;}}
 function savePreference(key,value){try{localStorage.setItem(key,value);}catch{}}
-const preferences={sound:false,theme:readPreference('sm-theme','light')==='dark'?'dark':'light',palette:readPreference('sm-palette','classic')==='olive'?'olive':'classic',language:readPreference('sm-language','sk')==='en'?'en':'sk'};
+const preferences={sound:false,theme:'dark',palette:'classic',language:readPreference('sm-language','sk')==='en'?'en':'sk'};
 const mood={value:preferences.theme==='dark'?1:0,palette:preferences.palette==='olive'?1:0};
 function getParticleTheme() {
   if (!particleTheme) {
     const css = getComputedStyle(document.documentElement);
     particleTheme = {
-      lightPaper:new THREE.Color('#f5f4f0'),darkPaper:new THREE.Color('#20221f'),
-      lightInk:new THREE.Color('#292a28'),darkInk:new THREE.Color('#ece9df'),
+      lightPaper:new THREE.Color('#f5f4f0'),darkPaper:new THREE.Color('#000000'),
+      lightInk:new THREE.Color('#292a28'),darkInk:new THREE.Color('#ffffff'),
       oliveColor:new THREE.Color(css.getPropertyValue('--olive').trim()),ivory:new THREE.Color(css.getPropertyValue('--ivory').trim()),
       paper:new THREE.Color(),ink:new THREE.Color(),pairPaper:new THREE.Color(),pairInk:new THREE.Color(),
       dark:0,olive:0,
@@ -1252,6 +1271,7 @@ let oliveGlobeColors;
 const appliedGlobeTheme={material:null,value:null,palette:null,markers:0};
 const music=new Audio();music.loop=true;music.preload='none';music.crossOrigin='anonymous';music.volume=0;music.id='background-music';music.hidden=true;document.body.append(music);
 let musicBlocked=false,musicPlayPending=null,musicPlayGesture=false,musicAttempt=0,musicFailed=false,toastTimer;
+let musicVideoRecoveryUntil=0,musicVideoRecoveryUsed=false;
 music.addEventListener('error',()=>{musicAttempt++;musicPlayPending=null;musicPlayGesture=false;musicBlocked=false;musicFailed=true;music.pause();preferences.sound=false;savePreference('sm-sound','off');applyLanguage();toast('musicUnavailable');});
 const t=key=>config.ui[preferences.language][key]||key;
 const localized=value=>typeof value==='object'?value?.[preferences.language]||value?.sk:value;
@@ -1301,6 +1321,14 @@ function toggleMusic(){
   syncMusic(true);syncSoundControl();
   if(!config.audio.backgroundMusic)toast('noMusic');
 }
+// Some TV media stacks pause existing audio while acquiring a video decoder.
+// Recover once during that handover; never override mute, a hidden tab or Instagram.
+function recoverMusicAfterVideoFocus(){
+  if(!preferences.sound||document.hidden||musicBlocked||musicFailed||musicVideoRecoveryUsed||!fullscreenVideo.active||fullscreenVideo.closing||fullscreenVideo.externalHold||performance.now()>musicVideoRecoveryUntil)return;
+  musicVideoRecoveryUsed=true;
+  queueMicrotask(()=>{if(preferences.sound&&!document.hidden&&fullscreenVideo.active&&!fullscreenVideo.closing&&!fullscreenVideo.externalHold)syncMusic();});
+}
+music.addEventListener('pause',recoverMusicAfterVideoFocus);
 function toast(key){clearTimeout(toastTimer);$('utility-toast').dataset.key=key;$('utility-toast').textContent=t(key);$('utility-toast').hidden=false;toastTimer=setTimeout(()=>{$('utility-toast').hidden=true;},3200);}
 function applyGlobeTheme(){
   if(!globeMaterial)return;
@@ -1342,6 +1370,7 @@ function applyMood(animate=true){
   gsap.to(mood,{value:preferences.theme==='dark'?1:0,palette:preferences.palette==='olive'?1:0,duration:animate?duration(.5):0,overwrite:true,onUpdate:applyGlobeTheme});
 }
 function applyLanguage(){
+  $('entry-button-text').textContent=t('enter');$('entry-button').setAttribute('aria-label',t('enterWithSound'));
   originMarkers?.refreshLanguage(t('originLabel'));
   document.documentElement.lang=preferences.language;
   document.title='Simona & Martin — '+t('story');
@@ -1404,6 +1433,7 @@ $('utility-mood').onclick=()=>selectThemePair('classic');
 $('utility-palette').onclick=()=>selectThemePair('olive');
 $('utility-language').onclick=()=>{preferences.language=preferences.language==='sk'?'en':'sk';savePreference('sm-language',preferences.language);applyLanguage();};
 document.addEventListener('visibilitychange',syncMusic);
+document.addEventListener('visibilitychange',()=>{destinationBuffer.pause(document.hidden);destinationParticles.visibility();});
 document.addEventListener('visibilitychange',()=>{
   if(document.hidden)weddingParticles?.suspend('visibility');else weddingParticles?.resume('visibility');
 });
@@ -1478,18 +1508,28 @@ function finishLoading() {
   $('interactive-preloader').setAttribute('aria-hidden','true');
   gsap.to($('interactive-preloader'), {autoAlpha:0,duration:duration(.45)});
   document.body.classList.remove('loading');
+  $('app').inert=false;$('utility-controls').inert=false;
   $('persistent-header').inert = $('bottom-nav').inert = false;
   syncMusic();
   const initialView = new URLSearchParams(location.search).get('view');
+  if(initialView!=='wedding')destinationBuffer.plan(0);
   if (initialView === 'journey') { finishStartupCloud(); playJourneyTransition(); }
   else if (initialView === 'wedding') { finishStartupCloud(); playWeddingTransition(); }
   else playIntroTextAnimations();
 }
-const loadTimeout = setTimeout(finishLoading, 6000);
+let loadTimeout;
 $('pl-skip-btn').onclick = finishLoading;
 $('preloader-percentage').textContent = '50%';
 $('loading-ring').style.setProperty('--p','50%');
-finishLoading();
+$('entry-button').onclick=()=>{
+  if(loaded)return;
+  // Keep play() inside this real click, before imports or animation promises.
+  preferences.sound=true;savePreference('sm-sound','on');syncMusic(true);syncSoundControl();
+  $('entry-screen').inert=true;delete document.body.dataset.entryPending;
+  gsap.to($('entry-screen'),{autoAlpha:0,duration:duration(.65),onComplete:()=>{$('entry-screen').hidden=true;}});
+  finishLoading();
+};
+$('entry-button').focus({preventScroll:true});
 
 // One monogram and one calligraphic name lockup, at every display size.
 document.querySelector('#header-home').innerHTML=weddingMonogram();

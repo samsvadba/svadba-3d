@@ -14,7 +14,9 @@ const production=[
   block('function syncSoundControl(){','function toast('),
   line("$('utility-sound').onclick="),
   line("document.addEventListener('visibilitychange',syncMusic)"),
-  'globalThis.player={preferences,music,syncMusic};',
+  'let loaded=false; function finishLoading(){loaded=true;testStats.entries++;}',
+  block("$('entry-button').onclick=", "$('entry-button').focus"),
+  'globalThis.player={preferences,music,syncMusic,enter:$("entry-button").onclick,recoverMusicAfterVideoFocus,armRecovery(){musicVideoRecoveryUntil=performance.now()+2000;musicVideoRecoveryUsed=false;}};',
 ].join('\n');
 assert.doesNotMatch(source,/addEventListener\([^\n]+unlockMusic/,'Ordinary interactions cannot enable audio');
 const settle=async()=>{for(let i=0;i<10;i++)await Promise.resolve();};
@@ -22,8 +24,10 @@ const settle=async()=>{for(let i=0;i<10;i++)await Promise.resolve();};
 function harness(saved={}) {
   const storage=new Map(Object.entries(saved)),attributes=new Map(),events=new Map();
   const sound={setAttribute:(key,value)=>attributes.set(key,value),getAttribute:key=>attributes.get(key)};
-  const stats={audio:0,storyCalls:0};
-  const document={hidden:false,body:{append(){}},addEventListener:(type,fn)=>events.set(type,fn)};
+  const stats={audio:0,storyCalls:0,entries:0};
+  const entry={},entryScreen={};
+  const document={hidden:false,body:{dataset:{entryPending:'true'},append(){}},addEventListener:(type,fn)=>events.set(type,fn)};
+  const fullscreenVideo={active:false,closing:false,externalHold:false};
   class AudioMock {
     constructor(){stats.audio++;this.paused=true;this.currentTime=0;this.playCalls=0;this.listeners=new Map();}
     addEventListener(type,fn){this.listeners.set(type,fn);}
@@ -32,15 +36,15 @@ function harness(saved={}) {
     pause(){this.paused=true;}
   }
   const context=vm.createContext({
-    Audio:AudioMock,config,document,base:'/svadba-3d/',
+    Audio:AudioMock,config,document,base:'/svadba-3d/',fullscreenVideo,queueMicrotask,performance:{now:()=>100},testStats:stats,duration:value=>value,
     localStorage:{getItem:key=>storage.get(key),setItem:(key,value)=>storage.set(key,value)},
-    $:id=>{assert.equal(id,'utility-sound');return sound;},t:key=>key,
+    $:id=>{if(id==='entry-button')return entry;if(id==='entry-screen')return entryScreen;assert.equal(id,'utility-sound');return sound;},t:key=>key,
     pauseStory:()=>stats.storyCalls++,particleIntro:{toggle:()=>stats.storyCalls++},
     applyLanguage(){},toast(){},
-    gsap:{killTweensOf(){},to(target,options){target.volume=options.volume;}},
+    gsap:{killTweensOf(){},to(target,options){if('volume' in options)target.volume=options.volume;options.onComplete?.();}},
   });
   vm.runInContext(production,context);
-  return {...context.player,storage,sound,stats,document,events};
+  return {...context.player,storage,sound,stats,document,events,fullscreenVideo,entryScreen};
 }
 
 for(const saved of [{},{'sm-sound':'on'},{'sm-sound':'off'}]) {
@@ -78,4 +82,21 @@ for(const saved of [{},{'sm-sound':'on'},{'sm-sound':'off'}]) {
   assert.equal(app.music.paused,true,'Explicit mute remains off');
   assert.equal(app.stats.storyCalls,0);
 }
-console.log('Music V3 passed: muted on load, sound-icon-only playback, independent Story, loop/fade and visibility.');
+const entry=harness();
+entry.enter();await settle();
+assert.equal(entry.music.paused,false,'Entry click starts music before asynchronous story work');
+assert.equal(entry.music.playCalls,1);assert.equal(entry.stats.entries,1);
+assert.equal(entry.preferences.theme,'dark');assert.equal(entry.preferences.palette,'classic');
+entry.enter();await settle();assert.equal(entry.stats.entries,1,'Entry is idempotent');
+entry.fullscreenVideo.active=true;entry.armRecovery();entry.music.paused=true;
+entry.recoverMusicAfterVideoFocus();await settle();
+assert.equal(entry.music.paused,false,'TV decoder handover restores music');
+const recovered=entry.music.playCalls;
+entry.music.paused=true;entry.recoverMusicAfterVideoFocus();await settle();
+assert.equal(entry.music.playCalls,recovered,'Recovery is bounded, never a play retry loop');
+entry.armRecovery();entry.fullscreenVideo.externalHold=true;
+entry.recoverMusicAfterVideoFocus();await settle();assert.equal(entry.music.playCalls,recovered);
+entry.fullscreenVideo.externalHold=false;entry.armRecovery();entry.sound.onclick();
+entry.recoverMusicAfterVideoFocus();await settle();assert.equal(entry.music.playCalls,recovered,'Explicit mute wins over recovery');
+assert.equal(entry.stats.storyCalls,0,'Entry and sound never accidentally pause Story');
+console.log('Music V3 passed: entry gesture, one player, bounded TV recovery, explicit mute/Instagram hold, loop/fade and visibility.');
