@@ -15,6 +15,10 @@ function galleryCall(action, data) {
     if (action === 'status') { folder_(); return { ok: true, ready: true, maxFileBytes: GALLERY.maxBytes, maxBatchFiles: 20 }; }
     if (action === 'list') return { ok: true, result: list_(data.cursor) };
     if (action === 'upload') return { ok: true, result: upload_(data) };
+    if (action === 'uploadStatus') {
+      var saved = original_(data.id, folder_());
+      return { ok: true, result: { photo: saved && saved.appProperties.state === 'ready' ? photo_(saved) : null } };
+    }
     if (action === 'media') return { ok: true, result: media_(data.id, data.variant) };
     throw Error('DENIED');
   } catch (error) {

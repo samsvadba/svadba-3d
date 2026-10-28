@@ -28,6 +28,9 @@ assert.equal([...files.values()].filter(x=>x.mimeType==='application/vnd.google-
 const jpeg=Buffer.from([255,216,255,192,0,17,8,0,20,0,30,3,1,17,0,2,17,0,3,17,0,255,218,0,2,255,217]).toString('base64');
 const data={id:'11111111-1111-4111-8111-111111111111',name:'Test.jpg',original:jpeg,thumbnail:jpeg,preview:jpeg};
 const uploaded=app.galleryCall('upload',data);assert.equal(uploaded.ok,true);assert.equal(files.size,4);
+assert.equal(app.galleryCall('uploadStatus',{id:data.id}).result.photo.id,data.id,'lost response is reconciled against the persisted original');
+assert.equal(app.galleryCall('uploadStatus',{id:'66666666-6666-4666-8666-666666666666'}).result.photo,null);
+assert.equal(app.galleryCall('uploadStatus',{id:'arbitrary-drive-id'}).error.code,'DENIED');
 assert.equal(Buffer.from([...files.values()].find(x=>x.appProperties.role==='original').bytes).toString('base64'),jpeg);
 assert.equal(app.galleryCall('upload',data).ok,true);assert.equal(files.size,4,'retry is idempotent');
 assert.equal(app.galleryCall('media',{id:data.id,variant:'thumbnail'}).result.base64,jpeg);
@@ -37,6 +40,7 @@ assert.equal(app.galleryCall('upload',{...data,id:'22222222-2222-4222-8222-22222
 full=true;assert.equal(app.galleryCall('upload',{...data,id:'33333333-3333-4333-8333-333333333333'}).error.code,'DRIVE_QUOTA');full=false;
 failRole='thumbnail';const retry={...data,id:'44444444-4444-4444-8444-444444444444'};
 assert.equal(app.galleryCall('upload',retry).ok,false);
+assert.equal(app.galleryCall('uploadStatus',{id:retry.id}).result.photo,null,'partial write cannot acknowledge success');
 assert.equal(app.galleryCall('list',{}).result.photos.length,1,'partial save is never published');
 assert.equal(app.galleryCall('upload',retry).ok,true);
 assert.equal(app.galleryCall('list',{}).result.photos.length,2);
@@ -45,4 +49,21 @@ assert.equal(app.detect_([...heic]),'image/heic');
 props.set('GALLERY_DAILY',JSON.stringify({day:new Date().toISOString().slice(0,10),count:500}));
 assert.equal(app.galleryCall('upload',{...data,id:'55555555-5555-4555-8555-555555555555'}).error.code,'DRIVE_QUOTA');
 assert.deepEqual(JSON.parse(await readFile(new URL('./appsscript.json',import.meta.url),'utf8')).oauthScopes,['https://www.googleapis.com/auth/drive.file','https://www.googleapis.com/auth/script.external_request']);
+// Exercise the actual HTML Service bridge after a dropped upload response.
+const bridgeSource=(await readFile(new URL('./Bridge.html',import.meta.url),'utf8')).match(/<script>([\s\S]*?)<\/script>/)[1].replace('<?= channel ?>',JSON.stringify('a'.repeat(48)));
+let listener, statusReads=0, uploadCalls=0;const replies=[],timers=[];
+const top={postMessage:value=>replies.push(value)};
+const bridge={window:{top,addEventListener:(type,fn)=>{listener=fn;}},Date,setTimeout:fn=>timers.push(fn),google:{script:{get run(){
+  let success,failure;return {withSuccessHandler(fn){success=fn;return this;},withFailureHandler(fn){failure=fn;return this;},galleryCall(action){
+    if(action==='upload'){uploadCalls++;failure();}
+    else {statusReads++;success({ok:true,result:{photo:statusReads===1?null:{id:data.id,name:data.name}}});}
+  }};
+}}}};
+vm.createContext(bridge);vm.runInContext(bridgeSource,bridge);
+listener({source:top,origin:'https://samsvadba.github.io',data:{type:'gallery:call',channel:'a'.repeat(48),id:'request-1',action:'upload',data}});
+assert.equal(replies.filter(x=>x.type==='gallery:result').length,0,'pending original is not acknowledged');
+timers.shift()();
+assert.equal(uploadCalls,1,'lost response never resends the photo');
+assert.equal(statusReads,2);
+assert.equal(replies.find(x=>x.type==='gallery:result').result.result.photo.id,data.id);
 console.log('PASS: Apps Script upload/list/media persistence, original bytes, retry, partial-write failure, type/HEIC signature, quota and narrow scopes (mock Google interfaces; no live Drive).');

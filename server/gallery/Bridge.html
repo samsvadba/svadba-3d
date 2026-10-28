@@ -1,7 +1,8 @@
 <!doctype html><html><head><base target="_top"><meta charset="utf-8"></head><body>
 <script>
 // google.script.run is available only inside this HTML Service document.
-const channel = <?= JSON.stringify(channel) ?>;
+// HTML Service contextual escaping already prints a quoted JavaScript string.
+const channel = <?= channel ?>;
 const parentOrigin = 'https://samsvadba.github.io';
 const inFlight = new Set();
 window.addEventListener('message', event => {
@@ -13,7 +14,20 @@ window.addEventListener('message', event => {
     inFlight.delete(message.id);
     window.top.postMessage({ type:'gallery:result', channel, id:message.id, result }, parentOrigin);
   };
-  google.script.run.withSuccessHandler(reply).withFailureHandler(() => reply({ok:false,error:{code:'STORAGE'}})).galleryCall(message.action,message.data || {});
+  google.script.run.withSuccessHandler(reply).withFailureHandler(() => {
+    const failed = {ok:false,error:{code:'STORAGE'}};
+    if (message.action !== 'upload') { reply(failed); return; }
+    // A lost RPC response does not cancel the Drive write. Read its stable UUID;
+    // never resend the upload or report success before all three files are ready.
+    const deadline = Date.now() + 90000;
+    const later = () => Date.now() < deadline ? setTimeout(check,2500) : reply(failed);
+    const check = () => google.script.run.withSuccessHandler(result => {
+      if (!result?.ok) { reply(result); return; }
+      if (result.result?.photo) reply(result);
+      else later();
+    }).withFailureHandler(later).galleryCall('uploadStatus',{id:message.data.id});
+    check();
+  }).galleryCall(message.action,message.data || {});
 });
 if (channel) window.top.postMessage({ type:'gallery:ready', channel },parentOrigin);
 </script></body></html>

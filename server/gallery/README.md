@@ -24,4 +24,12 @@ Bezplatné kvóty sa môžu meniť: https://developers.google.com/apps-script/gu
 
 ## Overenie
 
+28. 10. 2026 majiteľ autorizoval webové nasadenie. Nad skutočným Google Diskom prešiel zápis označenej 32px testovacej fotografie, porovnanie bajtov originálu, načítanie zhodného JPEG náhľadu a opätovné načítanie v samostatnom vykonaní Apps Script. Test nevyužíval dáta hostí. Dočasné testovacie funkcie boli pred nasadením ďalšej verzie odstránené. Produkčná konfigurácia používa overenú stabilnú `/exec` adresu.
+
+HTML Service už kontextovo zapisuje JavaScriptový reťazec vrátane úvodzoviek. `Bridge.html` preto tlačí `channel` priamo; ďalšie `JSON.stringify` by vytvorilo nadbytočné úvodzovky a znemožnilo handshake.
+
+Pri živej kontrole Google RPC občas vrátil sieťovú chybu HTTP 0 skôr, než sa dokončili zápisy na Disk. Most v takom prípade znovu neposiela fotografiu. Najviac 90 sekúnd číta stav pôvodného UUID a potvrdí úspech až po overení `ready` originálu s oboma JPEG derivátmi. Čiastočný zápis nie je úspech; neúspešný pokus ostáva možné zopakovať s rovnakým UUID bez duplikátov. Diagnostika nikdy nezapisuje fotografické dáta ani tokeny do konzoly.
+
+Produkčné nasadenie verzie 4 následne prešlo výberom viacerých testovacích súborov JPEG + HEIC, skutočným uložením na Disk, potvrdením úspechu a načítaním JPEG náhľadov. Samostatne bol uložený a zobrazený aj PNG. Neplatný súbor s príponou JPG zobrazil zrozumiteľnú chybu spracovania. Testy používali označené technické fotografie, nie záznamy hostí. Fyzické ovládanie fotoaparátu a výber súborov na reálnom iPhone/Androide sa týmto testom neoverili.
+
 `node server/gallery/apps-script.test.mjs` používa pamäťový adaptér Google rozhraní, **nie skutočný Disk**. `node gallery-v3.test.mjs` kontroluje most a chyby. Živý tok vyžaduje webový súhlas majiteľa. Testy neobsahujú Google prihlasovacie údaje.
