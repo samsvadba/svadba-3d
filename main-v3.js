@@ -8,6 +8,7 @@ import { createOrigins } from './origins-v3.js';
 import { bindGlobeInput } from './globe-input-v3.js';
 import { createGallery } from './gallery-v3.js';
 import { createDestinationBuffer, createDestinationParticles, destinationVideoUrl } from './destination-media-v3.js';
+import { createEntryParticles } from './entry-particles-v3.js';
 
 // Reference architecture: WeddingApp config, separate fullscreen screens,
 // interruptible GSAP section timelines, OrbitControls, flyToAndShow,
@@ -1555,7 +1556,7 @@ $('entry-button').onclick=()=>{
   // Keep play() inside this real click, before imports or animation promises.
   preferences.sound=true;savePreference('sm-sound','on');syncMusic(true);syncSoundControl();
   $('entry-screen').inert=true;delete document.body.dataset.entryPending;
-  gsap.to($('entry-screen'),{autoAlpha:0,duration:duration(.65),onComplete:()=>{$('entry-screen').hidden=true;}});
+  entryTransition.leave(()=>{$('entry-screen').hidden=true;});
   finishLoading();
 };
 $('entry-button').focus({preventScroll:true});
@@ -1566,3 +1567,4 @@ document.querySelector('#header-home').innerHTML=weddingMonogram();
 document.querySelector('.preloader-monogram').innerHTML=weddingMonogram();
 const brandHero=document.querySelector('.title-layout h1');
 brandHero.classList.add('brand-names');brandHero.innerHTML=names();
+const entryTransition=createEntryParticles({screen:$('entry-screen'),canvas:$('entry-particles'),content:document.querySelector('.entry-content'),logo:$('entry-monogram'),button:$('entry-button'),reducedMotion});
