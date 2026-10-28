@@ -1,7 +1,7 @@
 // Static artwork cannot inherit the page theme. These are its explicit colours.
 export default {
-  foreground: '#303D29',
-  background: '#F4EBDC',
+  foreground: '#000000',
+  background: '#FFFFFF',
   // Optional part colours fall back to foreground; the default is monochrome.
   parts: { s: null, ampersand: null, m: null },
   share: {
