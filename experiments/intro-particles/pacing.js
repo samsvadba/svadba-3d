@@ -1,12 +1,12 @@
 // Presentation pacing only. Existing geographic/particle phases stay in one
 // reversible score, shared by autoplay and manual scrubbing.
-export const STORY_DURATION = 29;
+export const STORY_DURATION = 25.5;
 // The cloud rotates while gathering for four seconds; the finished globe coasts
 // for one more second. The towns and retreat are concise; most of the remaining
 // time belongs to the small hearts flying, colliding and reforming the globe.
-const input = [0, 4, 5, 7.5, 8.12, 8.3, 13.3, 15, 15.6, 18.2, 21.7, 24.4, 25.1, 25.8, 26.55, 28.8, 29]
+const input = [0, 4, 5, 7.5, 8.12, 8.3, 13.3, 15, 15.6, 18.2, 21.7, 22.4, 25.3, 25.5]
   .map(seconds => seconds / STORY_DURATION);
-const score = [0, .144, .18, .30, .37, .39, .64, .72, .735, .795, .87, .915, .935, .955, .965, .995, 1];
+const score = [0, .144, .18, .30, .37, .39, .64, .72, .735, .795, .87, .895, .995, 1];
 const slopes = input.slice(1).map((x, i) => (score[i + 1] - score[i]) / (x - input[i]));
 const tangents = input.map((_, i) => {
   // Exact linear score during the shared five-second opening: the rotation's

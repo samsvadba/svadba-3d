@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import config from '../../config-v3.js';
-import { monogram } from '../../brand-v3.js';
+import { weddingMonogram } from '../../brand-v3.js';
 import { bindGlobeInput } from '../../globe-input-v3.js';
 import { createGlobe, placeOriginLabel } from './globe.js';
 import { createParticles, HEART_BOUNDS } from './particles.js';
@@ -40,7 +40,7 @@ function dismissStartupCloud(){
   if(!startupCloudVisible)return;
   startupCloudVisible=false;window.dispatchEvent(new Event('intro-particles:first-frame'));
 }
-$('story-monogram').innerHTML=monogram;
+$('story-monogram').innerHTML=weddingMonogram();
 
 function save(){try{for(const [k,v] of Object.entries(preferences))localStorage.setItem('sm-'+k,v);}catch{}}
 function applyTheme(){
@@ -82,7 +82,7 @@ function language(){
 $('utility-mood').onclick=()=>chooseTheme('classic');$('utility-palette').onclick=()=>chooseTheme('olive');
 $('utility-language').onclick=()=>{preferences.language=preferences.language==='sk'?'en':'sk';save();language();};
 
-function stageIndex(p){return p<.18?0:p<.37?1:p<.54?2:p<.64?3:p<.72?4:p<.955?5:6;}
+function stageIndex(p){return p<.18?0:p<.37?1:p<.54?2:p<.64?3:p<.72?4:p<.895?5:6;}
 function updateCopy(p){
   const stage=stageIndex(toStoryProgress(p)),d=copy[preferences.language];
   if(stage!==lastStage){$('story-stage-number').textContent=String(stage+1).padStart(2,'0')+' / 07';lastStage=stage;}
@@ -183,7 +183,7 @@ function cameraStory(p){
     globe.camera.lookAt(pose.target);globe.camera.updateMatrixWorld();
   }
   globe.group.rotation.y=pose.formationRotation;
-  fx.update({progress:score,origins:originVectors,merge:pose.merge,heartScale:pose.heartScale,color:particleColor,dark:displayedTheme.dark,basis:pose.basis,starBasis:pose.basis,formationRotation:pose.formationRotation,formationSurface:score>=.935?pose.globeOpacity:pose.globeReveal});
+  fx.update({progress:score,origins:originVectors,merge:pose.merge,heartScale:pose.heartScale,color:particleColor,dark:displayedTheme.dark,basis:pose.basis,starBasis:pose.basis,formationRotation:pose.formationRotation,formationSurface:score>=.87?pose.globeOpacity:pose.globeReveal});
   globe.globeMesh.visible=pose.globeReveal>.001;
   globe.globeMaterial.opacity=pose.globeOpacity;
 }

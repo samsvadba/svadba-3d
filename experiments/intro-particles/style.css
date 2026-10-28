@@ -11,7 +11,7 @@ body.particles-test{height:auto;min-height:100svh;overflow-x:clip;overscroll-beh
 .particles-test[data-explore] #globe-interaction{pointer-events:auto;cursor:grab;touch-action:none}
 .particles-test[data-explore] #globe-interaction:active{cursor:grabbing}
 .particles-test #story-header{position:absolute;left:4%;right:4%;top:max(22px,env(safe-area-inset-top));display:flex;align-items:center;justify-content:space-between;opacity:0;pointer-events:none;transition:color .5s}
-.particles-test #story-monogram{width:65px;height:54px}
+.particles-test #story-monogram{width:var(--monogram-header-width);height:auto}
 .particles-test #story-header>span{font-size:10px;letter-spacing:.2em}
 .particles-test #story-caption{position:absolute;left:8%;right:8%;bottom:calc(env(safe-area-inset-bottom) + 142px);text-align:center;pointer-events:none}
 .particles-test #stage-instruction{display:block;font-size:9px;letter-spacing:.08em;line-height:1.7;opacity:.6;text-wrap:balance}
@@ -54,6 +54,6 @@ body.particles-test{height:auto;min-height:100svh;overflow-x:clip;overscroll-beh
 .particles-test #destination-connectors line{stroke:currentColor;stroke-width:.7;opacity:0}
 .particles-test #story-loading{position:absolute;left:15%;right:15%;top:47%;text-align:center;font:italic 21px/1.5 'Cormorant Garamond',serif}
 .particles-test #story-canvas.is-restoring{visibility:hidden}
-@media(max-width:767px){.particles-test #story-header{left:6%;right:6%;top:max(18px,env(safe-area-inset-top))}.particles-test #story-skip{right:6%}.particles-test #story-header>span{font-size:8px}.particles-test #story-monogram{width:58px;height:47px}.particles-test .origin-label{width:118px}.particles-test .origin-label strong{font-size:34px}.particles-test #destination-labels .city-label{min-width:72px;padding:3px 12px}.particles-test #destination-labels .city-name{font-size:10px;letter-spacing:.1em}}
+@media(max-width:767px){.particles-test #story-header{left:6%;right:6%;top:max(18px,env(safe-area-inset-top))}.particles-test #story-skip{right:6%}.particles-test #story-header>span{font-size:8px}.particles-test #story-monogram{width:var(--monogram-header-width);height:auto}.particles-test .origin-label{width:118px}.particles-test .origin-label strong{font-size:34px}.particles-test #destination-labels .city-label{min-width:72px;padding:3px 12px}.particles-test #destination-labels .city-name{font-size:10px;letter-spacing:.1em}}
 @media(max-height:560px){.particles-test #story-caption{bottom:110px}.particles-test #story-timeline{bottom:65px}.particles-test #bottom-nav{bottom:65px}.particles-test #utility-controls{bottom:8px}.particles-test #story-header{top:10px}.particles-test #story-skip{top:6px}.particles-test #globe-interaction{inset:65px 0 120px}}
 @media(prefers-reduced-motion:reduce){.particles-test #story-stage,.particles-test #story-header{transition:none}}

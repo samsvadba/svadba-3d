@@ -1,5 +1,5 @@
 // Focused numerical checks for compact flying hearts, their impact and the
-// unchanged large-heart/geographic reformation.
+// direct geographic reformation without a large shared heart.
 // Uses the actual rendered poses, particle attributes and existing V3 camera.
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
@@ -64,21 +64,21 @@ assert.match(shader, /mix\(uHeartCenterB,\s*uHeartCenterA,\s*heartSide\)/);
 assert.match(shader, /mix\(uHeartAngleB,\s*uHeartAngleA,\s*heartSide\)/);
 assert.match(shader, /turn\s*\*\s*aMarker\s*\*\s*uMarkerScale\s*\*\s*uScale/);
 assert.match(shader, /marker\s*\+\s*heartCenter\s*\*\s*uScale/);
-assert.match(shader, /turn\s*\*\s*aHeart\s*\*\s*uHeartScale\s*\*\s*uScale/);
+assert.doesNotMatch(shader, /vec3\s+heart\s*=/, 'The large shared heart must never be a rendered destination');
 assert.match(shader, /heartImpact\s*=\s*phase\(0\.87,\s*0\.895\)/);
 assert.match(shader, /impactReveal\s*=\s*smoothPhase\(0\.87,\s*0\.882\)/);
-assert.match(shader, /bigGather\s*=\s*smoothPhase\(0\.895,\s*0\.915\)/);
-assert.match(shader, /localPosition\s*=\s*mix\(debris,\s*heart,\s*bigGather\)/,
-  'The final heart must gather from collision debris, not grow directly from the twins');
+assert.doesNotMatch(shader, /bigGather|shatter/, 'No large-heart regather/dwell/shatter passage may remain');
+assert.match(shader, /localPosition\s*=\s*debris/);
+assert.match(shader, /reform\s*=\s*smoothPhase\(0\.895,\s*0\.995\)/, 'The impact must lead directly into geographic reformation');
 assert.match(shader, /worldPosition\s*=\s*mix\(worldPosition,\s*aFormation,\s*reform\)\s*\+\s*curl/,
   'Geography must be the actual world-space target, without the heart basis or offset');
 assert.match(shader, /vec3 curl\s*=\s*cross\(aExplosion,\s*aFormation\s*\/\s*max\(length\(aFormation\),\s*0\.0001\)\)[\s\S]*?sin\(reform\s*\*\s*3\.14159265\)/,
   'The reversible curl must vanish at both geographic morph endpoints');
-assert.match(shader, /\(1\.0\s*-\s*aHeartActive\)\s*\*\s*smoothPhase\(0\.935,\s*0\.955\)/,
-  'Extra formation particles must arrive from zero opacity after drawRange restoration');
+assert.match(shader, /vAlpha\s*=\s*mix\(markerAlpha,\s*vAlpha,\s*impactReveal\)/,
+  'Restored particle density must fade in continuously from marker-only alpha');
 assert.match(shader, /\*\s*formationVisibility\(worldPosition,\s*cameraPosition,\s*uGlobeRadius,\s*uFormationSurface\)/);
 for (const source of [prototypeSource, nativeSource]) {
-  assert.match(source, /formationSurface\s*:\s*score\s*>=\s*\.935\s*\?\s*pose\.globeOpacity\s*:\s*pose\.globeReveal/,
+  assert.match(source, /formationSurface\s*:\s*score\s*>=\s*\.87\s*\?\s*pose\.globeOpacity\s*:\s*pose\.globeReveal/,
     'Final cloud hemisphere visibility must track the actual returning solid globe');
 }
 
@@ -93,8 +93,8 @@ function snapshot(progress) {
   assert.equal(uniforms.uHeartScale.value, poseA.scale);
   assert.equal(poseA.scale, poseB.scale, 'The fused clouds cannot have different scales');
   assert.ok([...poseA.center, ...poseB.center, poseA.scale, poseA.angle, poseB.angle].every(Number.isFinite));
-  assert.equal(particles.material.depthTest, progress >= .18 && (progress < .935 || progress >= 1));
-  assert.equal(geometry.drawRange.count, progress < .18 || progress >= .935 ? 42000
+  assert.equal(particles.material.depthTest, progress >= .18 && (progress < .87 || progress >= 1));
+  assert.equal(geometry.drawRange.count, progress < .18 || progress >= .87 ? 42000
     : progress >= .795 && progress < .87 ? 360 : 30000);
   for (const [key, value] of Object.entries(geometry.attributes)) assert.equal(value.array, attributes[key], 'Morph recreated a GPU attribute');
   return [...poseA.center, ...poseB.center, poseA.scale, poseA.angle, poseB.angle,
@@ -105,7 +105,7 @@ for (let step = 0; step <= 1000; step++) {
   const progress = .64 + .36 * step / 1000;
   states.push(snapshot(progress));
   assert.ok(poseA.center.clone().add(poseB.center).length() < 1e-12, 'The twins lost their balanced trajectories');
-  if (progress < .915) assert.equal(poseA.scale, 1, 'The markers grow into large twins before impact');
+  assert.equal(poseA.scale, 1, 'The compact markers must never grow into a shared large heart');
   if (progress >= .87) {
     assert.ok(poseA.center.length() < 1e-12 && poseB.center.length() < 1e-12, 'Two displaced hearts remain after impact');
     assert.equal(poseA.angle, poseB.angle, 'The single cloud retains two different orientations');
@@ -143,7 +143,7 @@ for (const hex of ['#292a28', '#ece9df', '#303D29', '#F4EBDC']) {
 // instead of filling a quarter of the screen or becoming a dense point blob.
 const point = new THREE.Vector3(), viewPoint = new THREE.Vector3(), axis = new THREE.Vector3(0, 1, 0);
 const viewports = [[390,844], [430,932], [844,390], [1440,720], [1440,900]];
-let edgeClearance = Infinity, minimumDepth = Infinity, maximumWidth = 0;
+let edgeClearance = Infinity, minimumDepth = Infinity;
 let minimumMarkerWidth = Infinity, maximumMarkerWidth = 0;
 for (const [width, height] of viewports) {
   const camera = new THREE.PerspectiveCamera(45, width / height, .1, 1000);
@@ -182,28 +182,7 @@ for (const [width, height] of viewports) {
         `Marker size ${markerWidth.toFixed(2)}px at ${width}×${height}, DPR ${dpr}, p=${progress}`);
     }
   }
-  // The original sampled full heart remains unchanged after the second impact.
-  for (let step = 0; step <= 20; step++) {
-    const progress = .915 + .020 * step / 20;
-    const pose = choreography.sample(progress, { width, height, overviewDistance, heartBounds: HEART_BOUNDS });
-    camera.position.copy(pose.position); camera.lookAt(pose.target); camera.updateMatrixWorld();
-    effect.update({ progress, origins, merge: pose.merge, heartScale: pose.heartScale, color,
-      basis: camera.quaternion, starBasis: pose.basis, formationSurface: pose.globeReveal });
-    let left = Infinity, right = -Infinity;
-    for (let i = 0; i < heart.count; i++) {
-      if (!active.getX(i)) continue;
-      point.fromBufferAttribute(heart, i).applyAxisAngle(axis, uniforms.uHeartAngleA.value)
-        .multiplyScalar(uniforms.uHeartScale.value * pose.heartScale)
-        .applyQuaternion(camera.quaternion).add(pose.merge);
-      const depth = -viewPoint.copy(point).applyMatrix4(camera.matrixWorldInverse).z;
-      minimumDepth = Math.min(minimumDepth, depth);
-      assert.ok(depth > camera.near);
-      point.project(camera);
-      assert.ok(Math.abs(point.x) < 1 && Math.abs(point.y) < 1, 'The final original heart left the viewport');
-      left = Math.min(left, point.x); right = Math.max(right, point.x);
-    }
-    maximumWidth = Math.max(maximumWidth, (right - left) * width / 2);
-  }
+
 }
 
 // Geographic positions come directly from real V3 boundaries. The final shader
@@ -218,7 +197,7 @@ for (let i = 0; i < geography.count; i++) {
 }
 effect.dispose(); geometrySource.dispose();
 console.log(`PASS — each small heart uses 156 native-contour points and 24 faint inner points; projected widths ${minimumMarkerWidth.toFixed(1)}–${maximumMarkerWidth.toFixed(1)}px at DPR 1/3 over five viewports.`);
-console.log('PASS — opposite spatial loops end in a nonzero-speed collision, then debris regathers into the unchanged original 22,000-point heart.');
+console.log('PASS — opposite spatial loops end in a nonzero-speed collision, then debris reforms directly into the geographic globe; no large shared heart stage.');
 console.log(`PASS — 1,001 forward/back states and all four palette variants preserve the current morph; final draw/depth visibility is clean.`);
-console.log(`PASS — all actual heart points remain visible over five viewports; edge clearance ≥${edgeClearance.toFixed(1)} px, camera depth ≥${minimumDepth.toFixed(2)}; maximum projected width ${maximumWidth.toFixed(0)} px.`);
+console.log(`PASS — compact heart markers remain visible over five viewports; edge clearance ≥${edgeClearance.toFixed(1)} px, camera depth ≥${minimumDepth.toFixed(2)}.`);
 console.log('PASS — geographic morph targets real V3 world-space boundaries; endpoint curl vanishes; analytic visibility follows returning globe opacity.');

@@ -6,7 +6,7 @@ input helper and theme tokens. Its Three.js scene, camera and controls are separ
 Production `intro-particles-v3.js` uses these same particle/choreography helpers
 on the native V3 renderer, camera and globe, with its existing header and footer.
 
-One 29-second GSAP timeline starts after the scene and shaders are ready. `pacing.js`
+One 25.5-second GSAP timeline starts after the scene and shaders are ready. `pacing.js`
 gives the rotating cloud four seconds to gather, followed by one final second
 of gentle coasting on the completed globe. These are one continuous motion.
 The close-up arrives at 7.5 s, the camera leaves the towns at 8.3 s and the stars
@@ -45,30 +45,20 @@ The native globe badge's exact Bezier outline is sampled into 180 fine points pe
 marker. Camera projection keeps them about 22 CSS pixels wide regardless of DPR
 or viewport; they never grow into full-sized twin hearts. `sampleHeartPose` drives
 their opposing looping paths and preserves approach velocity at the collision.
-The impact produces a second particle burst, which reforms the original large
-heart for just 0.7 s. The final
-world-space morph reaches the original geographic positions before fading into
-the native globe. Production then reveals Journey labels without a new entrance.
-`original-heart.js` restores the first sampler and point sprite verbatim from
-`2f7b1ed75ab0cf6f43b0062870c23631586fdc8f`: approximately 82% shell / 18% interior,
-the original random sequence and soft point sprite. The heart alone now has a
-1.2 CSS-pixel minimum point diameter and stronger seeded opacity, so it remains
-clear on light backgrounds without changing formation, stars or explosion.
-Normals from that same implicit surface emphasize the visible particle rim,
-with up to 25% larger points and 35% stronger opacity; interior particles remain
-unchanged. This is view-dependent shell shading, not a drawn outline or extra layer.
-Its width stays X ×0.90, while a smooth Y ×0.76–0.90 taper shortens the lower half;
-the complete refined Y coordinate is then scaled ×1.04 to restore a little height.
-Z ×0.86 retains depth, with a 0.042-unit cleft and 0.016-unit tip correction.
-The resulting width/height ratio is about 1.08, inside the unchanged camera framing.
-The heart uses 10,000 points on constrained devices,
-22,000 on mobile and 33,000 on desktop for the large heart. The small-marker phase
-draws only 360 points in total, avoiding an opaque blob at icon size. A slow 25-degree spatial turn and gentle
-1.8% breathing reveal the original volume. Formation uses adaptive
-16,000 / 42,000 / 60,000 points, while explosion retains its existing
-12,000 / 30,000 / 45,000 budget; the impact briefly swirls the same particles into
-clouds before they gather. All formation points return with a gradual opacity
-ramp during the final shatter. No solid heart mesh or duplicated scene is introduced.
+The impact at 21.7 s produces a second particle burst, which reforms directly
+onto the original geographic positions from 22.4–25.3 s. There is no large
+shared-heart regather, hold or second shatter. The world-space morph has zero
+residual merge offset and fades into the native globe. Production then reveals
+Journey labels without a new entrance.
+`original-heart.js` retains the original sampler and soft point sprite from
+`2f7b1ed75ab0cf6f43b0062870c23631586fdc8f`. Its cached geometry and random streams
+remain intact to avoid changing the opening, explosion or seeded point variation;
+the large heart itself is no longer a render destination.
+The small-marker phase draws only 360 points in total, avoiding an opaque blob
+at icon size. Formation uses adaptive 16,000 / 42,000 / 60,000 points, while the
+first explosion retains its 12,000 / 30,000 / 45,000 budget. All formation points
+return with a gradual opacity ramp during the compact-heart impact, then gather
+on Earth. No solid heart mesh or duplicated scene is introduced.
 A second point batch renders brighter star cores/trails; a small plane renders
 the merger impulse.
 Star trails use a separate, smaller budget: they grow with traveled distance after

@@ -7,7 +7,7 @@ export const HEART_BOUNDS = Object.freeze({ width: 2.08, height: 2.24, depth: 1.
 
 // Small heart markers loop through space and strike at the centre with actual
 // approach velocity. Their size is derived from the camera in onBeforeRender.
-// The original large heart is formed from the impact, never by scaling twins up.
+// Their collision breaks directly into the geographic globe formation.
 export function sampleHeartPose(progress, side, target = {center:new THREE.Vector3(),scale:1,angle:0}) {
   const p = THREE.MathUtils.clamp(progress, 0, 1);
   const flight = THREE.MathUtils.clamp((p - .775) / .095, 0, 1);
@@ -19,11 +19,8 @@ export function sampleHeartPose(progress, side, target = {center:new THREE.Vecto
     side * .18 * Math.sin(angle * 2) * wave,
   );
   if (p >= .87) target.center.set(0, 0, 0);
-  const breath = 1 + .018 * Math.sin(THREE.MathUtils.clamp((p - .915) / .020, 0, 1) * Math.PI);
-  target.scale = breath;
-  const sharedTurn = (-.22 + THREE.MathUtils.smoothstep(p, .895, .935) * .44)
-    * THREE.MathUtils.smoothstep(p, .87, .882);
-  target.angle = p < .87 ? side * .16 * Math.sin(angle * 2) : sharedTurn;
+  target.scale = 1;
+  target.angle = p < .87 ? side * .16 * Math.sin(angle * 2) : 0;
   return target;
 }
 
@@ -168,9 +165,7 @@ const particleVertex = /* glsl */ `
     float gather = smoothPhase(0.72, 0.795);
     float heartImpact = phase(0.87, 0.895);
     float impactReveal = smoothPhase(0.87, 0.882);
-    float bigGather = smoothPhase(0.895, 0.915);
-    float shatter = smoothPhase(0.935, 0.955);
-    float reform = smoothPhase(0.955, 0.995);
+    float reform = smoothPhase(0.895, 0.995);
     float finishFade = 1.0 - smoothPhase(0.995, 1.0);
     float driftPhase = uProgress * 17.0 + aSeed.x * 6.2831853;
 
@@ -186,7 +181,7 @@ const particleVertex = /* glsl */ `
               * cloud * uScale * (0.08 + aSeed.z * 0.12);
 
     // Compact native-style heart contours fly separately. They stay small right
-    // up to the strike; the original full heart forms only out of its debris.
+    // up to the strike; their debris reforms directly into the globe.
     float heartSide = step(0.0, aHeartSide);
     float angle = mix(uHeartAngleB, uHeartAngleA, heartSide);
     mat3 turn = mat3(cos(angle), 0.0, -sin(angle),
@@ -194,20 +189,18 @@ const particleVertex = /* glsl */ `
                      sin(angle), 0.0, cos(angle));
     vec3 heartCenter = mix(uHeartCenterB, uHeartCenterA, heartSide);
     vec3 marker = turn * aMarker * uMarkerScale * uScale;
-    vec3 heart = turn * aHeart * uHeartScale * uScale;
     vec3 localPosition = mix(flight, marker + heartCenter * uScale, gather);
     if (uProgress >= 0.87) {
       float impactExpansion = 1.0 - pow(1.0 - heartImpact, 3.0);
       vec3 debris = marker * (1.0 - impactExpansion)
                     + aExplosion * impactExpansion * uScale * (0.78 + aSeed.y * 0.32);
+      float impactWave = sin(heartImpact * 3.14159265);
       debris += vec3(sin(driftPhase), cos(driftPhase * 0.83), sin(driftPhase * 0.71))
-                * sin(heartImpact * 3.14159265) * uScale * 0.07;
-      localPosition = mix(debris, heart, bigGather);
+                * impactWave * impactWave * uScale * 0.07;
+      localPosition = debris;
     }
-    localPosition += (aExplosion * 1.35 + aHeart * 0.18)
-                     * shatter * shatter * uScale;
     vec3 worldPosition = uMerge + uBasis * localPosition;
-    if (uProgress >= 0.935) {
+    if (uProgress >= 0.87) {
       // These very same particles regroup on V3's real geographic surface.
       // Geography is a WORLD-space destination, without the heart's offset or
       // orientation. The curl vanishes at both endpoints of the reversible morph.
@@ -248,40 +241,26 @@ const particleVertex = /* glsl */ `
     vAlpha = (smoothPhase(0.638, 0.652)
              + formationAlpha) * mix(0.58, 1.0, aSeed.y)
              * sparkle * 0.88;
-    // Keep the original soft point sprite and seeded variation. Subpixel points
-    // were washing out on light backgrounds: strengthen the heart alone in CSS
-    // pixel units, independent of device DPR and without enlarging the cloud.
+    // Keep the compact markers' seeded sparkle independent of display DPR.
     float heartDriftPhase = uProgress * 12.0 + aHeartSeed.x * 6.2831853;
     float heartSparkle = 0.87 + 0.13 * pow(0.5 + 0.5 * sin(heartDriftPhase * 3.7), 6.0);
-    float heartSize = mix(0.024, 0.050, aHeartSeed.z) * (uScale / 6.0);
-    float originalSize = clamp(heartSize * uProjectionScale / max(0.5, -viewPosition.z),
-                              1.2 * uPixelRatio, 3.2 * uPixelRatio);
-    float originalAlpha = smoothPhase(0.638, 0.652)
-                          * mix(0.68, 1.0, aHeartSeed.y) * heartSparkle;
-    // Accentuate only the actual shell near the current silhouette, including
-    // its slight spatial turn. No solid outline or additional particle layer.
-    vec3 surfaceNormal = normalize(turn * aHeartNormal.xyz);
-    float rim = pow(1.0 - abs(surfaceNormal.z), 2.5) * aHeartNormal.w;
-    originalSize *= 1.0 + 0.25 * rim;
-    originalAlpha = min(1.0, originalAlpha * (1.0 + 0.35 * rim));
     float markerSize = (aMarkerActive > 0.5 ? 1.15 : 0.75) * uPixelRatio;
     float markerAlpha = aMarkerActive * mix(0.74, 0.94, aHeartSeed.y) * heartSparkle;
     if (uProgress < 0.87) {
       gl_PointSize = mix(gl_PointSize, markerSize, gather);
       vAlpha = mix(vAlpha, markerAlpha, gather);
     } else {
-      gl_PointSize = mix(mix(markerSize, gl_PointSize, impactReveal), originalSize, bigGather);
-      vAlpha = mix(mix(markerAlpha, vAlpha, impactReveal), originalAlpha * aHeartActive, bigGather);
+      gl_PointSize = mix(markerSize, gl_PointSize, impactReveal);
+      vAlpha = mix(markerAlpha, vAlpha, impactReveal);
     }
-    if (uProgress >= 0.935) {
-      // Extra globe points start at zero opacity when drawRange is restored;
-      // their gradual arrival enriches the shatter without a density pop.
-      float extra = (1.0 - aHeartActive) * smoothPhase(0.935, 0.955) * 0.70;
+    if (uProgress >= 0.87) {
+      // The restored globe particles share impactReveal, starting at zero
+      // opacity at the collision rather than popping in at full density.
       float globeSize = clamp(mix(0.018, 0.039, aSeed.z) * uProjectionScale
                               / max(0.5, -viewPosition.z), 1.1 * uPixelRatio, 2.6 * uPixelRatio);
       float globeAlpha = mix(0.58, 1.0, aSeed.y) * sparkle * 0.88;
       gl_PointSize = mix(gl_PointSize, globeSize, reform);
-      vAlpha = mix(vAlpha + extra * originalAlpha, globeAlpha, reform) * finishFade
+      vAlpha = mix(vAlpha, globeAlpha, reform) * finishFade
                * formationVisibility(worldPosition, cameraPosition, uGlobeRadius, uFormationSurface);
     }
     vSoftness = 0.0;
@@ -656,11 +635,11 @@ export function createParticles({ count = 10000, mobile = false, formationPositi
       forward.set(0, 0, 1).applyQuaternion(starBasis);
       configureCurve(origins[0], 1, uniforms.uAnchorA.value, uniforms.uControlAA.value, uniforms.uControlAB.value, heartScale);
       configureCurve(origins[1], -1, uniforms.uAnchorB.value, uniforms.uControlBA.value, uniforms.uControlBB.value, heartScale);
-      geometry.setDrawRange(0, p < .18 || p >= .935 ? particleCount : p >= .795 && p < .87 ? 360 : burstCount);
+      geometry.setDrawRange(0, p < .18 || p >= .87 ? particleCount : p >= .795 && p < .87 ? 360 : burstCount);
       // A transparent sphere must not hard-occlude the forming continents.
       // Use the gradual ray/sphere fade above until the solid globe takes over;
-      // restore normal hardware depth for the unchanged explosion and heart.
-      material.depthTest = p >= .18 && (p < .935 || p >= 1);
+      // restore normal hardware depth for the unchanged first burst and twins.
+      material.depthTest = p >= .18 && (p < .87 || p >= 1);
       particles.visible = (formation.available && p < .18) || (p > .637 && p < 1);
       stars.visible = p > .366 && p < .661;
       flash.visible = (p > .638 && p < .690) || (p > .868 && p < .898);

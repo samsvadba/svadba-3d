@@ -56,10 +56,10 @@ assert.ok(separationKm > 20 && separationKm < 35);
 assert.deepEqual(STORY_PHASES.stars, [.37, .64]);
 assert.deepEqual(STORY_PHASES.gather, [.72, .795]);
 
-assert.equal(STORY_DURATION, 29);
+assert.equal(STORY_DURATION, 25.5);
 assert.deepEqual(STORY_PHASES.formation, [0,.144]);
 assert.deepEqual(STORY_PHASES.overview, [.144,.18]);
-for (const [seconds, score] of [[0,0],[4,.144],[5,.18],[7.5,.30],[8.12,.37],[8.3,.39],[13.3,.64],[15,.72],[15.6,.735],[18.2,.795],[21.7,.87],[24.4,.915],[25.1,.935],[25.8,.955],[26.55,.965],[28.8,.995],[29,1]]) {
+for (const [seconds, score] of [[0,0],[4,.144],[5,.18],[7.5,.30],[8.12,.37],[8.3,.39],[13.3,.64],[15,.72],[15.6,.735],[18.2,.795],[21.7,.87],[22.4,.895],[25.3,.995],[25.5,1]]) {
   assert.ok(Math.abs(toStoryProgress(seconds/STORY_DURATION)-score)<1e-10);
 }
 for (let milliseconds=0;milliseconds<=5000;milliseconds+=5) {
@@ -70,9 +70,8 @@ for (let milliseconds=0;milliseconds<=5000;milliseconds+=5) {
 // leaving the latter passage for heart-marker flight, impact and geographic reform.
 assert.deepEqual(STORY_PHASES.twins, [.795,.87]);
 assert.deepEqual(STORY_PHASES.heartImpact, [.87,.895]);
-assert.deepEqual(STORY_PHASES.heartRegather, [.895,.915]);
-assert.deepEqual(STORY_PHASES.heart, [.915,.935]);
-assert.deepEqual(STORY_PHASES.reform, [.955,.995]);
+assert.ok(!('heart' in STORY_PHASES) && !('heartRegather' in STORY_PHASES), 'Large shared heart stage must be removed');
+assert.deepEqual(STORY_PHASES.reform, [.895,.995]);
 let previousScore = -1;
 for (let i=0;i<=10000;i++) { const score=toStoryProgress(i/10000); assert.ok(score>=previousScore && score>=0 && score<=1); previousScore=score; }
 const detail = JSON.parse(await readFile(new URL('../../geography-detail-v3.json', import.meta.url), 'utf8'));
@@ -145,7 +144,7 @@ for (const count of [16000, 42000, 60000]) {
   for (const progress of [0,.105,.179,.18,.64,.795,.83,.86999,.87,.90,.93499,.935,.97,.999,1,.05]) {
     effect.update({progress,origins,merge:new THREE.Vector3(0,0,20),color:new THREE.Color('#303D29')});
     assert.equal(geometry.drawRange.start,0);
-    assert.equal(geometry.drawRange.count,progress<.18||progress>=.935?count:progress>=.795&&progress<.87?360:burstBudget,'Only the two compact marker contours are drawn between their formation and impact');
+    assert.equal(geometry.drawRange.count,progress<.18||progress>=.87?count:progress>=.795&&progress<.87?360:burstBudget,'Only the two compact marker contours are drawn between their formation and impact');
   }
   effect.dispose();
   assert.equal(effect.group.children.length, 0);
@@ -221,7 +220,7 @@ for (const [width, height] of viewports) {
   const evaluate = progress => {
     const pose = choreography.sample(progress, { width, height, overviewDistance, heartBounds: HEART_BOUNDS });
     camera.position.copy(pose.position); camera.lookAt(pose.target); camera.updateMatrixWorld();
-    effect.update({ progress, origins, merge: pose.merge, heartScale: pose.heartScale, color, basis: camera.quaternion, starBasis: pose.basis, formationRotation: pose.formationRotation, formationSurface: progress >= .935 ? pose.globeOpacity : pose.globeReveal });
+    effect.update({ progress, origins, merge: pose.merge, heartScale: pose.heartScale, color, basis: camera.quaternion, starBasis: pose.basis, formationRotation: pose.formationRotation, formationSurface: progress >= .87 ? pose.globeOpacity : pose.globeReveal });
     return pose;
   };
   for (let i = 0; i <= 1000; i += 1) {
@@ -234,8 +233,8 @@ for (const [width, height] of viewports) {
     assert.ok(pose.heartScale > 0);
     const uniforms = effect.group.children[0].material.uniforms;
     assert.ok(Math.abs(uniforms.uFormationRotation.value - pose.formationRotation) < 1e-12, 'Geography and particle formation have different axes');
-    assert.equal(uniforms.uFormationSurface.value, progress >= .935 ? pose.globeOpacity : pose.globeReveal, 'Cloud occlusion differs from the visible globe surface');
-    assert.equal(effect.group.children[0].material.depthTest, progress >= .18 && (progress < .935 || progress >= 1), 'The transparent forming sphere abruptly cuts off cloud geography');
+    assert.equal(uniforms.uFormationSurface.value, progress >= .87 ? pose.globeOpacity : pose.globeReveal, 'Cloud occlusion differs from the visible globe surface');
+    assert.equal(effect.group.children[0].material.depthTest, progress >= .18 && (progress < .87 || progress >= 1), 'The transparent forming sphere abruptly cuts off cloud geography');
     assert.ok(pose.formationRotation >= previousFormationRotation, 'Formation spin reverses during settling');
     previousFormationRotation = pose.formationRotation;
     if (progress === 0) assert.equal(pose.formationRotation, -Math.PI * 4);
@@ -307,10 +306,10 @@ for (const [width, height] of viewports) {
 }
 
 effect.dispose(); sourceGeometry.dispose();
-console.log('PASS — finite 16k / 42k / 60k formation points; unchanged 10k / 22k / 33k hearts retain original sampler/sprite and seeded appearance.');
-console.log('PASS — 2f7b1ed sampler/sprite checksum preserved with four-percent taller balanced spatial heart proportions; opposite star arcs stay clear until their impact.');
+console.log('PASS — finite 16k / 42k / 60k formation points; original cached sampler/seed streams remain unchanged, without rendering a shared large heart.');
+console.log('PASS — 2f7b1ed sampler/sprite checksum preserved; opposite star arcs stay clear until their impact.');
 console.log('PASS — stable geometries/attributes; no independent clock; 1,001 forward/backward states identical across five viewports.');
 console.log(`PASS — origins ${separationKm.toFixed(2)} km apart; minimum camera radius ${minimumCamera.toFixed(3)}; minimum star radius ${minimumStarRadius.toFixed(3)}.`);
 console.log(`PASS — star depth ≥${minimumStarDepth.toFixed(2)}, edge clearance ≥${edgeMargin.toFixed(1)} px; fixed trajectory basis; clean final globe handoff.`);
 console.log(`PASS — distinct star cores remain ≥${minimumSeparateCores.toFixed(1)} px apart through p=.61, without crossing before the p=.64 merger.`);
-console.log(`PASS — cloud rotates while gathering for four seconds, then the completed globe coasts one second; 720° with smooth start/stop (peak ${(greatestSpinSpeed/(2*Math.PI)).toFixed(3)} turns/s); shortened towns/retreat and 29-second twin-heart/geographic-reform score.`);
+console.log(`PASS — cloud rotates while gathering for four seconds, then the completed globe coasts one second; 720° with smooth start/stop (peak ${(greatestSpinSpeed/(2*Math.PI)).toFixed(3)} turns/s); shortened towns/retreat and 25.5-second compact-heart/direct-geographic-reform score.`);
