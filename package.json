@@ -6,7 +6,9 @@
   "scripts": {
     "test:rsvp": "node rsvp-v3.test.cjs",
     "dev": "vite --configLoader native",
-    "build": "vite build --configLoader native",
+    "brand:export": "node scripts/brand-export.mjs",
+    "test:brand": "node branding/monogram.test.mjs && node scripts/brand-export.test.mjs",
+    "build": "node scripts/brand-export.mjs && vite build --configLoader native",
     "preview": "vite preview --configLoader native"
   },
   "dependencies": {
@@ -14,6 +16,7 @@
     "three": "^0.180.0"
   },
   "devDependencies": {
-    "vite": "^7.1.7"
+    "vite": "^7.1.7",
+    "sharp": "0.35.5"
   }
 }

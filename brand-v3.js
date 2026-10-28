@@ -1,5 +1,9 @@
-// Shared visual identity across the V3 experience.
-export const monogram = '<svg class="brand-monogram" viewBox="0 0 160 128" aria-hidden="true" focusable="false"><text x="9" y="91" class="brand-initial">S</text><text x="65" y="116" class="brand-initial">M</text><text x="46" y="116" class="brand-ampersand">&amp;</text></svg>';
+import monogramSource from './branding/monogram.svg?raw';
+import { renderMonogram } from './branding/monogram-component.js';
+import './branding/monogram.css';
+
+// One approved vector, shared by the header, invitation, loader and prototype.
+export const weddingMonogram = options => renderMonogram(monogramSource, options);
 const nameArtwork = new URL('./invite-wordmark-original.png', import.meta.url).href;
 let nameInstance = 0;
 export function names() {

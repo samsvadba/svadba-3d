@@ -1,4 +1,4 @@
-import { monogram, names } from './brand-v3.js';
+import { weddingMonogram, names } from './brand-v3.js';
 import { gsap } from 'gsap';
 import config from './config-v3.js';
 import countries from './countries-v3.json';
@@ -1387,7 +1387,7 @@ $('loading-ring').style.setProperty('--p','50%');
 finishLoading();
 
 // One monogram and one calligraphic name lockup, at every display size.
-document.querySelector('#header-home').innerHTML=monogram;
-document.querySelector('.preloader-monogram').innerHTML=monogram;
+document.querySelector('#header-home').innerHTML=weddingMonogram();
+document.querySelector('.preloader-monogram').innerHTML=weddingMonogram();
 const brandHero=document.querySelector('.title-layout h1');
 brandHero.classList.add('brand-names');brandHero.innerHTML=names();

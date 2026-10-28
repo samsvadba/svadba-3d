@@ -1,4 +1,4 @@
-import { monogram, names } from './brand-v3.js';
+import { weddingMonogram, names } from './brand-v3.js';
 import { createRSVP } from './rsvp-v3.js';
 import './wedding-v3.css';
 import maps from './wedding-maps-v3.js';
@@ -24,7 +24,7 @@ export function createWedding(root, wedding, { t, gsap, reducedMotion }) {
   const venue = (item, ceremony) => `<article class="w-venue">${icon(ceremony?'church':'rings')}<p class="w-eyebrow">${copy(ceremony?'wCeremony':'wReception')}</p><h3>${escape(item.name)}</h3><p class="w-venue-time">${ceremony?escape(item.time):copy('wAfterCeremony')}</p><p class="w-address">${escape(item.address)}</p><a class="w-map-preview" href="${escape(item.maps)}" target="_blank" rel="noopener noreferrer" aria-label="${escape(item.name+' — '+item.address)}">${maps[ceremony?'ceremony':'reception']}</a><a class="w-map-credit" href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">© OpenStreetMap</a>${link(item.maps,'wMap')}</article>`;
   const invitationMarkup = `<section class="w-panel w-invitation" id="w-panel-invitation" role="tabpanel" aria-labelledby="w-tab-invitation" tabindex="0" aria-label="${escape(t('wInvitation'))}">
     <div class="w-invitation-inner">
-      <div class="w-monogram" aria-hidden="true">${monogram}</div>
+      <div class="w-monogram" aria-hidden="true">${weddingMonogram()}</div>
       <h2 tabindex="-1" class="w-invitation-names brand-names">${names()}</h2>
       <p class="w-invitation-announcement">${copy('wAnnounce')}<br>${copy('wSacrament')}</p>
       <div class="w-invitation-rule" aria-hidden="true"></div>

@@ -91,7 +91,7 @@ export function createParticleIntro({
     root.dataset.particleMode = mode;
     content.dataset.mode = mode; content.dataset.progress = progress.toFixed(6);
     const score = toStoryProgress(progress);
-    const nextStage = score < .18 ? 0 : score < .37 ? 1 : score < .54 ? 2 : score < .64 ? 3 : score < .72 ? 4 : score < .955 ? 5 : 6;
+    const nextStage = score < .18 ? 0 : score < .37 ? 1 : score < .54 ? 2 : score < .64 ? 3 : score < .72 ? 4 : score < .895 ? 5 : 6;
     if (nextStage !== lastStage) {
       stage.textContent = `${String(nextStage + 1).padStart(2, '0')} / 07`; lastStage = nextStage;
     }
@@ -219,7 +219,7 @@ export function createParticleIntro({
       paintGeography(pose, theme);
       fx.update({ progress: score, origins: originVectors, merge: pose.merge, heartScale: pose.heartScale,
         color: particleColor, dark: theme.dark, basis: pose.basis, starBasis: pose.basis,
-        formationRotation: pose.formationRotation, formationSurface: score >= .935 ? pose.globeOpacity : pose.globeReveal });
+        formationRotation: pose.formationRotation, formationSurface: score >= .87 ? pose.globeOpacity : pose.globeReveal });
       updateOrigins(pose.originReveal);
       renderer.setClearColor(theme.paper, 1); renderer.render(scene, camera);
       if (!firstFrame) { firstFrame = true; onFirstFrame(); }
