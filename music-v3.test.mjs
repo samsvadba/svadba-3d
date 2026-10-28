@@ -42,7 +42,7 @@ function harness(saved = {}, { webAudio = true, storageAvailable = true } = {}) 
     },
   };
   class AudioMock {
-    constructor() { this.paused = true; this.playCalls = 0; this.pauseCalls = 0; this.listeners = new Map(); stats.audio.push(this); }
+    constructor() { this.paused = true; this.currentTime = 0; this.playCalls = 0; this.pauseCalls = 0; this.listeners = new Map(); stats.audio.push(this); }
     addEventListener(type, callback) { this.listeners.set(type, callback); }
     getAttribute(name) { return name === 'src' ? this.src || null : null; }
     play() { this.playCalls++; this.paused = false; return Promise.resolve(); }
@@ -80,7 +80,7 @@ function harness(saved = {}, { webAudio = true, storageAvailable = true } = {}) 
   return { ...context.player, stats, storage, document, sound, dispatch };
 }
 
-assert.equal(config.audio.backgroundMusic, 'audio/shes-a-rainbow.mp3');
+assert.equal(config.audio.backgroundMusic, 'audio/shes-a-rainbow.mp3?v=cb14e941');
 const mp3 = await readFile(new URL('./public/audio/shes-a-rainbow.mp3', import.meta.url));
 assert.ok(mp3.byteLength > 100_000, 'Real MP3 asset is present, not a placeholder');
 
@@ -94,7 +94,8 @@ fresh.syncMusic(); fresh.dispatch('click', '#nav-journey');
 assert.equal(fresh.music.playCalls, 0, 'Navigation cannot turn on a fresh visitor’s music');
 assert.equal(fresh.stats.contexts, 0, 'No Web Audio context until sound is enabled');
 fresh.sound.onclick();
-assert.equal(fresh.music.src, '/svadba-3d/audio/shes-a-rainbow.mp3');
+assert.equal(fresh.music.src, '/svadba-3d/audio/shes-a-rainbow.mp3?v=cb14e941');
+assert.equal(fresh.music.currentTime, 0, 'The already-trimmed recording starts at zero, without an extra seek');
 assert.equal(fresh.music.paused, false);
 assert.equal(fresh.storage.get('sm-sound'), 'on');
 assert.equal(fresh.music.playCalls, 1);
@@ -109,11 +110,13 @@ for (const { options } of fresh.stats.fades) {
   assert.equal(options.duration, .8);
   assert.equal(options.ease, 'sine.inOut');
 }
+fresh.music.currentTime = 12;
 fresh.document.hidden = true; fresh.dispatch('visibilitychange');
 assert.equal(fresh.music.paused, true, 'A hidden page pauses the same audio');
 assert.equal(fresh.storage.get('sm-sound'), 'on', 'Visibility does not overwrite preference');
 fresh.document.hidden = false; fresh.dispatch('visibilitychange');
 assert.equal(fresh.music.playCalls, 2);
+assert.equal(fresh.music.currentTime, 12, 'Resuming preserves the existing position');
 assert.equal(fresh.stats.audio.length, 1);
 fresh.sound.onclick();
 assert.equal(fresh.music.paused, true);
@@ -128,7 +131,7 @@ assert.equal(rememberedOn.music.playCalls, 0, 'Remembered on still waits for exi
 assert.equal(rememberedOn.music.src, undefined);
 rememberedOn.dispatch('click', '#nav-journey');
 assert.equal(rememberedOn.music.playCalls, 1);
-assert.equal(rememberedOn.music.src, '/svadba-3d/audio/shes-a-rainbow.mp3');
+assert.equal(rememberedOn.music.src, '/svadba-3d/audio/shes-a-rainbow.mp3?v=cb14e941');
 rememberedOn.sound.onclick();
 assert.equal(rememberedOn.music.paused, true, 'Remembered-on visitor can switch sound off');
 assert.equal(rememberedOn.storage.get('sm-sound'), 'off');
