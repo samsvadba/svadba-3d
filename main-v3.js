@@ -54,8 +54,9 @@ const smoothstep = (a,b,n) => {const t=clamp((n-a)/(b-a),0,1);return t*t*(3-2*t)
 const fullscreenVideo = { active:false, closing:false, timeline:null, externalHold:false, resumeStory:false };
 const videoScene=$('destination-video-scene'), destinationVideo=$('destination-video');
 const destinationBuffer=createDestinationBuffer(locations,{enabled:!navigator.connection?.saveData&&!/^(slow-)?2g$/.test(navigator.connection?.effectiveType||'')});
-const destinationParticles=createDestinationParticles($('destination-video-particles'),{reducedMotion,getColor:()=>getParticleTheme().ink.getStyle()});
+const destinationParticles=createDestinationParticles($('destination-video-particles'),{reducedMotion,getColor:()=>getParticleTheme().ink.getStyle(),getBackground:()=>getParticleTheme().paper.getStyle()});
 let destinationSourceFallback=false;
+let destinationPlaybackPending=null;
 const androidInstagram = /Android/i.test(navigator.userAgent);
 let instagramCopy, instagramCopyHelp, instagramCopyField;
 if(androidInstagram){
@@ -77,6 +78,7 @@ function refreshInstagramCopy(){
 function holdInstagramDestination(){
   if(!fullscreenVideo.externalHold)fullscreenVideo.resumeStory=storyActive;
   fullscreenVideo.externalHold=true;
+  destinationVideo.autoplay=false;
   pauseStory();destinationVideo.pause();
   // Return/focus never reopens Instagram or resumes the story; playback is explicit.
   $('destination-video-retry').textContent=t('videoResume');
@@ -114,6 +116,7 @@ function resetFullscreenVideo() {
   destinationParticles.stop();
   videoScene.style.removeProperty('--destination-backdrop');
   gsap.killTweensOf(destinationVideo);
+  destinationPlaybackPending=null;destinationVideo.autoplay=false;
   destinationVideo.pause();
   if(destinationVideo.hasAttribute('src')){
     destinationVideo.removeAttribute('src');destinationVideo.load();
@@ -141,7 +144,8 @@ function prepareFullscreenVideo(loc) {
       videoScene.style.setProperty('--destination-backdrop', 'url("'+backdrop+'")');
     }
   }
-  destinationVideo.muted=true;destinationVideo.defaultMuted=true;destinationVideo.volume=0;
+  destinationPlaybackPending=null;
+  destinationVideo.muted=true;destinationVideo.defaultMuted=true;destinationVideo.volume=0;destinationVideo.playsInline=true;
   destinationVideo.autoplay=false;destinationVideo.preload='auto';
   destinationSourceFallback=false;
   destinationVideo.src=destinationBuffer.sourceFor(loc);destinationVideo.load();
@@ -156,18 +160,42 @@ function prepareFullscreenVideo(loc) {
   $('destination-video-status').textContent='';
   $('destination-video-retry').textContent=t('play');
   $('destination-video-retry').hidden=true;
-  gsap.set(destinationVideo,{opacity:0,scale:reducedMotion.matches?1:1.035});
+  // Safari must see a visible muted video; the full-screen particle canvas
+  // covers its first frame instead of hiding the media element with opacity:0.
+  gsap.set(destinationVideo,{opacity:1,scale:reducedMotion.matches?1:1.035});
 }
 
 function playFullscreenVideo() {
-  if(fullscreenVideo.externalHold)return;
-  const request=revision;
-  destinationVideo.play()?.catch(()=>{
-    if(request!==revision||!fullscreenVideo.active||fullscreenVideo.closing||fullscreenVideo.externalHold)return;
+  if(!fullscreenVideo.active||fullscreenVideo.closing||fullscreenVideo.externalHold||document.hidden||destinationPlaybackPending)return;
+  const request=revision, source=destinationVideo.getAttribute('src'), attempt={};
+  destinationPlaybackPending=attempt;
+  destinationVideo.muted=true;
+  let playing;
+  try{playing=destinationVideo.play();}catch(error){playing=Promise.reject(error);}
+  Promise.resolve(playing).catch(error=>{
+    if(destinationPlaybackPending!==attempt||request!==revision||source!==destinationVideo.getAttribute('src')||!fullscreenVideo.active||fullscreenVideo.closing||fullscreenVideo.externalHold)return;
+    // Loading/cancelling a source is not a request for another user gesture.
+    if(error.name==='AbortError')return;
+    // Some Safari versions reject a prefetched blob despite accepting the same
+    // silent HTTPS film. Retry the original delivery once, never another player.
+    if(fallbackDestinationSource())return;
+    destinationVideo.autoplay=false;
     $('destination-video-status').textContent=t('videoTap');
     $('destination-video-retry').hidden=false;
-  });
+  }).finally(()=>{if(destinationPlaybackPending===attempt)destinationPlaybackPending=null;});
 }
+
+function fallbackDestinationSource() {
+  if(!destinationVideo.getAttribute('src')?.startsWith('blob:')||destinationSourceFallback)return false;
+  destinationSourceFallback=true;destinationPlaybackPending=null;
+  destinationVideo.src=destinationVideoUrl(locations[currentIndex].fullscreenVideo);destinationVideo.load();
+  if(fullscreenVideo.active)playFullscreenVideo();
+  return true;
+}
+
+destinationVideo.addEventListener('canplay',()=>{
+  if(destinationVideo.paused&&!destinationVideo.ended&&$('destination-video-retry').hidden)playFullscreenVideo();
+});
 
 function openFullscreenVideo() {
   fullscreenVideo.active=true;
@@ -176,7 +204,10 @@ function openFullscreenVideo() {
   document.body.dataset.fullscreenVideo='true';
   videoScene.inert=false;videoScene.setAttribute('aria-hidden','false');
   $('app').inert=true;$('persistent-header').inert=true;$('bottom-nav').inert=true;
-  fullscreenVideo.timeline=gsap.to(videoScene,{autoAlpha:1,duration:duration(.85),ease:'power2.inOut'});
+  // Make the media visible before requesting playback. The particles provide
+  // the reveal; an invisible fading parent can block Safari autoplay.
+  gsap.set(videoScene,{autoAlpha:1});
+  destinationVideo.autoplay=true;
   $('destination-video-close').focus({preventScroll:true});
   playFullscreenVideo();
 }
@@ -185,6 +216,7 @@ function closeFullscreenVideo(afterOverview=null) {
   if(typeof afterOverview!=='function')afterOverview=null;
   if(!fullscreenVideo.active||fullscreenVideo.closing)return;
   fullscreenVideo.closing=true;destinationReady=false;updateDestinationNavigation();
+  destinationVideo.autoplay=false;
   fullscreenVideo.timeline?.kill();
   destinationVideo.pause();
   fullscreenVideo.timeline=gsap.to(videoScene,{autoAlpha:0,duration:duration(.6),ease:'power2.inOut',onComplete:()=>{
@@ -201,10 +233,7 @@ destinationVideo.addEventListener('playing',()=>{
 });
 destinationVideo.addEventListener('error',()=>{
   if(!destinationVideo.hasAttribute('src'))return;
-  if(destinationVideo.getAttribute('src').startsWith('blob:')&&!destinationSourceFallback){
-    destinationSourceFallback=true;destinationVideo.src=destinationVideoUrl(locations[currentIndex].fullscreenVideo);destinationVideo.load();
-    if(fullscreenVideo.active)playFullscreenVideo();return;
-  }
+  if(fallbackDestinationSource())return;
   destinationParticles.stop();
   $('destination-video-status').textContent=t('videoError');
   $('destination-video-retry').hidden=false;

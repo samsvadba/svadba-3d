@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
+import vm from 'node:vm';
 import config from './config-v3.js';
-import { destinationVideoUrl, createDestinationBuffer } from './destination-media-v3.js';
+import { destinationVideoUrl, createDestinationBuffer, createDestinationParticles } from './destination-media-v3.js';
 
 const first=config.locations[0].fullscreenVideo;
 const silent=destinationVideoUrl(first);
@@ -32,4 +33,56 @@ const main=await readFile(new URL('./main-v3.js',import.meta.url),'utf8');
 assert.ok(main.indexOf('if(loc.fullscreenVideo)prepareFullscreenVideo(loc);')<main.indexOf('flyCamera(loc.lat, loc.lon, memoryDistance(), 1.3'));
 assert.doesNotMatch(main,/textContent=t\('videoLoading'\)/);
 assert.match(main,/destinationParticles\.reveal\(destinationVideo\)/);
-console.log('PASS: audio-free MP4 delivery, three-ahead buffering, reuse, active pinning, eviction, bounded streams/data saver and particle handoff.');
+
+// Run the actual production preparation/open/readiness handlers. A WebKit-like
+// player rejects an invisible media element, making the old ordering fail here.
+const playback=main.slice(main.indexOf('function prepareFullscreenVideo('),main.indexOf('function closeFullscreenVideo('));
+function playerFixture({blob=false,outcomes=[]}={}) {
+  const events=new Map(),elements=new Map();let plays=0;
+  const element=id=>{if(!elements.has(id))elements.set(id,{hidden:true,style:{removeProperty(){},setProperty(){}},setAttribute(){},focus(){}});return elements.get(id);};
+  const video={src:'',paused:true,ended:false,opacity:0,load(){},getAttribute(){return this.src;},addEventListener:(type,fn)=>events.set(type,fn),
+    play(){plays++;assert.equal(element('scene').autoAlpha,1,'scene is visible before play');assert.equal(this.opacity,1,'video is visible beneath the particles');assert.equal(this.muted,true);assert.equal(this.playsInline,true);
+      const error=outcomes.shift();if(error)return Promise.reject(Object.assign(new Error(error),{name:error}));this.paused=false;return Promise.resolve();}};
+  const state={active:false,closing:false,externalHold:false};
+  const context=vm.createContext({destinationVideo:video,videoScene:element('scene'),fullscreenVideo:state,destinationPlaybackPending:null,destinationSourceFallback:false,
+    document:{hidden:false,body:{dataset:{}}},window:{matchMedia:()=>({matches:false})},revision:1,currentIndex:0,locations:config.locations,reducedMotion:{matches:false},
+    destinationBuffer:{sourceFor:()=>blob?'blob:cached':silent},destinationVideoUrl,destinationParticles:{start(){}},syncMusic(){},refreshInstagramCopy(){},
+    cityName:loc=>loc.key,countryText:()=>'',t:key=>key,$:element,gsap:{set:(target,values)=>Object.assign(target,values)}});
+  vm.runInContext(playback,context);
+  context.prepareFullscreenVideo(config.locations[0]);assert.equal(plays,0,'preparing never plays a hidden film');
+  return {context,state,video,events,element,plays:()=>plays,open:()=>context.openFullscreenVideo()};
+}
+const automatic=playerFixture();automatic.open();await settle();
+assert.equal(automatic.video.paused,false);assert.equal(automatic.video.autoplay,true);assert.equal(automatic.element('destination-video-retry').hidden,true);
+const blobRejected=playerFixture({blob:true,outcomes:['NotAllowedError']});blobRejected.open();await settle();
+assert.equal(blobRejected.plays(),2);assert.equal(blobRejected.video.src,silent);assert.equal(blobRejected.video.paused,false,'HTTPS fallback starts without a new tap');
+const interrupted=playerFixture({outcomes:['AbortError']});interrupted.open();await settle();
+assert.equal(interrupted.element('destination-video-retry').hidden,true,'source cancellation is not reported as gesture denial');
+interrupted.events.get('canplay')();await settle();assert.equal(interrupted.video.paused,false);
+const blocked=playerFixture({outcomes:['NotAllowedError']});blocked.open();await settle();blocked.events.get('canplay')();await settle();
+assert.equal(blocked.plays(),1,'a real policy denial does not create a retry loop');assert.equal(blocked.element('destination-video-retry').hidden,false);
+for(const reason of ['externalHold','closing']){
+  const held=playerFixture({outcomes:['AbortError']});held.open();held.state[reason]=true;await settle();held.events.get('canplay')();await settle();
+  assert.equal(held.plays(),1,`${reason} cannot restart playback`);
+}
+
+// The portrait transition must span both viewport axes, including after the
+// cloud has gathered, rather than fitting a small 9:16 frame at the centre.
+const savedGlobals=new Map(['document','requestAnimationFrame','cancelAnimationFrame','devicePixelRatio'].map(key=>[key,globalThis[key]]));
+try {
+  const callbacks=new Map();let frameId=0,arcs=[],fills=[];let bounds={width:390,height:844};
+  Object.assign(globalThis,{document:{hidden:false},devicePixelRatio:2,requestAnimationFrame:fn=>{callbacks.set(++frameId,fn);return frameId;},cancelAnimationFrame:id=>callbacks.delete(id)});
+  const context={setTransform(){},clearRect(){arcs=[];fills=[];},fillRect:(...rect)=>fills.push(rect),beginPath(){},arc:(x,y)=>arcs.push([x,y]),fill(){}};
+  const canvas={hidden:true,getContext:()=>context,getBoundingClientRect:()=>bounds};
+  const particles=createDestinationParticles(canvas,{reducedMotion:{matches:false},getColor:()=>'#ece9df',getBackground:()=>'#20221f'});
+  const tick=now=>{const next=callbacks.entries().next().value;assert.ok(next);callbacks.delete(next[0]);next[1](now);};
+  for(const dimensions of [{width:390,height:844},{width:844,height:390}]){
+    bounds=dimensions;particles.start();tick(performance.now()+1200);
+    assert.deepEqual(fills[0],[0,0,bounds.width,bounds.height]);
+    assert.ok(Math.min(...arcs.map(p=>p[0]))<bounds.width*.04&&Math.max(...arcs.map(p=>p[0]))>bounds.width*.96);
+    assert.ok(Math.min(...arcs.map(p=>p[1]))<bounds.height*.04&&Math.max(...arcs.map(p=>p[1]))>bounds.height*.96);
+    particles.reveal();tick(performance.now()+1000);assert.equal(canvas.hidden,true,'overlay clears after playback starts');
+  }
+  particles.stop();
+} finally {for(const [key,value] of savedGlobals){if(value===undefined)delete globalThis[key];else globalThis[key]=value;}}
+console.log('PASS: bounded three-ahead buffer; visible muted autoplay; cancelled-load readiness; one HTTPS fallback; no hold/close/policy retry loop; full portrait/landscape particle coverage and cleanup.');

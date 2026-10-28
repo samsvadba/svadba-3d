@@ -66,33 +66,35 @@ export function createDestinationBuffer(locations, { fetcher = fetch, objectUrls
   };
 }
 
-// A light canvas transition: a spatial cloud gathers into the film frame and
+// A light canvas transition: a spatial cloud gathers across the full viewport and
 // dissolves into playback. No new renderer, library or competing video decoder.
-export function createDestinationParticles(canvas, { reducedMotion, getColor }) {
+export function createDestinationParticles(canvas, { reducedMotion, getColor, getBackground }) {
   const context = canvas.getContext('2d');
   if (!context) return { start() {}, reveal() {}, stop() {}, visibility() {} };
   const points = []; let seed = 20270430;
   const random = () => { seed = (Math.imul(seed,1664525) + 1013904223) >>> 0; return seed / 4294967296; };
   for (let i = 0; i < 1100; i++) points.push({ x:random(), y:random(), z:random(), angle:random()*Math.PI*2, size:.35+random()*.8 });
-  let active = false, frame = 0, started = 0, ready = 0, width = 0, height = 0, aspect = 9/16;
+  let active = false, frame = 0, started = 0, ready = 0, width = 0, height = 0;
   const reduced = () => reducedMotion.matches;
   function draw(now) {
     frame = 0; if (!active || document.hidden) return;
-    if (width !== innerWidth || height !== innerHeight) {
-      width = innerWidth; height = innerHeight;
+    const bounds = canvas.getBoundingClientRect();
+    if (width !== bounds.width || height !== bounds.height) {
+      width = bounds.width; height = bounds.height;
       const dpr = Math.min(devicePixelRatio || 1, 1.5);
       canvas.width = width*dpr; canvas.height = height*dpr; context.setTransform(dpr,0,0,dpr,0,0);
     }
     const arrival = Math.min(1, Math.max(0, (now-started)/1100));
     const exit = ready ? Math.min(1, (now-ready)/850) : 0;
     const gather = ready ? 1-Math.pow(1-exit,3) : arrival*.78;
-    const frameHeight = Math.min(height*.64,width*.76/aspect), frameWidth = frameHeight*aspect;
-    context.clearRect(0,0,width,height); context.fillStyle = getColor();
+    context.clearRect(0,0,width,height);
+    context.globalAlpha = 1-exit; context.fillStyle = getBackground(); context.fillRect(0,0,width,height);
+    context.fillStyle = getColor();
     for (const p of points) {
       const angle = p.angle + (reduced() ? 0 : (now-started)*.00016*(1-gather));
-      const radius = Math.sqrt(p.z)*Math.min(width,height)*.51;
-      const x = width/2 + Math.cos(angle)*radius*(1-gather) + (p.x-.5)*frameWidth*gather;
-      const y = height/2 + Math.sin(angle)*radius*(1-gather) + (p.y-.5)*frameHeight*gather;
+      const radius = Math.sqrt(p.z)*.72;
+      const x = width/2 + Math.cos(angle)*radius*width*(1-gather) + (p.x-.5)*width*gather;
+      const y = height/2 + Math.sin(angle)*radius*height*(1-gather) + (p.y-.5)*height*gather;
       context.globalAlpha = (.22+p.z*.62)*(1-exit);
       context.beginPath(); context.arc(x,y,p.size*(.65+p.z*.5),0,Math.PI*2); context.fill();
     }
@@ -103,7 +105,7 @@ export function createDestinationParticles(canvas, { reducedMotion, getColor }) 
   function stop() { active = false; cancelAnimationFrame(frame); frame = 0; canvas.hidden = true; }
   return {
     start() { stop(); active = true; ready = 0; started = performance.now(); canvas.hidden = false; draw(started); },
-    reveal(video) { if (!active) return; if (reduced()) { stop(); return; } aspect = video.videoWidth / video.videoHeight || aspect; ready = performance.now(); if (!frame) frame = requestAnimationFrame(draw); },
+    reveal() { if (!active || ready) return; if (reduced()) { stop(); return; } ready = performance.now(); if (!frame) frame = requestAnimationFrame(draw); },
     stop,
     visibility() { if (!active) return; if (document.hidden) { cancelAnimationFrame(frame); frame = 0; } else if (!frame) draw(performance.now()); },
   };
