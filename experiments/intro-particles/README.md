@@ -6,7 +6,7 @@ input helper and theme tokens. Its Three.js scene, camera and controls are separ
 Production `intro-particles-v3.js` uses these same particle/choreography helpers
 on the native V3 renderer, camera and globe, with its existing header and footer.
 
-One 22.1-second GSAP timeline starts after the scene and shaders are ready. `pacing.js`
+One 17.2-second GSAP timeline starts after the scene and shaders are ready. `pacing.js`
 gives the rotating cloud four seconds to gather, followed by one final second
 of gentle coasting on the completed globe. These are one continuous motion.
 The close-up arrives at 7.5 s, the camera leaves the towns at 8.3 s and the stars
@@ -39,38 +39,28 @@ over America. The returning geographic cloud uses the same gradual visibility
 with the actual sphere opacity, so its rear points do not abruptly disappear.
 
 The original GPU point cloud retains its geographic formation and seeded burst.
-Before drawing, dispersed dust fades away instead of condensing into tiny blobs.
-Two luminous pens then trace the native globe badge's exact Bezier contour in
-0.55 s (15.6–16.15 s). `heart-light-trails.js` samples one closed contour for
-both pens and ribbons. Two contours share one GPU ribbon mesh with a roughly
-one-CSS-pixel stroke, plus four point sprites for the pens and restrained halos.
-Camera projection keeps the hearts about 28 CSS pixels wide at any DPR/viewport.
-The cores fade after closing the line; only a few companion grains remain.
-`sampleHeartPose` drives a short pair of opposite spatial arcs with a gentle
-tilt, preserving approach velocity at their collision after 2.15 s of flight.
-The impact at 18.3 s produces a second particle burst, which reforms directly
-onto the original geographic positions from 19.0–21.9 s. There is no large
-shared-heart regather, hold or second shatter. The world-space morph has zero
-residual merge offset and fades into the native globe. Production then reveals
-Journey labels without a new entrance.
-`original-heart.js` retains the original sampler and soft point sprite from
-`2f7b1ed75ab0cf6f43b0062870c23631586fdc8f`. Its cached geometry and random streams
-remain intact to avoid changing the opening, explosion or seeded point variation;
-the large heart itself is no longer a render destination.
-The ribbon geometry, four pen sprites and 360 companion grain slots are created
-once; update reuses every GPU buffer. Drawing and pen position are analytic
-functions of the same reversible score, with no accumulated trail history.
-Formation uses adaptive 16,000 / 42,000 / 60,000 points, while the
-first explosion retains its 12,000 / 30,000 / 45,000 budget. All formation points
-return with a gradual opacity ramp during the compact-heart impact, then gather
-on Earth. No solid heart mesh or duplicated scene is introduced.
+The stars collide once at 13.3 s. Their same particles expand into a short spatial
+cloud, then regroup directly on the real geographic boundary positions from
+14.0–17.0 s. There is no heart drawing, heart flight, second impact or hidden
+heart geometry. The entire intro now finishes at 17.2 s. The exact original
+pre-impact score, including its outgoing tangent, is preserved through 13.3 s.
+The world-space morph loses all merge offset and curl at its Earth endpoint;
+production then reveals Journey labels without a new entrance.
+The original soft point sprite remains in use. Legacy random draw advancement
+preserves every approved opening scatter, explosion direction and star seed,
+without generating or uploading any of the former heart points or ribbons.
+Formation uses adaptive 16,000 / 42,000 / 60,000 points, while the early explosion
+retains its 12,000 / 30,000 / 45,000 budget. Additional geography points fade in
+with the reform weight, so increasing the draw range creates no density jump.
+All geometry is created once and every motion remains a function of score
+progress, fully reversible without an accumulated trail history.
 A second point batch renders brighter star cores/trails; a small plane renders
 the merger impulse.
 Star trails use a separate, smaller budget: they grow with traveled distance after
 liftoff, instead of stacking the entire tail into one close-up particle blot.
 The reference repository had no license, so none of its source was copied.
-Heart generation uses its own seeded random stream. All geometry is created once;
-every motion remains a function of score progress. Camera framing is unchanged.
+Camera framing remains unchanged up to the stars’ impact; afterward it settles
+directly into the existing interactive globe.
 
 ## Build without changing production configuration
 

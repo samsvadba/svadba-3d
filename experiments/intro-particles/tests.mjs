@@ -1,8 +1,7 @@
 // Offline numerical checks: no browser, network or production mutations.
 // node experiments/intro-particles/tests.mjs
 import assert from 'node:assert/strict';
-import {createHash} from 'node:crypto';
-import {heartField,heartPoint,originalPointFragment} from './original-heart.js';
+import {originalPointFragment} from './original-heart.js';
 import { readFile } from 'node:fs/promises';
 import * as THREE from 'three';
 import config from '../../config-v3.js';
@@ -12,9 +11,6 @@ import { toStoryProgress, STORY_DURATION } from './pacing.js';
 
 const globeSource = await readFile(new URL('./globe.js', import.meta.url), 'utf8');
 const countries = JSON.parse(await readFile(new URL('../../countries-v3.json', import.meta.url), 'utf8'));
-// Historical code is copied verbatim from the first implementation, 2f7b1ed.
-const historicalHash = createHash('sha256').update([heartField.toString(), heartPoint.toString(), originalPointFragment].join('\n').replace(/\r\n/g, '\n')).digest('hex');
-assert.equal(historicalHash, 'f3cc9b8ab8f6c59d8354fb2b15e9c5dc433664977697a051bdfe1bbceb0391d0', 'The first sampler or sprite has changed');
 function originalRandom() {
   let state = 0x534d2027;
   return () => { state = (Math.imul(state,1664525)+1013904223)>>>0; return state/4294967296; };
@@ -54,25 +50,21 @@ for (const [index, origin] of config.origins.entries()) {
 const separationKm = origins[0].angleTo(origins[1]) * 6371;
 assert.ok(separationKm > 20 && separationKm < 35);
 assert.deepEqual(STORY_PHASES.stars, [.37, .64]);
-assert.deepEqual(STORY_PHASES.gather, [.72, .735]);
-assert.deepEqual(STORY_PHASES.trace, [.735, .795]);
+assert.deepEqual(STORY_PHASES.burst, [.64, .72]);
 
-assert.equal(STORY_DURATION, 22.1);
+assert.equal(STORY_DURATION, 17.2);
 assert.deepEqual(STORY_PHASES.formation, [0,.144]);
 assert.deepEqual(STORY_PHASES.overview, [.144,.18]);
-for (const [seconds, score] of [[0,0],[4,.144],[5,.18],[7.5,.30],[8.12,.37],[8.3,.39],[13.3,.64],[15,.72],[15.6,.735],[16.15,.795],[18.3,.87],[19,.895],[21.9,.995],[22.1,1]]) {
+for (const [seconds, score] of [[0,0],[4,.144],[5,.18],[7.5,.30],[8.12,.37],[8.3,.39],[13.3,.64],[14,.70],[17,.995],[17.2,1]]) {
   assert.ok(Math.abs(toStoryProgress(seconds/STORY_DURATION)-score)<1e-10);
 }
 for (let milliseconds=0;milliseconds<=5000;milliseconds+=5) {
   assert.ok(Math.abs(toStoryProgress(milliseconds/1000/STORY_DURATION)-milliseconds*.000036)<1e-10,
     'Opening retiming interrupts the shared cloud/globe motion');
 }
-// The five-second formation stays intact; the towns/retreat are now concise,
-// leaving the latter passage for heart-marker flight, impact and geographic reform.
-assert.deepEqual(STORY_PHASES.twins, [.795,.87]);
-assert.deepEqual(STORY_PHASES.heartImpact, [.87,.895]);
-assert.ok(!('heart' in STORY_PHASES) && !('heartRegather' in STORY_PHASES), 'Large shared heart stage must be removed');
-assert.deepEqual(STORY_PHASES.reform, [.895,.995]);
+// No hidden heart passage remains between the first strike and Earth.
+assert.ok(!Object.keys(STORY_PHASES).some(name => /heart|twin|trace|gather/i.test(name)));
+assert.deepEqual(STORY_PHASES.reform, [.70,.995]);
 let previousScore = -1;
 for (let i=0;i<=10000;i++) { const score=toStoryProgress(i/10000); assert.ok(score>=previousScore && score>=0 && score<=1); previousScore=score; }
 const detail = JSON.parse(await readFile(new URL('../../geography-detail-v3.json', import.meta.url), 'utf8'));
@@ -100,52 +92,32 @@ for (const count of [16000, 42000, 60000]) {
     assert.ok(Math.abs(point.length() - radius - .045) < .0001, 'Formation lost its geographic surface target');
   }
 
-  const heart = geometry.getAttribute('aHeart');
-  const heartSeeds = geometry.getAttribute('aHeartSeed');
-  const heartNormals = geometry.getAttribute('aHeartNormal');
-  assert.equal(heartNormals.itemSize, 4, 'Heart rim must use an existing shell normal and classification');
-  const active = geometry.getAttribute('aHeartActive');
-  const expectedCount = count <= 16000 ? 10000 : count < 60000 ? 22000 : 33000;
-  assert.equal([...active.array].filter(Boolean).length, expectedCount, 'Adaptive heart density changed');
-  assert.ok(!geometry.hasAttribute('aHeartMeta'), 'Later contour/cloud categories remain');
-  assert.equal(effect.group.children[0].material.fragmentShader, originalPointFragment);
-  assert.ok(!/lightWave|heartbeat|bodyWave|cloudStructure|glint/.test(effect.group.children[0].material.vertexShader), 'Later heart effects remain');
-  const historical = originalRandom();
-  let interior = 0, rimShell = 0;
-  for (let i = 0; i < count; i += 1) {
-    let draws = 0;
-    const original = heartPoint(() => { draws += 1; return historical(); });
-    historical(); historical(); // The original direction samples, then its seeds.
-    const expectedSeed = [historical(), historical(), historical()];
-    for (let axis = 0; axis < 3; axis += 1) assert.ok(Math.abs(heartSeeds.array[i*3+axis]-expectedSeed[axis]) < 6e-8, 'Original brightness/size seed changed');
-    const [x,y,z] = original;
-    assert.ok(Math.abs(Math.hypot(heartNormals.getX(i),heartNormals.getY(i),heartNormals.getZ(i))-1)<1e-7, 'Heart rim normal is not normalized');
-    assert.ok(heartNormals.getW(i)===0 || heartNormals.getW(i)===1, 'Heart rim shell mask is not binary');
-    if (draws===3) assert.equal(heartNormals.getW(i),1,'Original surface points lost rim classification');
-    const cleft = .042 * Math.exp(-x*x/.025) * THREE.MathUtils.smoothstep(y,.55,.88);
-    const tip = .016 * THREE.MathUtils.smoothstep(-y,.92,1.11);
-    const taper = THREE.MathUtils.lerp(.76,.90,THREE.MathUtils.smoothstep(y,-.18,.40));
-    const expected = [x*.90,((y-cleft+tip)*taper-.08)*1.04,z*.86];
-    for (let axis = 0; axis < 3; axis += 1) assert.ok(Math.abs(heart.array[i*3+axis]-expected[axis]) < 1.2e-7, 'Heart differs from original samples plus the documented geometry refinement');
-    assert.equal(active.getX(i), i < expectedCount ? 1 : 0);
-    if (i < expectedCount) {
-      if (draws === 4) interior += 1;
-      rimShell += heartNormals.getW(i);
-      assert.ok(heartField(x,y+.13,z) < .00002, 'Original volumetric surface was lost');
+  assert.ok(!Object.keys(geometry.attributes).some(name => /heart|marker/i.test(name)), 'Removed hearts still allocate GPU attributes');
+  assert.equal(effect.group.children.length,3,'Only the geographic cloud, stars and one impact flash are needed');
+  assert.equal(effect.group.children[0].material.fragmentShader,originalPointFragment);
+  // Consume the exact original geographic/random draw order. Removing unused
+  // heart geometry must not change the opening scatter, burst or star samples.
+  const historical=originalRandom();
+  for(let i=0;i<count*2;i++)historical();
+  const expectedBurst=geometry.getAttribute('aExplosion'), expectedSeeds=geometry.getAttribute('aSeed');
+  const expectedScatter=geometry.getAttribute('aScatter');
+  for(let i=0;i<count;i++){
+    historical();historical();if(historical()<.16)historical();
+    const z=historical()*2-1,angle=historical()*Math.PI*2,ring=Math.sqrt(1-z*z);
+    const direction=[Math.cos(angle)*ring,Math.sin(angle)*ring,z];
+    const seeds=[historical(),historical(),historical()];
+    const scatterRadius=(radius+.045)*(1.65+historical()*1.15);
+    for(let axis=0;axis<3;axis++){
+      assert.ok(Math.abs(expectedBurst.array[i*3+axis]-direction[axis])<6e-8,'Approved impact direction changed');
+      assert.ok(Math.abs(expectedSeeds.array[i*3+axis]-seeds[axis])<6e-8,'Approved particle seed changed');
+      assert.ok(Math.abs(expectedScatter.array[i*3+axis]-direction[axis]*scatterRadius)<3e-6,'Approved opening cloud changed');
     }
   }
-  assert.ok(interior > expectedCount*.15 && interior < expectedCount*.21, 'Original 82% shell / 18% interior distribution changed');
-  assert.ok(rimShell>expectedCount*.80 && rimShell<expectedCount*.90, 'Rim emphasis leaks across the whole heart volume');
-  const size = new THREE.Box3().setFromBufferAttribute(heart).getSize(new THREE.Vector3());
-  assert.ok(size.x > 2.02 && size.x <= HEART_BOUNDS.width, 'Refined heart exceeds the unchanged horizontal framing');
-  assert.ok(size.y > 1.85 && size.y < 1.96, 'The four-percent height restoration changed');
-  assert.ok(size.z > 1.10 && size.z <= HEART_BOUNDS.depth, 'Original spatial volume was replaced by a flat or shallow cloud');
-  assert.ok(size.x / size.y > 1.04 && size.x / size.y < 1.14, 'Heart lost its balanced proportions');
   const burstBudget=count<=16000?12000:count<60000?30000:45000;
   for (const progress of [0,.105,.179,.18,.64,.795,.83,.86999,.87,.90,.93499,.935,.97,.999,1,.05]) {
     effect.update({progress,origins,merge:new THREE.Vector3(0,0,20),color:new THREE.Color('#303D29')});
     assert.equal(geometry.drawRange.start,0);
-    assert.equal(geometry.drawRange.count,progress<.18||progress>=.87?count:progress>=.735&&progress<.87?360:burstBudget,'Only a few companion grains remain during the light-drawn heart passage');
+    assert.equal(geometry.drawRange.count,progress<.18||progress>=.70?count:burstBudget,'The first impact cloud must morph directly into the full geographic buffer');
   }
   effect.dispose();
   assert.equal(effect.group.children.length, 0);
@@ -199,8 +171,6 @@ function snapshot(camera, pose) {
   const uniforms = effect.group.children[0].material.uniforms;
   return [...camera.position, ...camera.quaternion, ...pose.basis, ...uniforms.uMerge.value,
     ...uniforms.uBasis.value.elements, ...uniforms.uStarBasis.value.elements,
-    ...uniforms.uHeartCenterA.value, ...uniforms.uHeartCenterB.value,
-    uniforms.uHeartAngleA.value, uniforms.uHeartAngleB.value, uniforms.uHeartScale.value,
     uniforms.uProgress.value, uniforms.uScale.value, uniforms.uFormationRotation.value,
     uniforms.uFormationSurface.value, uniforms.uGlobeRadius.value, Number(effect.group.children[0].material.depthTest),
     uniforms.uTrailReveal.value, uniforms.uTrailSpread.value, uniforms.uStarCoreLimit.value,
@@ -221,7 +191,7 @@ for (const [width, height] of viewports) {
   const evaluate = progress => {
     const pose = choreography.sample(progress, { width, height, overviewDistance, heartBounds: HEART_BOUNDS });
     camera.position.copy(pose.position); camera.lookAt(pose.target); camera.updateMatrixWorld();
-    effect.update({ progress, origins, merge: pose.merge, heartScale: pose.heartScale, color, basis: camera.quaternion, starBasis: pose.basis, formationRotation: pose.formationRotation, formationSurface: progress >= .87 ? pose.globeOpacity : pose.globeReveal });
+    effect.update({ progress, origins, merge: pose.merge, heartScale: pose.heartScale, color, basis: camera.quaternion, starBasis: pose.basis, formationRotation: pose.formationRotation, formationSurface: progress >= .64 ? pose.globeOpacity : pose.globeReveal });
     return pose;
   };
   for (let i = 0; i <= 1000; i += 1) {
@@ -234,8 +204,8 @@ for (const [width, height] of viewports) {
     assert.ok(pose.heartScale > 0);
     const uniforms = effect.group.children[0].material.uniforms;
     assert.ok(Math.abs(uniforms.uFormationRotation.value - pose.formationRotation) < 1e-12, 'Geography and particle formation have different axes');
-    assert.equal(uniforms.uFormationSurface.value, progress >= .87 ? pose.globeOpacity : pose.globeReveal, 'Cloud occlusion differs from the visible globe surface');
-    assert.equal(effect.group.children[0].material.depthTest, progress >= .18 && (progress < .87 || progress >= 1), 'The transparent forming sphere abruptly cuts off cloud geography');
+    assert.equal(uniforms.uFormationSurface.value, progress >= .64 ? pose.globeOpacity : pose.globeReveal, 'Cloud occlusion differs from the visible globe surface');
+    assert.equal(effect.group.children[0].material.depthTest, progress >= .18 && (progress < .64 || progress >= 1), 'The transparent forming sphere abruptly cuts off cloud geography');
     assert.ok(pose.formationRotation >= previousFormationRotation, 'Formation spin reverses during settling');
     previousFormationRotation = pose.formationRotation;
     if (progress === 0) assert.equal(pose.formationRotation, -Math.PI * 4);
@@ -307,10 +277,10 @@ for (const [width, height] of viewports) {
 }
 
 effect.dispose(); sourceGeometry.dispose();
-console.log('PASS — finite 16k / 42k / 60k formation points; original cached sampler/seed streams remain unchanged, without rendering a shared large heart.');
-console.log('PASS — 2f7b1ed sampler/sprite checksum preserved; opposite star arcs stay clear until their impact.');
+console.log('PASS — finite 16k / 42k / 60k formation points; exact opening, impact and star seed streams retained; no heart objects or GPU attributes.');
+console.log('PASS — approved soft point sprite preserved; opposite star arcs stay clear until their single impact.');
 console.log('PASS — stable geometries/attributes; no independent clock; 1,001 forward/backward states identical across five viewports.');
 console.log(`PASS — origins ${separationKm.toFixed(2)} km apart; minimum camera radius ${minimumCamera.toFixed(3)}; minimum star radius ${minimumStarRadius.toFixed(3)}.`);
 console.log(`PASS — star depth ≥${minimumStarDepth.toFixed(2)}, edge clearance ≥${edgeMargin.toFixed(1)} px; fixed trajectory basis; clean final globe handoff.`);
 console.log(`PASS — distinct star cores remain ≥${minimumSeparateCores.toFixed(1)} px apart through p=.61, without crossing before the p=.64 merger.`);
-console.log(`PASS — cloud/globe opening stays unchanged; 720° with smooth start/stop (peak ${(greatestSpinSpeed/(2*Math.PI)).toFixed(3)} turns/s); 22.1-second light-drawn-heart/direct-geographic-reform score.`);
+console.log(`PASS — cloud/globe opening stays unchanged; 720° with smooth start/stop (peak ${(greatestSpinSpeed/(2*Math.PI)).toFixed(3)} turns/s); 17.2-second star-impact/direct-geographic-reform score.`);

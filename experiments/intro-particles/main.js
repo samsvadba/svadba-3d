@@ -82,10 +82,10 @@ function language(){
 $('utility-mood').onclick=()=>chooseTheme('classic');$('utility-palette').onclick=()=>chooseTheme('olive');
 $('utility-language').onclick=()=>{preferences.language=preferences.language==='sk'?'en':'sk';save();language();};
 
-function stageIndex(p){return p<.18?0:p<.37?1:p<.54?2:p<.64?3:p<.72?4:p<.895?5:6;}
+function stageIndex(p){return p<.18?0:p<.37?1:p<.54?2:p<.64?3:p<.70?4:5;}
 function updateCopy(p){
   const stage=stageIndex(toStoryProgress(p)),d=copy[preferences.language];
-  if(stage!==lastStage){$('story-stage-number').textContent=String(stage+1).padStart(2,'0')+' / 07';lastStage=stage;}
+  if(stage!==lastStage){$('story-stage-number').textContent=String(stage+1).padStart(2,'0')+' / 06';lastStage=stage;}
   document.body.dataset.mode=mode;
   $('stage-instruction').textContent=d.manual;
   $('story-caption').hidden=mode!=='manual';$('story-timeline').hidden=mode!=='manual';
@@ -183,7 +183,7 @@ function cameraStory(p){
     globe.camera.lookAt(pose.target);globe.camera.updateMatrixWorld();
   }
   globe.group.rotation.y=pose.formationRotation;
-  fx.update({progress:score,origins:originVectors,merge:pose.merge,heartScale:pose.heartScale,color:particleColor,dark:displayedTheme.dark,basis:pose.basis,starBasis:pose.basis,formationRotation:pose.formationRotation,formationSurface:score>=.87?pose.globeOpacity:pose.globeReveal});
+  fx.update({progress:score,origins:originVectors,merge:pose.merge,heartScale:pose.heartScale,color:particleColor,dark:displayedTheme.dark,basis:pose.basis,starBasis:pose.basis,formationRotation:pose.formationRotation,formationSurface:score>=.64?pose.globeOpacity:pose.globeReveal});
   globe.globeMesh.visible=pose.globeReveal>.001;
   globe.globeMaterial.opacity=pose.globeOpacity;
 }

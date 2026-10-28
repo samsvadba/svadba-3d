@@ -39,9 +39,9 @@ const visibility = new Function('dot', 'length', 'max', 'sqrt', 'step', 'clamp',
   );
 assert.match(particleSource, /formationAlpha\s*=[\s\S]*?\*\s*formationVisibility\(worldPosition,\s*cameraPosition,\s*uGlobeRadius,\s*uFormationSurface\)/,
   'Actual forming cloud must use gradual visibility, not just declare it');
-assert.match(mainSource, /formationSurface\s*:\s*score\s*>=\s*\.87\s*\?\s*pose\.globeOpacity\s*:\s*pose\.globeReveal/,
+assert.match(mainSource, /formationSurface\s*:\s*score\s*>=\s*\.64\s*\?\s*pose\.globeOpacity\s*:\s*pose\.globeReveal/,
   'Sphere and formation shader must share the same surface reveal');
-assert.match(particleSource, /material\.depthTest\s*=\s*p\s*>=\s*\.18\s*&&\s*\(p\s*<\s*\.87\s*\|\|\s*p\s*>=\s*1\)/,
+assert.match(particleSource, /material\.depthTest\s*=\s*p\s*>=\s*\.18\s*&&\s*\(p\s*<\s*\.64\s*\|\|\s*p\s*>=\s*1\)/,
   'Hardware depth must be bypassed only for opening/final geographic formation');
 
 // Compare against Three's independent exact Ray.intersectSphere oracle,
@@ -82,7 +82,7 @@ assert.ok(hiddenCount > 10000 && visibleCount > 10000, 'Both hemispheres must be
 // the analytic Earth. Coastlines cannot flicker through the sphere itself.
 const geometry = boundaryGeometry(rings), positions = geometry.getAttribute('position');
 const effect = createParticles({ count: 3000, mobile: true, formationPositions: positions.array });
-const particles = effect.group.getObjectByName('geographic-formation-burst-volumetric-heart');
+const particles = effect.group.getObjectByName('geographic-formation-star-impact');
 const stars = effect.group.getObjectByName('two-geographic-stars-and-trails');
 assert.ok(particles?.material && stars?.material);
 assert.ok(Math.abs(particles.material.uniforms.uGlobeRadius.value - radius) < .00001);
@@ -92,7 +92,7 @@ for (const progress of [0, .08, .17999, .18, .4, .85, .93499, .935, .955, .995, 
       origins: [latLonToVec3(48.43, 17.8), latLonToVec3(48.31, 17.49)],
       merge: latLonToVec3(48.37, 17.64, radius + 8), color: new THREE.Color('#292a28'),
     });
-    assert.equal(particles.material.depthTest, progress >= .18 && (progress < .87 || progress >= 1), 'Formation depth ownership must work forward and backward');
+    assert.equal(particles.material.depthTest, progress >= .18 && (progress < .64 || progress >= 1), 'Formation depth ownership must work forward and backward');
     assert.equal(particles.material.uniforms.uFormationSurface.value, formationSurface, 'Surface reveal was not supplied to the actual shader');
     assert.equal(stars.material.depthTest, true, 'Formation bypass leaked into the stars');
   }

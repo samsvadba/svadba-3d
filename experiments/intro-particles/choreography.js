@@ -2,7 +2,7 @@ import * as THREE from 'three';
 
 // One film score for autoplay and reversible manual scrubbing. Phases include
 // a brief hold over the home towns before the camera follows the stars. The two
-// compact hearts break directly into Earth, including during reverse scrubbing.
+// stars' single collision reforms directly into Earth, also when scrubbed back.
 export const STORY_PHASES = Object.freeze({
   formation: Object.freeze([0, .144]),
   overview: Object.freeze([.144, .18]),
@@ -10,14 +10,8 @@ export const STORY_PHASES = Object.freeze({
   origins: Object.freeze([.30, .39]),
   stars: Object.freeze([.37, .64]),
   retreat: Object.freeze([.39, .65]),
-  burst: Object.freeze([.64, .735]),
-  gather: Object.freeze([.72, .735]),
-  twinGather: Object.freeze([.72, .735]),
-  trace: Object.freeze([.735, .795]),
-  twins: Object.freeze([.795, .87]),
-  heartImpact: Object.freeze([.87, .895]),
-  dissolve: Object.freeze([.87, .995]),
-  reform: Object.freeze([.895, .995]),
+  burst: Object.freeze([.64, .72]),
+  reform: Object.freeze([.70, .995]),
   final: Object.freeze([.995, 1]),
 });
 
@@ -76,7 +70,7 @@ export function createChoreography({ homeDirection, startDirection, radius = 12 
     const farRadius = overview * 1.32;
     const approach = smoother(.18, .30, p);
     const retreat = smoother(.39, .65, p);
-    const returnToOverview = smoother(.87, 1, p);
+    const returnToOverview = smoother(.70, 1, p);
     const formationSettle = smoother(0, .144, p);
 
     // All orientation changes are spherical rotations outside the Earth.
@@ -94,7 +88,7 @@ export function createChoreography({ homeDirection, startDirection, radius = 12 
     pose.position.copy(direction).multiplyScalar(Math.max(radius + 2.5, cameraRadius));
     pose.target.copy(home).multiplyScalar(radius * approach * (1 - retreat));
 
-    // The merge point and compact hearts have a fixed, physically meaningful position
+    // The merge point and its cloud have a fixed, physically meaningful position
     // above the globe. Framing derives from the actual 45-degree perspective.
     const effectDepth = Math.max(radius, farRadius - (radius + 8));
     const worldHeight = 2 * effectDepth * Math.tan(Math.PI / 8);
@@ -103,14 +97,14 @@ export function createChoreography({ homeDirection, startDirection, radius = 12 
     pose.heartScale = Math.min(horizontalScale, verticalScale);
 
     const globeReveal = smooth(.08, .144, p);
-    // Keep the actual globe subdued through the two-heart passage and the
-    // second burst. Geography returns under the particles as they form Earth.
-    const heartPresence = smooth(.70, .81, p) * (1 - smooth(.895, 1, p));
+    // Briefly subdue the existing globe after the stars strike. Its geography
+    // returns beneath these same particles as they settle into Earth.
+    const cloudPresence = smooth(.64, .70, p) * (1 - smooth(.82, .995, p));
     pose.progress = p;
     pose.cameraRadius = cameraRadius;
     pose.globeReveal = globeReveal;
-    pose.globeOpacity = globeReveal * (1 - .82 * heartPresence);
-    pose.geographyOpacity = globeReveal * (1 - .94 * heartPresence);
+    pose.globeOpacity = globeReveal * (1 - .90 * cloudPresence);
+    pose.geographyOpacity = globeReveal * (1 - .94 * cloudPresence);
     pose.formationProgress = smooth(0, .144, p);
     // One shared motion from the first cloud to the completed globe. Gathering
     // finishes after four seconds, with the final second gently coasting to rest.
