@@ -1,0 +1,26 @@
+/* Central live identity settings. currentColor follows the surrounding theme.
+   Optional overrides: --monogram-s-color, --monogram-ampersand-color,
+   --monogram-m-color. Unset parts inherit the base monogram colour. */
+:root {
+  --monogram-color: currentColor;
+  --monogram-header-width: 65px;
+  --monogram-loader-width: 102px;
+  --monogram-invitation-width: 146px;
+}
+svg.brand-monogram {
+  display: block;
+  width: var(--monogram-width, 100%);
+  height: auto;
+  max-width: 100%;
+  color: var(--monogram-color, currentColor);
+  fill: currentColor;
+  stroke: none;
+  overflow: visible;
+}
+.brand-monogram [data-monogram-part="s"] { fill: var(--monogram-s-color, currentColor); }
+.brand-monogram [data-monogram-part="ampersand"] { fill: var(--monogram-ampersand-color, currentColor); }
+.brand-monogram [data-monogram-part="m"] { fill: var(--monogram-m-color, currentColor); }
+.brand-monogram [data-monogram-part] { transition: fill .5s ease; }
+@media (prefers-reduced-motion: reduce) {
+  .brand-monogram [data-monogram-part] { transition: none; }
+}

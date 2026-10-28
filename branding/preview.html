@@ -1,0 +1,21 @@
+<!doctype html><html lang="sk" data-theme="light" data-palette="classic"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Kontrola schváleného monogramu</title>
+<style>
+*{box-sizing:border-box}body{margin:0;padding:24px;font:15px/1.5 system-ui;background:var(--paper);color:var(--ink)}
+html{--paper:#f5f4f0;--ink:#292a28}html[data-theme="dark"]{--paper:#20221f;--ink:#ece9df}html[data-palette="olive"]{--paper:#F4EBDC;--ink:#303D29}html[data-palette="olive"][data-theme="dark"]{--paper:#303D29;--ink:#F4EBDC}
+label{display:inline-flex;gap:8px;align-items:center;margin:5px}input{width:95px}button,select,input{font:inherit;padding:7px}
+main{display:flex;align-items:center;justify-content:space-around;gap:30px;flex-wrap:wrap;margin-top:45px}.specimen{width:260px;max-width:100%;text-align:center}.art{display:flex;justify-content:center;align-items:center;min-height:230px}
+</style></head><body>
+<h1>Schválený monogram S &amp; M</h1>
+<label>Režim <select id="theme"><option value="classic-light">Classic Light</option><option value="classic-dark">Classic Dark</option><option value="olive-light">Ivory</option><option value="olive-dark">Olive</option></select></label>
+<label>Základná farba <input id="base" value="#303D29"></label><button id="apply-base">Použiť základnú farbu</button>
+<label>Farba &amp; <input id="amp" value="#9b5c61"></label><button id="apply-amp">Použiť farbu &amp;</button><button id="reset">Obnoviť farby témy</button>
+<main id="examples"></main><p id="status" role="status">Farby témy</p>
+<script type="module">
+import { weddingMonogram } from '../brand-v3.js';
+document.querySelector('#examples').innerHTML=[['Hlavička',65],['Pozvánka',146],['Detail vektora',260]].map(([label,width])=>`<section class="specimen"><div class="art">${weddingMonogram({label:'Simona a Martin',width})}</div><p>${label} · ${width} px</p></section>`).join('');
+const root=document.documentElement,status=document.querySelector('#status');
+document.querySelector('#theme').onchange=e=>{const[palette,theme]=e.target.value.split('-');root.dataset.palette=palette;root.dataset.theme=theme};
+for(const[button,input,variable]of[['apply-base','base','--monogram-color'],['apply-amp','amp','--monogram-ampersand-color']])document.getElementById(button).onclick=()=>{const value=document.getElementById(input).value;if(/^#[\da-f]{6}$/i.test(value)){root.style.setProperty(variable,value);status.textContent=variable+' = '+value}};
+document.querySelector('#reset').onclick=()=>{root.style.removeProperty('--monogram-color');root.style.removeProperty('--monogram-ampersand-color');status.textContent='Farby témy'};
+</script></body></html>
