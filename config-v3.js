@@ -574,7 +574,7 @@ const config = {
     ]
   },
   "audio": {
-    "backgroundMusic": "https://res.cloudinary.com/kxksv8hk/video/upload/v1791220008/tropical-sunset-stan-town-main-version-47825-02-12.mp3"
+    "backgroundMusic": "audio/shes-a-rainbow.mp3"
   },
   "gallery": {
     "url": null

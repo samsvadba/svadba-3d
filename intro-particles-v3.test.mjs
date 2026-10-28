@@ -107,6 +107,7 @@ try {
   assert.equal(controls.enabled, false); assert.equal(controls.autoRotate, false); assert.equal(clearAlpha, 1);
   assert.equal(elements['#particle-intro-content'].hidden, false);
   const effect = scene.getObjectByName('intro-story-particles'); assert.ok(effect?.visible);
+  assert.equal(effect.children.length,3,'Native intro must not retain a heart ribbon or pen layer');
 
   root.emit('pointerdown', { target: new Surface('button'), pointerId: 1, clientY: 500 });
   assert.equal(controller.mode, 'auto', 'UI controls must not take over the story');
@@ -120,14 +121,14 @@ try {
 
   const range = elements['#particle-intro-progress']; range.value = '890'; range.emit('input'); controller.render(390, 844);
   near(controller.progress, .89); assert.equal(controller.mode, 'manual');
-  const heartCamera = camera.position.clone();
+  const cloudCamera = camera.position.clone();
   for (const [paper, ink, dark, olive] of [
     ['#f5f4f0', '#292a28', 0, 0], ['#11120f', '#f5f4f0', 1, 0],
     ['#303D29', '#F4EBDC', 1, 1], ['#F4EBDC', '#303D29', 0, 1],
   ]) {
     theme.paper.set(paper); theme.ink.set(ink); theme.dark = dark; theme.olive = olive;
     controller.render(390, 844); near(controller.progress, .89);
-    assert.ok(camera.position.distanceTo(heartCamera) < 1e-9, 'Theme switching cannot restart or move the story');
+    assert.ok(camera.position.distanceTo(cloudCamera) < 1e-9, 'Theme switching cannot restart or move the story');
     assert.ok(effect.children[0].material.uniforms.uColor.value.equals(theme.ink));
   }
   language = 'en'; controller.refreshLanguage();

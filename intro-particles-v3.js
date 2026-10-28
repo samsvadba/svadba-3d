@@ -91,9 +91,9 @@ export function createParticleIntro({
     root.dataset.particleMode = mode;
     content.dataset.mode = mode; content.dataset.progress = progress.toFixed(6);
     const score = toStoryProgress(progress);
-    const nextStage = score < .18 ? 0 : score < .37 ? 1 : score < .54 ? 2 : score < .64 ? 3 : score < .72 ? 4 : score < .895 ? 5 : 6;
+    const nextStage = score < .18 ? 0 : score < .37 ? 1 : score < .54 ? 2 : score < .64 ? 3 : score < .70 ? 4 : 5;
     if (nextStage !== lastStage) {
-      stage.textContent = `${String(nextStage + 1).padStart(2, '0')} / 07`; lastStage = nextStage;
+      stage.textContent = `${String(nextStage + 1).padStart(2, '0')} / 06`; lastStage = nextStage;
     }
     const value = Math.round(progress * 1000);
     if (value !== lastRange) { range.value = String(value); lastRange = value; }
@@ -109,7 +109,7 @@ export function createParticleIntro({
       if (!active || finished) return;
       finished = true;
       // The handoff inherits the final geographic camera pose, not the previous
-      // frame of the dissolving heart, even for an explicit skip.
+      // frame of the settling impact cloud, even for an explicit skip.
       if (!rendering) render(width, height);
       onFinish();
     },
@@ -219,7 +219,7 @@ export function createParticleIntro({
       paintGeography(pose, theme);
       fx.update({ progress: score, origins: originVectors, merge: pose.merge, heartScale: pose.heartScale,
         color: particleColor, dark: theme.dark, basis: pose.basis, starBasis: pose.basis,
-        formationRotation: pose.formationRotation, formationSurface: score >= .87 ? pose.globeOpacity : pose.globeReveal });
+        formationRotation: pose.formationRotation, formationSurface: score >= .64 ? pose.globeOpacity : pose.globeReveal });
       updateOrigins(pose.originReveal);
       renderer.setClearColor(theme.paper, 1); renderer.render(scene, camera);
       if (!firstFrame) { firstFrame = true; onFirstFrame(); }
