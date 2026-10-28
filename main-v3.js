@@ -1223,7 +1223,7 @@ bindGlobeInput(globeSurface, {
 // Independent, persistent utility preferences; audio is never loaded without a source.
 function readPreference(key,fallback){try{return localStorage.getItem(key)||fallback;}catch{return fallback;}}
 function savePreference(key,value){try{localStorage.setItem(key,value);}catch{}}
-const preferences={sound:readPreference('sm-sound','off')==='on',theme:readPreference('sm-theme','light')==='dark'?'dark':'light',palette:readPreference('sm-palette','classic')==='olive'?'olive':'classic',language:readPreference('sm-language','sk')==='en'?'en':'sk'};
+const preferences={sound:readPreference('sm-sound','on')==='on',theme:readPreference('sm-theme','light')==='dark'?'dark':'light',palette:readPreference('sm-palette','classic')==='olive'?'olive':'classic',language:readPreference('sm-language','sk')==='en'?'en':'sk'};
 const mood={value:preferences.theme==='dark'?1:0,palette:preferences.palette==='olive'?1:0};
 function getParticleTheme() {
   if (!particleTheme) {
@@ -1248,16 +1248,32 @@ let oliveGlobeColors;
 const appliedGlobeTheme={material:null,value:null,palette:null,markers:0};
 const music=new Audio();music.loop=true;music.preload='none';music.crossOrigin='anonymous';music.volume=0;music.id='background-music';music.hidden=true;document.body.append(music);
 let musicContext,musicGain;
-let musicEligible=false,musicFailed=false,toastTimer;
-music.addEventListener('error',()=>{musicFailed=true;music.pause();preferences.sound=false;savePreference('sm-sound','off');applyLanguage();toast('musicUnavailable');});
+let musicBlocked=false,musicPlayPending=null,musicPlayGesture=false,musicAttempt=0,musicFailed=false,toastTimer;
+music.addEventListener('error',()=>{musicAttempt++;musicPlayPending=null;musicPlayGesture=false;musicBlocked=false;musicFailed=true;music.pause();preferences.sound=false;savePreference('sm-sound','off');applyLanguage();toast('musicUnavailable');});
 const t=key=>config.ui[preferences.language][key]||key;
 const localized=value=>typeof value==='object'?value?.[preferences.language]||value?.sk:value;
 const cityName=loc=>localized(loc.names)||loc.name;
 const countryText=loc=>preferences.language==='en'?(loc.countryEn||loc.subname):loc.subname;
 const memoryLocation=loc=>loc.special==='engagement'?`${t('engagement')} · ${loc.subname}`:preferences.language==='en'?(loc.descriptionEn||countryText(loc)):(loc.description||loc.subname);
-function syncMusic(){
-  gsap.killTweensOf(musicGain?.gain||music);
-  if(!musicEligible||!preferences.sound||document.hidden||musicFailed||!config.audio.backgroundMusic){music.pause();return;}
+function syncSoundControl(){
+  const enabled=preferences.sound&&!musicBlocked;
+  $('utility-sound').setAttribute('aria-pressed',String(enabled));
+  $('utility-sound').setAttribute('aria-label',t(enabled?'soundOn':'soundOff'));
+  $('utility-sound').title=$('utility-sound').getAttribute('aria-label');
+}
+function syncMusic(userGesture=false){
+  userGesture=userGesture===true;
+  if(!preferences.sound||document.hidden||musicFailed||!config.audio.backgroundMusic){
+    musicAttempt++;musicPlayPending=null;musicPlayGesture=false;
+    if(!preferences.sound||musicFailed)musicBlocked=false;
+    gsap.killTweensOf(musicGain?.gain||music);music.pause();syncSoundControl();return;
+  }
+  // A rejected autoplay attempt waits for a real gesture, without timer/focus retries.
+  if(musicBlocked&&!userGesture)return;
+  if(userGesture){
+    musicBlocked=false;
+    if(musicPlayPending&&!musicPlayGesture&&musicContext&&musicContext.state!=='running'){musicAttempt++;musicPlayPending=null;}
+  }
   // Reuse the same audio element; a gain stage also supports smooth ducking on iOS.
   if(!musicContext){
     const AudioContext=window.AudioContext||window.webkitAudioContext;
@@ -1265,10 +1281,51 @@ function syncMusic(){
       try{musicContext=new AudioContext();musicGain=musicContext.createGain();musicGain.gain.value=0;musicContext.createMediaElementSource(music).connect(musicGain);musicGain.connect(musicContext.destination);music.volume=1;}catch{musicGain=null;music.volume=0;}
     }
   }
-  musicContext?.resume().catch(()=>{});
+  // Keep resume() and play() inside the same trusted input event on Safari.
+  // Do not await resume(): a blocked context may remain pending until a gesture.
+  const resuming=musicContext?.resume()||Promise.resolve();
+  resuming.catch(()=>{});
   if(!music.getAttribute('src'))music.src=/^(https?:|\/)/.test(config.audio.backgroundMusic)?config.audio.backgroundMusic:asset(config.audio.backgroundMusic);
-  if(music.paused)music.play().catch(()=>{});
+  if(musicPlayPending)return;
+  if(!music.paused&&(!musicContext||musicContext.state==='running')){syncSoundControl();return;}
+  const attempt=++musicAttempt;
+  const blocked=()=>{
+    if(attempt!==musicAttempt||!preferences.sound||document.hidden)return;
+    musicBlocked=true;music.pause();gsap.killTweensOf(musicGain?.gain||music);
+    if(musicGain)musicGain.gain.value=0;else music.volume=0;
+    syncSoundControl();
+  };
+  let playing;
+  try{playing=Promise.resolve(music.play());}catch(error){playing=Promise.reject(error);}
+  // A trusted gesture can unlock Web Audio after play() has already resolved.
+  // Wait for both without moving either call out of the original input event.
+  const pending=userGesture?Promise.all([playing,resuming]):playing;
+  musicPlayGesture=userGesture;
+  musicPlayPending=pending;
+  pending.then(()=>{
+    if(attempt!==musicAttempt||!preferences.sound||document.hidden)return;
+    if(musicContext&&musicContext.state!=='running'){blocked();return;}
+    musicBlocked=false;syncSoundControl();
+  },blocked).finally(()=>{if(attempt===musicAttempt){musicPlayPending=null;musicPlayGesture=false;}});
+  if(!userGesture)resuming.then(()=>{
+    // An initially allowed context may also finish resuming after the media.
+    if(attempt===musicAttempt&&musicBlocked&&preferences.sound&&!document.hidden&&musicContext?.state==='running'){
+      musicBlocked=false;musicPlayPending=null;syncMusic();
+    }
+  }).catch(()=>{});
+  gsap.killTweensOf(musicGain?.gain||music);
   gsap.to(musicGain?.gain||music,{[musicGain?'value':'volume']:.45,duration:.8,ease:'sine.inOut'});
+}
+function toggleMusic(){
+  preferences.sound=preferences.sound&&musicBlocked?true:!preferences.sound;
+  savePreference('sm-sound',preferences.sound?'on':'off');
+  syncMusic(true);syncSoundControl();
+  if(!config.audio.backgroundMusic)toast('noMusic');
+}
+function unlockMusic(event){
+  if(!preferences.sound||musicFailed||event.target.closest?.('#utility-sound'))return;
+  if(event.type==='keydown'&&(event.repeat||['Shift','Control','Alt','Meta','Escape'].includes(event.key)))return;
+  if(musicBlocked||(musicContext&&musicContext.state!=='running')||(music.paused&&!musicPlayPending))syncMusic(true);
 }
 function toast(key){clearTimeout(toastTimer);$('utility-toast').dataset.key=key;$('utility-toast').textContent=t(key);$('utility-toast').hidden=false;toastTimer=setTimeout(()=>{$('utility-toast').hidden=true;},3200);}
 function applyGlobeTheme(){
@@ -1346,7 +1403,7 @@ function applyLanguage(){
   const status=$('destination-video-status');
   for(const key of ['videoLoading','videoTap','videoError'])if(Object.values(config.ui).some(d=>d[key]===status.textContent)){status.textContent=t(key);break;}
   $('utility-language').textContent=preferences.language.toUpperCase();attr('utility-language','language');attr('utility-gallery','photos');attr('utility-controls','controls');
-  $('utility-sound').setAttribute('aria-pressed',String(preferences.sound));attr('utility-sound',preferences.sound?'soundOn':'soundOff');$('utility-mood').setAttribute('aria-label',themeControlLabel('classic'));
+  syncSoundControl();$('utility-mood').setAttribute('aria-label',themeControlLabel('classic'));
   $('utility-palette').setAttribute('aria-label',themeControlLabel('olive'));
   if(!$('utility-toast').hidden)$('utility-toast').textContent=t($('utility-toast').dataset.key);
   $('journey-scene').setAttribute('aria-label','Journey — '+t('journey1'));
@@ -1359,12 +1416,14 @@ function applyLanguage(){
   if(state==='wedding')announce(t('navWedding'));
   layoutDirty=true;
 }
-$('utility-sound').onclick=()=>{preferences.sound=!preferences.sound;musicEligible=true;savePreference('sm-sound',preferences.sound?'on':'off');applyLanguage();syncMusic();if(!config.audio.backgroundMusic)toast('noMusic');};
+$('utility-sound').onclick=toggleMusic;
 $('utility-gallery').onclick=()=>{if(config.gallery.url)window.open(config.gallery.url,'_blank','noopener,noreferrer');else toast('gallery');};
 $('utility-mood').onclick=()=>selectThemePair('classic');
 $('utility-palette').onclick=()=>selectThemePair('olive');
 $('utility-language').onclick=()=>{preferences.language=preferences.language==='sk'?'en':'sk';savePreference('sm-language',preferences.language);applyLanguage();};
-document.addEventListener('click',event=>{if(event.target.closest('#next-btn,#nav-journey,#nav-wedding,#story-play')){musicEligible=true;syncMusic();}},true);
+document.addEventListener('pointerup',unlockMusic,true);
+document.addEventListener('click',unlockMusic,true);
+document.addEventListener('keydown',unlockMusic,true);
 document.addEventListener('visibilitychange',syncMusic);
 document.addEventListener('visibilitychange',()=>{
   if(document.hidden)weddingParticles?.suspend('visibility');else weddingParticles?.resume('visibility');
@@ -1441,6 +1500,7 @@ function finishLoading() {
   gsap.to($('interactive-preloader'), {autoAlpha:0,duration:duration(.45)});
   document.body.classList.remove('loading');
   $('persistent-header').inert = $('bottom-nav').inert = false;
+  syncMusic();
   const initialView = new URLSearchParams(location.search).get('view');
   if (initialView === 'journey') { finishStartupCloud(); playJourneyTransition(); }
   else if (initialView === 'wedding') { finishStartupCloud(); playWeddingTransition(); }
