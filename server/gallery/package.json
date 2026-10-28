@@ -1,0 +1,16 @@
+{
+  "name": "simona-martin-gallery",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=22.12" },
+  "scripts": {
+    "start": "node --env-file-if-exists=.env server.mjs",
+    "setup": "node --env-file-if-exists=.env setup-google.mjs",
+    "test": "node --test gallery.test.mjs"
+  },
+  "dependencies": {
+    "heic-decode": "2.1.0",
+    "sharp": "0.35.5"
+  }
+}

@@ -1,0 +1,29 @@
+# Use as a Render Blueprint file, or enter the same values in a Node Web Service.
+# Free tier is for a trial only; choose at least 1 GiB RAM for larger HEIC images.
+services:
+  - type: web
+    name: simona-martin-gallery
+    runtime: node
+    plan: free
+    rootDir: server/gallery
+    buildCommand: npm ci --omit=dev
+    startCommand: npm start
+    healthCheckPath: /health
+    numInstances: 1
+    envVars:
+      - key: NODE_VERSION
+        value: 24
+      - key: ALLOWED_ORIGINS
+        value: https://samsvadba.github.io
+      - key: PUBLIC_API_URL
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: GOOGLE_REFRESH_TOKEN
+        sync: false
+      - key: GOOGLE_DRIVE_FOLDER_ID
+        sync: false
+      - key: TRUST_PROXY_HOPS
+        value: 0

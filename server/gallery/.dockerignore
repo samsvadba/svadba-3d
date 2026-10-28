@@ -1,0 +1,8 @@
+.env
+.env.*
+*credentials*.json
+*tokens*.json
+client_secret*.json
+node_modules/
+.git/
+*.log
