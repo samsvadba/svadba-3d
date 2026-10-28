@@ -1,0 +1,34 @@
+{
+  "source": "branding/monogram.svg",
+  "sourceSha256": "365d84b2286a4aace5b0fbec4955af93c999f64412f8fe66efe1c43f80f010f4",
+  "configuration": {
+    "foreground": "#303D29",
+    "background": "#F4EBDC",
+    "parts": {
+      "s": null,
+      "ampersand": null,
+      "m": null
+    },
+    "share": {
+      "width": 1200,
+      "height": 630,
+      "monogram": {
+        "left": 58,
+        "top": 185,
+        "width": 305,
+        "height": 235
+      }
+    },
+    "favicon": {
+      "paddingRatio": 0.055,
+      "hairlinePixels": 0.18
+    }
+  },
+  "outputs": [
+    "favicon.svg",
+    "favicon.ico",
+    "favicon-16.png",
+    "favicon-32.png",
+    "simona-martin-wedding-1200x630.jpg"
+  ]
+}
