@@ -24,7 +24,7 @@ Tieto živé nastavenia sú sústredené v `branding/monogram.css`. Predvolené
 Farbu samostatnej časti vymažte, ak sa má vrátiť jednofarebné logo.
 Veľkosti v rovnakom súbore: `--monogram-header-width`,
 `--monogram-loader-width`, `--monogram-invitation-width`. Mobilná hlavička
-má v `style-v3.css` 58 px; nízke obrazovky zmenšujú pozvánku na najviac 126 px.
+má v tom istom súbore 58 px; nízke obrazovky zmenšujú pozvánku na najviac 126 px.
 Komponent `weddingMonogram({ width: 146, label: 'Simona a Martin' })`
 podporuje aj samostatnú šírku. Bez `label` je SVG dekoratívne a skryté pred
 čítačkami; hlavné tlačidlo na úvod má vlastný prístupný názov.

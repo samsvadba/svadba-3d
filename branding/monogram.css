@@ -7,6 +7,9 @@
   --monogram-loader-width: 102px;
   --monogram-invitation-width: 146px;
 }
+@media (max-width: 600px) {
+  :root { --monogram-header-width: 58px; }
+}
 svg.brand-monogram {
   display: block;
   width: var(--monogram-width, 100%);
