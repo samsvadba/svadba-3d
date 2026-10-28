@@ -1252,8 +1252,8 @@ function getParticleTheme() {
   if (!particleTheme) {
     const css = getComputedStyle(document.documentElement);
     particleTheme = {
-      lightPaper:new THREE.Color('#f5f4f0'),darkPaper:new THREE.Color('#000000'),
-      lightInk:new THREE.Color('#292a28'),darkInk:new THREE.Color('#ffffff'),
+      lightPaper:new THREE.Color('#f5f4f0'),darkPaper:new THREE.Color('#20221f'),
+      lightInk:new THREE.Color('#292a28'),darkInk:new THREE.Color('#ece9df'),
       oliveColor:new THREE.Color(css.getPropertyValue('--olive').trim()),ivory:new THREE.Color(css.getPropertyValue('--ivory').trim()),
       paper:new THREE.Color(),ink:new THREE.Color(),pairPaper:new THREE.Color(),pairInk:new THREE.Color(),
       dark:0,olive:0,
@@ -1532,6 +1532,7 @@ $('entry-button').onclick=()=>{
 $('entry-button').focus({preventScroll:true});
 
 // One monogram and one calligraphic name lockup, at every display size.
+$('entry-monogram').innerHTML=weddingMonogram();
 document.querySelector('#header-home').innerHTML=weddingMonogram();
 document.querySelector('.preloader-monogram').innerHTML=weddingMonogram();
 const brandHero=document.querySelector('.title-layout h1');
