@@ -98,18 +98,28 @@ export function createWedding(root, wedding, { t, gsap, reducedMotion }) {
       .to(inner.children,{opacity:1,y:0,clipPath:'inset(0 0 0% 0)',duration:1.05,stagger:.09,ease:'power2.out',clearProps:'opacity,transform,clipPath'});
   }
 
-  function selectTab(id, focusPanel=false) {
-    if(!tabKeys.includes(id)||(!focusPanel&&id===active))return;
+  function selectTab(id, focusPanel=false, immediate=false) {
+    if(!tabKeys.includes(id)||(!focusPanel&&!immediate&&id===active))return;
     panelReady=false;hideHint();
     const invitationChildren=root.querySelector('.w-invitation-inner').children;
     gsap.killTweensOf(invitationChildren);
     gsap.set(invitationChildren,{clearProps:'opacity,transform,clipPath'});
     // Keep the invitation hidden while its panel fades in, then reveal it once.
-    if(id==='invitation'&&!reducedMotion.matches)gsap.set(invitationChildren,{opacity:0,y:10,clipPath:'inset(0 0 100% 0)'});
+    if(id==='invitation'&&!immediate&&!reducedMotion.matches)gsap.set(invitationChildren,{opacity:0,y:10,clipPath:'inset(0 0 100% 0)'});
     animation?.kill();
     const previous=root.querySelector(`#w-panel-${active}`), next=root.querySelector(`#w-panel-${id}`);
     active=id;
     tabs.forEach((tab,i)=>{const selected=tabKeys[i]===id;tab.setAttribute('aria-selected',String(selected));tab.tabIndex=selected?0:-1;});
+    if(immediate){
+      // The particle handoff already reveals the invitation at its final pose.
+      // Lay it out invisibly for sampling, without a second entrance animation.
+      gsap.killTweensOf(panels);
+      panels.forEach(panel=>{panel.hidden=panel!==next;panel.inert=panel!==next;});
+      gsap.set(panels,{opacity:1,y:0});
+      next.scrollTop=0;panelReady=true;
+      if(focusPanel)next.querySelector('h2')?.focus({preventScroll:true});
+      return;
+    }
     const show=()=>{
       panels.forEach(panel=>{panel.hidden=panel!==next;panel.inert=panel!==next;});
       gsap.set(next,{opacity:0,y:reducedMotion.matches?0:8});
@@ -161,7 +171,7 @@ export function createWedding(root, wedding, { t, gsap, reducedMotion }) {
   }
   return {
     refreshLanguage,
-    enter(){entered=true;clearInterval(countdownTimer);refreshLanguage();updateCountdown();countdownTimer=setInterval(updateCountdown,1000);selectTab('invitation',true);root.querySelector('#w-panel-invitation').scrollTop=0;},
+    enter({immediate=false,focus=true}={}){entered=true;clearInterval(countdownTimer);refreshLanguage();updateCountdown();countdownTimer=setInterval(updateCountdown,1000);selectTab('invitation',focus,immediate);root.querySelector('#w-panel-invitation').scrollTop=0;},
     leave(){entered=false;panelReady=false;hideHint();clearInterval(countdownTimer);animation?.kill();gsap.killTweensOf(root.querySelector('.w-invitation-inner').children);gsap.set(root.querySelector('.w-invitation-inner').children,{clearProps:'opacity,transform,clipPath'});panels.forEach(panel=>{panel.hidden=panel.id!==`w-panel-${active}`;panel.inert=panel.hidden;});gsap.set(panels,{opacity:1,y:0});}
   };
 }

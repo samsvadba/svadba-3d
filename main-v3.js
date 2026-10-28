@@ -20,8 +20,10 @@ const asset = (path) => `${base}${path}`;
 const lineartIntro = document.documentElement.dataset.intro === 'lineart';
 const particleIntroEnabled = document.documentElement.dataset.intro === 'particles';
 let particleIntro, particleIntroFactory, particleTheme;
+let weddingParticles, weddingParticlesFactory, weddingTargetSampler, weddingTargetAbort;
+let weddingTargetRevision=0, weddingTargetRefreshTimer, weddingParticleCount=22000;
 let introLineartPromise, introLineartStarted = false, introLineartPaths = [];
-const screens = ['intro-overlay', 'journey-scene', 'transition-screen', 'final-transition-screen', 'wedding-scene'];
+const screens = ['intro-overlay', 'journey-scene', 'transition-screen', 'wedding-scene'];
 let weddingChapter;
 let originMarkers;
 let state = 'loading', revision = 0, activeSectionTimeline, currentIndex = -1;
@@ -262,6 +264,9 @@ function unloadMedia() {
 }
 
 function killActiveSectionTransition() {
+  clearTimeout(weddingTargetRefreshTimer);
+  weddingTargetRevision++;weddingTargetAbort?.abort();weddingTargetAbort=null;
+  weddingParticles?.dispose();weddingParticles=null;
   particleIntro?.leave();
   appliedGlobeTheme.material = null;
   delete document.body.dataset.introPending;
@@ -495,33 +500,83 @@ async function playJourneyTransition() {
     .to({}, {duration:duration(3)});
 }
 
-function playWeddingTransition() {
-  if(state==='wedding')return;
-  finishStartupCloud();
-  pauseStory();
-  killActiveSectionTransition();
+function finishWeddingEntry(request) {
+  if(request!==revision||state!=='final-transition')return;
+  clearTimeout(weddingTargetRefreshTimer);
+  weddingTargetRevision++;weddingTargetAbort?.abort();weddingTargetAbort=null;
+  weddingParticles?.dispose();weddingParticles=null;
+  appliedGlobeTheme.material=null;
   hideAllScreensImmediate();
-  setState('final-transition');
-  setActiveNav('wedding');
-  showScreen('final-transition-screen', false);
-  announce(t('final1')+' '+t('final2'));
-  const tl = gsap.timeline();
-  activeSectionTimeline = tl;
-  animateTransitionLines(tl, $('final-transition-screen'), .75);
-  tl.to($('final-transition-screen'), { autoAlpha: 0, duration: duration(.5) })
-    .call(() => {
-      $('final-transition-screen').setAttribute('aria-hidden', 'true');
-      currentIndex=-1;
-      setState('wedding');
-      if(!weddingChapter)weddingChapter=createWedding($('wedding-scene'),wedding,{t,gsap,reducedMotion});
-      weddingChapter.enter();
-      // Prepare the invitation before exposing the chapter, including on repeat visits.
-      $('wedding-scene').setAttribute('aria-hidden', 'false');
-      $('wedding-scene').inert = false;
-      gsap.set($('wedding-scene'), { autoAlpha: 0 });
-      announce(t('navWedding'));
-    })
-    .to($('wedding-scene'), { autoAlpha: 1, duration: duration(.7) });
+  currentIndex=-1;setState('wedding');showScreen('wedding-scene');
+  $('wedding-scene').querySelector('.w-invitation-names')?.focus({preventScroll:true});
+  announce(t('navWedding'));
+}
+
+async function refreshWeddingParticleTarget() {
+  if(state!=='final-transition'||!weddingParticles?.active||!weddingTargetSampler)return;
+  const effect=weddingParticles,request=revision,targetRequest=++weddingTargetRevision;
+  weddingTargetAbort?.abort();
+  const abort=weddingTargetAbort=new AbortController();
+  // Hold the finite clock while remeasuring text after a rotation or SK/EN change.
+  effect.suspend('target');
+  try {
+    const targets=await weddingTargetSampler($('wedding-scene').querySelector('.w-invitation-inner'),{
+      width:innerWidth,height:innerHeight,count:weddingParticleCount,signal:abort.signal,
+    });
+    if(request!==revision||targetRequest!==weddingTargetRevision||effect!==weddingParticles)return;
+    effect.setTargets(targets);
+    effect.resume('target');
+  } catch(error) {
+    if(error.name!=='AbortError'&&request===revision&&targetRequest===weddingTargetRevision)finishWeddingEntry(request);
+  }
+}
+
+async function playWeddingTransition() {
+  if(state==='wedding'||state==='final-transition')return;
+  const fromGlobe=!!renderer&&['journey','memory','transition'].includes(state)&&$('globe-fallback').hidden;
+  finishStartupCloud();pauseStory();
+  const request=killActiveSectionTransition();
+  hideAllScreensImmediate();setState('final-transition');setActiveNav('wedding');
+  if(!weddingChapter)weddingChapter=createWedding($('wedding-scene'),wedding,{t,gsap,reducedMotion});
+  // Final layout exists for sampling, but remains hidden and noninteractive.
+  weddingChapter.enter({immediate:true,focus:false});
+  if(!fromGlobe||reducedMotion.matches||renderer.getContext().isContextLost()){
+    finishWeddingEntry(request);return;
+  }
+  showScreen('journey-scene',false);
+  gsap.set([$ ('label-layer'),$('city-connectors'),$('journey-instruction')],{autoAlpha:0});
+  announce(t('navWedding'));
+  try {
+    if(!weddingParticlesFactory){
+      const [effect,sampler]=await Promise.all([import('./wedding-particles-v3.js'),import('./wedding-particle-target-v3.js')]);
+      weddingParticlesFactory=effect.createWeddingParticles;weddingTargetSampler=sampler.sampleWeddingInvitation;
+    }
+    if(request!==revision||state!=='final-transition')return;
+    const abort=weddingTargetAbort=new AbortController();
+    const count=weddingParticleCount=mobile()?22000:30000;
+    let targets,targetVersion,targetWidth,targetHeight;
+    do {
+      targetVersion=weddingTargetRevision;targetWidth=innerWidth;targetHeight=innerHeight;
+      targets=await weddingTargetSampler($('wedding-scene').querySelector('.w-invitation-inner'),{
+        width:targetWidth,height:targetHeight,count,signal:abort.signal,
+      });
+      if(request!==revision||state!=='final-transition')return;
+    } while(targetVersion!==weddingTargetRevision||targetWidth!==innerWidth||targetHeight!==innerHeight);
+    if(reducedMotion.matches){finishWeddingEntry(request);return;}
+    applyGlobeTheme();
+    weddingParticles=weddingParticlesFactory({
+      THREE,gsap,scene,camera,renderer,controls,globeGroup,globeMesh,overviewGeometry,framing,
+      radius:GLOBE_RADIUS,overviewDistance,getTheme:getParticleTheme,count,
+      onReveal:alpha=>{if(request===revision){$('wedding-scene').style.opacity=String(alpha);$('wedding-scene').style.visibility=alpha>0?'visible':'hidden';}},
+      onFinish:()=>finishWeddingEntry(request),
+    });
+    weddingParticles.start(targets);
+  } catch(error) {
+    if(error.name!=='AbortError'){
+      console.warn('Wedding particle transition unavailable:',error.message);
+      finishWeddingEntry(request);
+    }
+  }
 }
 
 function latLonToVec3(lat, lon, radius) {
@@ -697,6 +752,7 @@ async function ensureGlobeScene() {
       document.fonts?.ready.then(()=>{layoutDirty=true;});
       $('three-canvas').addEventListener('webglcontextlost', event => {
         event.preventDefault();
+        if(state==='final-transition'){finishWeddingEntry(revision);return;}
         if (particleIntro?.active) { particleIntro.suspend('context'); return; }
         $('globe-fallback').hidden = false;
         connector.style.visibility = 'hidden';
@@ -797,7 +853,7 @@ function separateLabels(items,key,minY,maxY,gap=9) {
 function animate(time) {
   const dt=Math.min(.05,Math.max(.001,(time-(lastFrame||time-16.7))/1000));
   lastFrame=time;
-  if(document.hidden||!(['transition','journey','memory'].includes(state)||(state==='intro'&&particleIntro?.active)))return;
+  if(document.hidden||!(['transition','journey','memory'].includes(state)||(state==='intro'&&particleIntro?.active)||(state==='final-transition'&&weddingParticles?.active)))return;
   if(renderer.getContext().isContextLost())return;
   if(!$('globe-fallback').hidden){showFallbackLabels();return;}
   if(view.width!==innerWidth||view.height!==innerHeight){
@@ -808,6 +864,7 @@ function animate(time) {
   if (state === 'intro' && particleIntro?.active) {
     applyGlobeTheme(); particleIntro.render(view.width, view.height); return;
   }
+  if(state==='final-transition'&&weddingParticles?.active){weddingParticles.render(view.width,view.height);return;}
   if(layoutDirty)measureJourneyLayout();
   applyFraming();
   if(!cameraMoving){
@@ -1269,12 +1326,13 @@ function applyLanguage(){
   $('next-btn').firstChild.textContent=t('explore')+' ';
   document.querySelector('#journey-instruction p').firstChild.textContent=t('journey1');text('#journey-instruction p span','journey2');
   text('#transition-screen .trans-line:first-child','journeyEntry');text('#transition-screen .trans-line:last-child','journey2');
-  text('#final-transition-screen .trans-line:first-child','final1');text('#final-transition-screen .trans-line:last-child','final2');
   text('#globe-fallback','fallback');attr('three-canvas','canvas');attr('header-home','home');attr('bottom-nav','navigation');attr('label-layer','cities');
   attr('destination-video-close','back');attr('video-stop-btn','close');text('#destination-video-retry',fullscreenVideo.externalHold?'videoResume':'play');
   refreshInstagramCopy();
   updateDestinationNavigation();syncStoryUI();
   weddingChapter?.refreshLanguage();
+  if(state==='final-transition')weddingTargetRevision++;
+  if(weddingParticles?.active)refreshWeddingParticleTarget();
   particleIntro?.refreshLanguage();
   if(!$('media-error').classList.contains('empty-memory'))text('#media-error','imageError');
   for(const item of markerData){const loc=locations[item.index];item.element.setAttribute('aria-label',cityName(loc)+' — '+countryText(loc));item.element.querySelector('.city-subname').textContent=countryText(loc);item.element.querySelector('.city-name').textContent=cityName(loc);}
@@ -1293,7 +1351,6 @@ function applyLanguage(){
   if(!$('utility-toast').hidden)$('utility-toast').textContent=t($('utility-toast').dataset.key);
   $('journey-scene').setAttribute('aria-label','Journey — '+t('journey1'));
   $('transition-screen').setAttribute('aria-label',t('prepare'));
-  $('final-transition-screen').setAttribute('aria-label',t('final2'));
   $('wedding-scene').setAttribute('aria-label',t('navWedding'));
   $('instagram-link').textContent=t('instagram');
   document.querySelectorAll('#utility-controls button').forEach(button=>button.title=button.getAttribute('aria-label'));
@@ -1309,6 +1366,10 @@ $('utility-palette').onclick=()=>selectThemePair('olive');
 $('utility-language').onclick=()=>{preferences.language=preferences.language==='sk'?'en':'sk';savePreference('sm-language',preferences.language);applyLanguage();};
 document.addEventListener('click',event=>{if(event.target.closest('#next-btn,#nav-journey,#nav-wedding,#story-play')){musicEligible=true;syncMusic();}},true);
 document.addEventListener('visibilitychange',syncMusic);
+document.addEventListener('visibilitychange',()=>{
+  if(document.hidden)weddingParticles?.suspend('visibility');else weddingParticles?.resume('visibility');
+});
+window.addEventListener('pagehide',()=>weddingParticles?.suspend('page'));
 
 createLabels();
 applyLanguage();
@@ -1323,6 +1384,10 @@ document.addEventListener('keydown', event => { if (event.key === 'Escape' && !p
 let previousOverview=overviewDistance();
 window.addEventListener('resize', () => {
   layoutDirty=true;
+  if(weddingParticles?.active){
+    clearTimeout(weddingTargetRefreshTimer);weddingParticles.suspend('target');
+    weddingTargetRefreshTimer=setTimeout(refreshWeddingParticleTarget,120);
+  }
   const nextOverview=overviewDistance(), zoomRatio=nextOverview/previousOverview;
   previousOverview=nextOverview;
   if (!camera) {showFallbackLabels();return;}
@@ -1346,6 +1411,7 @@ reducedMotion.addEventListener('change', () => {
   }
   if (controls) controls.autoRotate=state==='journey'&&!reducedMotion.matches;
   if (reducedMotion.matches && particleIntro?.active) particleIntro.finish();
+  if(reducedMotion.matches&&state==='final-transition')finishWeddingEntry(revision);
   journeyMotion.spin=0;
   if(reducedMotion.matches && globeFlight) globeFlight.progress(1);
 });
@@ -1361,7 +1427,7 @@ $('three-canvas').addEventListener('keydown',event=>{
   camera.position.setFromSpherical(spherical); controls.update(); idleSince=performance.now()+1800;
 });
 // BFCache restores the existing section and playback state, never a fresh intro.
-window.addEventListener('pageshow', () => { if (particleIntro?.active) particleIntro.resume('page'); });
+window.addEventListener('pageshow', () => { if (particleIntro?.active) particleIntro.resume('page');weddingParticles?.resume('page'); });
 
 let loaded = false;
 function finishLoading() {
