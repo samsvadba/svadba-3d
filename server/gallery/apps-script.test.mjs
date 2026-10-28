@@ -43,6 +43,6 @@ assert.equal(app.galleryCall('list',{}).result.photos.length,2);
 const heic=Buffer.concat([Buffer.from([0,0,0,24]),Buffer.from('ftypheic'),Buffer.alloc(12)]);
 assert.equal(app.detect_([...heic]),'image/heic');
 props.set('GALLERY_DAILY',JSON.stringify({day:new Date().toISOString().slice(0,10),count:500}));
-assert.equal(app.galleryCall('upload',{...data,id:'55555555-5555-4555-8555-555555555555'}).error.code,'RATE_LIMIT');
+assert.equal(app.galleryCall('upload',{...data,id:'55555555-5555-4555-8555-555555555555'}).error.code,'DRIVE_QUOTA');
 assert.deepEqual(JSON.parse(await readFile(new URL('./appsscript.json',import.meta.url),'utf8')).oauthScopes,['https://www.googleapis.com/auth/drive.file','https://www.googleapis.com/auth/script.external_request']);
 console.log('PASS: Apps Script upload/list/media persistence, original bytes, retry, partial-write failure, type/HEIC signature, quota and narrow scopes (mock Google interfaces; no live Drive).');

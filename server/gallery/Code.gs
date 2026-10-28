@@ -20,7 +20,7 @@ function galleryCall(action, data) {
   } catch (error) {
     var message = String(error.message || error);
     var known = /^(FILE_TOO_LARGE|UNSUPPORTED_TYPE|IMAGE_DECODE|DRIVE_QUOTA|RATE_LIMIT|DENIED|NOT_FOUND)$/;
-    var code = known.test(message) ? message : /quota|storage|limit exceeded/i.test(message) ? 'DRIVE_QUOTA' : /too many|invoked too/i.test(message) ? 'RATE_LIMIT' : 'STORAGE';
+    var code = known.test(message) ? message : /quota|storage|limit exceeded|for one day/i.test(message) ? 'DRIVE_QUOTA' : /too many|invoked too/i.test(message) ? 'RATE_LIMIT' : 'STORAGE';
     console.warn('Gallery failure: ' + code); // Never log photo bytes, names or tokens.
     return { ok: false, error: { code: code } };
   }
@@ -104,7 +104,7 @@ function upload_(data) {
     var props = PropertiesService.getScriptProperties(), day = Utilities.formatDate(new Date(), 'UTC', 'yyyy-MM-dd');
     var counter = JSON.parse(props.getProperty('GALLERY_DAILY') || '{}');
     if (counter.day !== day) counter = { day: day, count: 0 };
-    if (counter.count >= GALLERY.maxDaily) throw Error('RATE_LIMIT');
+    if (counter.count >= GALLERY.maxDaily) throw Error('DRIVE_QUOTA');
     // Charge attempts, not just successes, to bound free-quota use on failed/repeated requests.
     counter.count++; props.setProperty('GALLERY_DAILY', JSON.stringify(counter));
     var quota = Drive.About.get({ fields: 'storageQuota' }).storageQuota;
