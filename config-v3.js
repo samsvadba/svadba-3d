@@ -577,7 +577,7 @@ const config = {
     "backgroundMusic": "audio/shes-a-rainbow.mp3?v=cb14e941"
   },
   "gallery": {
-    "url": null
+    "url": "https://photos.app.goo.gl/u2VrM5vwNZyGKfwf7"
   },
   "ui": {
     "sk": {
@@ -620,7 +620,7 @@ const config = {
       "instagram": "POZRIEŤ NA INSTAGRAME ↗",
       "more": "Viac z našej cesty",
       "gallery": "Po svadbe tu sprístupníme spoločnú galériu, do ktorej budete môcť pridať svoje fotografie.",
-      "photos": "Svadobné fotografie",
+      "photos": "Pridať a pozrieť fotky",
       "soundOn": "Vypnúť hudbu",
       "soundOff": "Zapnúť hudbu",
       "noMusic": "Hudbu doplníme čoskoro.",
@@ -839,7 +839,7 @@ const config = {
       "instagram": "VIEW ON INSTAGRAM ↗",
       "more": "More from our journey",
       "gallery": "After the wedding, we will open a shared gallery here where you can add your photos.",
-      "photos": "Wedding photos",
+      "photos": "Add and view photos",
       "soundOn": "Turn music off",
       "soundOff": "Turn music on",
       "noMusic": "Music is coming soon.",
