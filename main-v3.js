@@ -1223,7 +1223,7 @@ bindGlobeInput(globeSurface, {
 // Independent, persistent utility preferences; audio is never loaded without a source.
 function readPreference(key,fallback){try{return localStorage.getItem(key)||fallback;}catch{return fallback;}}
 function savePreference(key,value){try{localStorage.setItem(key,value);}catch{}}
-const preferences={sound:true,theme:readPreference('sm-theme','light')==='dark'?'dark':'light',palette:readPreference('sm-palette','classic')==='olive'?'olive':'classic',language:readPreference('sm-language','sk')==='en'?'en':'sk'};
+const preferences={sound:false,theme:readPreference('sm-theme','light')==='dark'?'dark':'light',palette:readPreference('sm-palette','classic')==='olive'?'olive':'classic',language:readPreference('sm-language','sk')==='en'?'en':'sk'};
 const mood={value:preferences.theme==='dark'?1:0,palette:preferences.palette==='olive'?1:0};
 function getParticleTheme() {
   if (!particleTheme) {
@@ -1246,7 +1246,7 @@ function getParticleTheme() {
 }
 let oliveGlobeColors;
 const appliedGlobeTheme={material:null,value:null,palette:null,markers:0};
-const music=new Audio();music.loop=true;music.preload='auto';music.autoplay=true;music.crossOrigin='anonymous';music.volume=0;music.id='background-music';music.hidden=true;document.body.append(music);
+const music=new Audio();music.loop=true;music.preload='none';music.crossOrigin='anonymous';music.volume=0;music.id='background-music';music.hidden=true;document.body.append(music);
 let musicBlocked=false,musicPlayPending=null,musicPlayGesture=false,musicAttempt=0,musicFailed=false,toastTimer;
 music.addEventListener('error',()=>{musicAttempt++;musicPlayPending=null;musicPlayGesture=false;musicBlocked=false;musicFailed=true;music.pause();preferences.sound=false;savePreference('sm-sound','off');applyLanguage();toast('musicUnavailable');});
 const t=key=>config.ui[preferences.language][key]||key;
@@ -1296,11 +1296,6 @@ function toggleMusic(){
   savePreference('sm-sound',preferences.sound?'on':'off');
   syncMusic(true);syncSoundControl();
   if(!config.audio.backgroundMusic)toast('noMusic');
-}
-function unlockMusic(event){
-  if(!preferences.sound||musicFailed||event.target.closest?.('#utility-sound'))return;
-  if(event.type==='keydown'&&(event.repeat||['Shift','Control','Alt','Meta','Escape'].includes(event.key)))return;
-  if(musicBlocked||(music.paused&&!musicPlayPending))syncMusic(true);
 }
 function toast(key){clearTimeout(toastTimer);$('utility-toast').dataset.key=key;$('utility-toast').textContent=t(key);$('utility-toast').hidden=false;toastTimer=setTimeout(()=>{$('utility-toast').hidden=true;},3200);}
 function applyGlobeTheme(){
@@ -1396,9 +1391,6 @@ $('utility-gallery').onclick=()=>{if(config.gallery.url)window.open(config.galle
 $('utility-mood').onclick=()=>selectThemePair('classic');
 $('utility-palette').onclick=()=>selectThemePair('olive');
 $('utility-language').onclick=()=>{preferences.language=preferences.language==='sk'?'en':'sk';savePreference('sm-language',preferences.language);applyLanguage();};
-document.addEventListener('pointerup',unlockMusic,true);
-document.addEventListener('click',unlockMusic,true);
-document.addEventListener('keydown',unlockMusic,true);
 document.addEventListener('visibilitychange',syncMusic);
 document.addEventListener('visibilitychange',()=>{
   if(document.hidden)weddingParticles?.suspend('visibility');else weddingParticles?.resume('visibility');
