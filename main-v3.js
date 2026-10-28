@@ -6,6 +6,7 @@ import './style-v3.css';
 import { createWedding } from './wedding-v3.js';
 import { createOrigins } from './origins-v3.js';
 import { bindGlobeInput } from './globe-input-v3.js';
+import { createGallery } from './gallery-v3.js';
 
 // Reference architecture: WeddingApp config, separate fullscreen screens,
 // interruptible GSAP section timelines, OrbitControls, flyToAndShow,
@@ -25,6 +26,7 @@ let weddingTargetRevision=0, weddingTargetRefreshTimer, weddingParticleCount=220
 let introLineartPromise, introLineartStarted = false, introLineartPaths = [];
 const screens = ['intro-overlay', 'journey-scene', 'transition-screen', 'wedding-scene'];
 let weddingChapter;
+let galleryChapter;
 let originMarkers;
 let state = 'loading', revision = 0, activeSectionTimeline, currentIndex = -1;
 let destinationReady=false, lastDestinationIndex=-1;
@@ -357,7 +359,9 @@ async function playParticleIntro() {
       });
     }
     applyGlobeTheme();
-    particleIntro.start(); syncStoryUI();
+    particleIntro.start();
+    if(galleryChapter?.isOpen())particleIntro.suspend('gallery');
+    syncStoryUI();
     delete document.body.dataset.introPending;
   } catch (error) {
     if (request !== revision) return;
@@ -1341,6 +1345,7 @@ function applyLanguage(){
   originMarkers?.refreshLanguage(t('originLabel'));
   document.documentElement.lang=preferences.language;
   document.title='Simona & Martin — '+t('story');
+  galleryChapter?.refreshLanguage();
   const text=(selector,key)=>document.querySelectorAll(selector).forEach(el=>{el.textContent=t(key);});
   const attr=(id,key)=>$(id).setAttribute('aria-label',t(key));
   text('.header-subtitle, .title-layout .eyebrow','story');
@@ -1387,7 +1392,14 @@ function applyLanguage(){
   layoutDirty=true;
 }
 $('utility-sound').onclick=toggleMusic;
-$('utility-gallery').onclick=()=>{if(config.gallery.url)window.open(config.gallery.url,'_blank','noopener,noreferrer');else toast('gallery');};
+$('utility-gallery').onclick=()=>{
+  if(!galleryChapter)galleryChapter=createGallery({
+    config:config.gallery,getLanguage:()=>preferences.language,
+    onOpen:()=>{particleIntro?.suspend('gallery');if(storyActive)pauseStory();},
+    onClose:()=>particleIntro?.resume('gallery'),
+  });
+  galleryChapter.open($('utility-gallery'));
+};
 $('utility-mood').onclick=()=>selectThemePair('classic');
 $('utility-palette').onclick=()=>selectThemePair('olive');
 $('utility-language').onclick=()=>{preferences.language=preferences.language==='sk'?'en':'sk';savePreference('sm-language',preferences.language);applyLanguage();};

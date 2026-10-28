@@ -198,5 +198,6 @@ for (const lang of ['sk', 'en']) {
     if (item.tab) assert.equal(item.tab, 'rsvp');
   }
 }
-assert.equal(config.gallery.url, null, 'No non-functional gallery upload link');
+assert.equal(Object.hasOwn(config.gallery, 'url'), false, 'Photo control no longer redirects to an external album');
+assert.ok(config.gallery.apiUrl === null || new URL(config.gallery.apiUrl).protocol === 'https:', 'Gallery uses an explicit HTTPS backend or the honest unconfigured state');
 console.log('PASS: RSVP 1–12 guests, required-field focus/aria, lodging bounds, review, yes/no payloads, duplicate guard, message validation, success/error/timeout cleanup, language preservation, boolean/MediaQueryList reduced motion. No network requests.');
