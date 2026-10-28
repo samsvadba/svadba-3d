@@ -1,32 +1,17 @@
-# Galéria vo V3
+# Galéria V3 – bezplatné riešenie
 
-Fotoikonka otvára galériu priamo v aktuálnej stránke. Externý album Google Fotky už neotvára. Rozhranie používa pôvodný monogram, písma a premenné tém Classic a Olive & Ivory.
+Galéria používa existujúci vzhľad, témy a fotoikonku. Jediný `#bottom-nav` sa počas otvorenia presunie dovnútra natívneho dialógu: nie je inertný, ostáva nad posúvanými fotkami a pôvodné tlačidlá zavrú galériu a otvoria príslušnú sekciu. Pri detaile fotografie je lišta skrytá; po zatvorení sa pôvodný prvok vráti na svoje miesto.
 
-## Aktuálny stav
+Samostatný Node/Render server bol nahradený Apps Script + Google Disk. Nie je potrebný hosting, platobná karta ani platené API. Platí dostupná kapacita účtu a bezplatné kvóty Google. Pri ich vyčerpaní sa upload zastaví s vysvetlením, nie s platbou.
 
-Rozhranie aj serverová implementácia sú pripravené. **Živý Google Disk a HTTPS hosting servera zatiaľ nie sú autorizované ani nasadené.** `config-v3.js` preto obsahuje `gallery.apiUrl: null`. V tomto stave galéria pravdivo vysvetľuje prípravu úložiska a nahrávanie je vypnuté. Nezobrazuje skúšobné fotografie ani falošné potvrdenia.
+V3 komunikuje cez skrytý HTML Service iframe a `google.script.run`. Nepoužíva CORS požiadavky na Node REST endpoint ani klientsky Google token. Lokálny OAuth callback sa nepoužíva.
 
-## Jednorazové dokončenie
+Konfigurácia: `gallery.scriptUrl` v `config-v3.js`, skutočná nasadená `/macros/s/.../exec` adresa, alebo `null`, kým nie je autorizácia a reálny test dokončený. **Null znamená vypnuté nahrávanie; rozhranie nepredstiera uloženie.**
 
-1. Majiteľ vytvorí samostatného OAuth klienta Google Drive a spustí pripravený `server/gallery/setup-google.mjs`. Skript vyžiada iba `drive.file` a vytvorí vyhradený privátny svadobný priečinok.
-2. Nasadí `server/gallery/` na HTTPS Node hosting. Google údaje a refresh token patria iba do serverových secrets. Neposielajte ich cez chat a nevkladajte ich do GitHub Pages.
-3. Nad osobitným testovacím priečinkom spustí `live-smoke.mjs`; tento test ešte nebol vykonaný proti skutočnému Google Disku.
-4. Po úspešnom teste sa nastaví `gallery.apiUrl` na skutočnú adresu `https://HOST/api/gallery` a V3 sa publikuje existujúcim Pages postupom.
+## HEIC a limity
 
-Presný postup, Render/Docker konfigurácia, bezpečnostné nastavenia, limity a odkazy na náklady sú v [server/gallery/README.md](server/gallery/README.md). GitHub Pages zostáva statický; server potrebuje samostatný hosting. Bezplatný hosting je vhodný na skúšanie, pre svadobný deň odporúčame trvalo bežiaci server s aspoň 1 GiB RAM. Úložisko originálov aj náhľadov sa započítava do kapacity účtu Google Disk.
+Originál JPEG/PNG/WebP/HEIC sa uloží bez zmeny. Prehliadač pripraví JPEG náhľad 480 px a detail 1600 px; ak natívne HEIC neprečíta, načíta bezplatný lokálny libheif prevodník. Nepodporovaná fotografia má vysvetlenie a možnosť skúsiť JPEG. Apps Script overuje podpis formátu, veľkosť a rozmery JPEG náhľadov. Nemá plnohodnotný serverový HEIC dekodér; úplné dekódovanie prebieha v prehliadači. Podpis súboru nie je antivírusová kontrola.
 
-## Čo bolo overené
+Limit 10 MiB/originál, 50 MP pri dekódovaní, 20 fotografií na výber, jedna konverzia/upload naraz, 500 pokusov o upload/deň. Náhľady sa čítajú postupne a malé sa ukladajú do dočasnej cache. RPC má neurčitý priebeh; „uložené“ sa zobrazí až po potvrdení všetkých zápisov.
 
-- Lokálne HTTP testy servera s pamäťovým testovacím adaptérom Disku: uloženie pôvodných bajtov, náhľady, opakovanie chyby, deduplikácia, nový server nad rovnakým úložiskom, stránkovanie, kontrola typov/veľkostí a izolácia priečinka.
-- Skutočný prevod HEIC vzorky z projektu libheif na JPEG náhľad. Originál sa nemení; na mobiloch bez podpory HEIC sa zobrazuje odvodený JPEG.
-- V prehliadači: viacnásobný výber JPEG/PNG/HEIC, potvrdené uloženie do testovacieho adaptéra, retry po simulovanej chybe, veľký náhľad, klávesnica, obnovenie stránky a opätovné načítanie fotografií.
-- SK/EN, mobilná šírka a farby aktuálnych tém. Pôvodný zvuk, Intro a RSVP prešli svojimi kontrolami; produkčný build prešiel.
-
-**Neoverené:** živé uloženie na Google Disk, skutočný mobilný fotoaparát a výber fotografií na fyzickom iPhone/Androide. Tieto skúšky zostávajú po autorizácii a HTTPS nasadení. Testovacie fotografie sa do produkčnej galérie nekopírujú.
-
-## Zdrojové súbory
-
-- `gallery-v3.js`, `gallery-v3.css`: galéria a nahrávanie.
-- `main-v3.js`: existujúca fotoikonka, jazyk a pozastavenie úvodu počas otvorenej galérie.
-- `config-v3.js`: jediná adresa servera; žiadne Google prihlasovacie údaje.
-- `server/gallery/`: oddelený server, konfigurácia a testy.
+Nasadenie: [server/gallery/README.md](server/gallery/README.md). Živé uloženie na Disk musí byť overené po autorizácii majiteľa; lokálne testy ho nenahrádzajú.

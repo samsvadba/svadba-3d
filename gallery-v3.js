@@ -1,5 +1,6 @@
 import './gallery-v3.css';
 import { weddingMonogram } from './brand-v3.js';
+import { createDriveBridge, preparePhoto, jpegObjectUrl } from './gallery-drive-v3.js';
 
 const copy = {
   sk: {
@@ -20,6 +21,7 @@ const copy = {
     rate: 'Teraz sa nahráva veľa fotografií. O chvíľu to skúste znova.',
     denied: 'Nahrávanie momentálne nie je povolené. Obráťte sa, prosím, na novomanželov.',
     storage: 'Úložisko je momentálne nedostupné. Skúste to neskôr.',
+    quota: 'Bezplatný limit alebo miesto na Google Disku sa vyčerpalo. Skúste to zajtra alebo kontaktujte novomanželov.',
     photoError: 'Fotografiu sa nepodarilo načítať.', original: 'Otvoriť fotografiu v novej karte',
     uploadingElsewhere: 'Nahrávanie pokračuje aj po zatvorení galérie. Stránku zatiaľ nezatvárajte.',
     uploaded: 'Uložené fotografie: {count}.', photo: 'Svadobná fotografia', remove: 'Odstrániť z radu',
@@ -42,6 +44,7 @@ const copy = {
     rate: 'Many photos are being uploaded right now. Please try again shortly.',
     denied: 'Uploads are not available at the moment. Please contact the couple.',
     storage: 'Storage is temporarily unavailable. Please try again later.',
+    quota: 'The free quota or Google Drive storage is full. Please try tomorrow or contact the couple.',
     photoError: 'This photo could not be loaded.', original: 'Open photo in a new tab',
     uploadingElsewhere: 'Uploads continue when the gallery is closed. Please keep this page open.',
     uploaded: 'Photos saved: {count}.', photo: 'Wedding photo', remove: 'Remove from queue',
@@ -59,9 +62,8 @@ const icons = {
 export function createGallery({ config = {}, getLanguage = () => 'sk', onOpen = () => {}, onClose = () => {} } = {}) {
   const t = (key, vars = {}) => Object.entries(vars).reduce((value, [name, replacement]) =>
     value.replaceAll(`{${name}}`, String(replacement)), (copy[getLanguage()] || copy.sk)[key] || key);
-  const api = validateApiBase(config.apiUrl || config.apiBase);
-  const headers = config.inviteKey ? { 'X-Gallery-Key': String(config.inviteKey) } : {};
-  const limits = { maxFileBytes: 20 * 1024 * 1024, maxBatchFiles: 20 };
+  const api = createDriveBridge(config.scriptUrl);
+  const limits = { maxFileBytes: 10 * 1024 * 1024, maxBatchFiles: 20 };
   const dialog = document.createElement('dialog');
   dialog.className = 'wedding-gallery';
   dialog.id = 'wedding-gallery';
@@ -93,11 +95,32 @@ export function createGallery({ config = {}, getLanguage = () => 'sk', onOpen = 
   const feedback = $('.gallery-feedback'), queueElement = $('.gallery-queue-list');
   const lightbox = $('.gallery-lightbox'), largeImage = $('.gallery-large-photo');
   const queue = [], photos = [], photoNodes = new Map();
-  let ready = false, loading = false, cursor = null, controller = null, restoreFocus = null;
+  let ready = false, loading = false, cursor = null, restoreFocus = null;
   let active = 0, selected = -1, lightboxReturn = null, loadRevision = 0;
   let statusKey = api ? 'loading' : 'setup', photoFailed = false;
   const mobileCamera = 'capture' in cameraInput && matchMedia('(pointer: coarse)').matches;
   cameraButton.hidden = !mobileCamera;
+  const nav = document.getElementById('bottom-nav');
+  const navHome = document.createComment('gallery navigation return point');
+  let navInert = false, routed = false;
+  const navResize = new ResizeObserver(() => {
+    if (dialog.open && nav?.parentNode === dialog) dialog.style.setProperty('--gallery-nav-height', `${nav.getBoundingClientRect().height}px`);
+  });
+  if (nav) navResize.observe(nav);
+  function dockNavigation() {
+    if (!nav) return;
+    navInert = nav.inert; nav.before(navHome); dialog.append(nav); nav.inert = false;
+    dialog.style.setProperty('--gallery-nav-height', `${nav.getBoundingClientRect().height}px`);
+  }
+  function restoreNavigation() {
+    if (!navHome.parentNode) return;
+    navHome.replaceWith(nav); nav.inert = navInert; nav.hidden = false;
+  }
+  // Close synchronously in capture phase, before the original section handler runs.
+  nav?.addEventListener('click', event => {
+    if (!dialog.open || !event.target.closest('.nav-item')) return;
+    routed = true; close();
+  }, true);
 
   function text(selector, key, vars) { $(selector).textContent = t(key, vars); }
   function label(selector, key) { $(selector).setAttribute('aria-label', t(key)); $(selector).title = t(key); }
@@ -132,28 +155,21 @@ export function createGallery({ config = {}, getLanguage = () => 'sk', onOpen = 
     feedback.dataset.key = key; feedback.dataset.vars = JSON.stringify(vars);
     feedback.textContent = t(key, vars); feedback.hidden = false;
   }
-  async function request(path, signal) {
-    const response = await fetch(`${api}${path}`, { headers, signal, credentials: 'omit', cache: 'no-store' });
-    if (!response.ok) throw new Error('unavailable');
-    return response.json();
-  }
   async function load(reset = false) {
     if (!api || loading) return;
     const revision = ++loadRevision;
     loading = true;
-    controller = new AbortController();
-    const signal = controller.signal;
     if (!photos.length) setStatus('loading');
     updateControls();
     try {
       if (!ready) {
-        const state = await request('/status', signal);
+        const state = await api.call('status');
         if (!state.ready) throw new Error('unavailable');
-        limits.maxFileBytes = Math.min(20 * 1024 * 1024, Number(state.maxFileBytes) || limits.maxFileBytes);
+        limits.maxFileBytes = Math.min(10 * 1024 * 1024, Number(state.maxFileBytes) || limits.maxFileBytes);
         limits.maxBatchFiles = Math.min(20, Number(state.maxBatchFiles) || limits.maxBatchFiles);
         ready = true;
       }
-      const page = await request(`/photos${!reset && cursor ? `?cursor=${encodeURIComponent(cursor)}` : ''}`, signal);
+      const page = await api.call('list', { cursor: !reset ? cursor : null });
       if (revision !== loadRevision) return;
       if (!Array.isArray(page.photos)) throw new Error('unavailable');
       for (const candidate of page.photos) addPhoto(candidate);
@@ -162,7 +178,7 @@ export function createGallery({ config = {}, getLanguage = () => 'sk', onOpen = 
     } catch (error) {
       if (error.name !== 'AbortError' && revision === loadRevision) {
         ready = false;
-        setStatus('unavailable', true);
+        setStatus(uploadErrorKey(error) === 'quota' ? 'quota' : 'unavailable', true);
       }
     } finally {
       if (revision === loadRevision) { loading = false; updateControls(); }
@@ -170,11 +186,29 @@ export function createGallery({ config = {}, getLanguage = () => 'sk', onOpen = 
   }
   function normalizePhoto(candidate) {
     if (!candidate || typeof candidate.id !== 'string' || !candidate.id || candidate.id.length > 128) return null;
-    const thumbnailUrl = validateAssetUrl(candidate.thumbnailUrl, api);
-    const displayUrl = validateAssetUrl(candidate.displayUrl || candidate.imageUrl, api);
-    if (!thumbnailUrl || !displayUrl) return null;
-    return { id: candidate.id, name: String(candidate.name || t('photo')).slice(0, 300), thumbnailUrl, displayUrl };
+    if (!/^[a-f0-9-]{36}$/.test(candidate.id)) return null;
+    return { id: candidate.id, name: String(candidate.name || t('photo')).slice(0, 300) };
   }
+  const mediaCache = new Map();
+  let mediaTail = Promise.resolve();
+  function media(photo, variant) {
+    const key = `${photo.id}:${variant}`;
+    if (!mediaCache.has(key)) {
+      // Serial RPCs stay well below Apps Script's execution/concurrency quotas.
+      const result = (variant === 'preview' ? Promise.resolve() : mediaTail.catch(() => {})).then(() => api.call('media', { id: photo.id, variant })).then(jpegObjectUrl);
+      mediaCache.set(key, result); if (variant === 'thumbnail') mediaTail = result;
+      result.catch(() => mediaCache.delete(key));
+    }
+    return mediaCache.get(key);
+  }
+  const thumbnails = new IntersectionObserver(entries => {
+    for (const entry of entries) {
+      if (!entry.isIntersecting) continue;
+      thumbnails.unobserve(entry.target);
+      const photo = photos.find(value => value.id === entry.target.dataset.id);
+      media(photo, 'thumbnail').then(url => { entry.target.querySelector('img').src = url; }).catch(() => { entry.target.classList.add('gallery-tile-failed'); entry.target.textContent = t('photoError'); });
+    }
+  }, { root: $('.gallery-scroll'), rootMargin: '180px' });
   function addPhoto(candidate, prepend = false) {
     const photo = normalizePhoto(candidate);
     if (!photo || photoNodes.has(photo.id)) return !!photo;
@@ -188,35 +222,41 @@ export function createGallery({ config = {}, getLanguage = () => 'sk', onOpen = 
     button.type = 'button'; button.className = 'gallery-tile';
     button.setAttribute('aria-label', `${t('photo')}: ${photo.name}`);
     const image = document.createElement('img');
-    image.alt = ''; image.loading = 'lazy'; image.decoding = 'async'; image.src = photo.thumbnailUrl;
+    image.alt = ''; image.loading = 'lazy'; image.decoding = 'async'; button.dataset.id = photo.id;
     image.onerror = () => { button.classList.add('gallery-tile-failed'); button.textContent = t('photoError'); };
     button.append(image); button.onclick = () => openPhoto(photos.findIndex(value => value.id === photo.id), button);
     photoNodes.set(photo.id, button);
     prepend ? grid.prepend(button) : grid.append(button);
+    thumbnails.observe(button);
     return true;
   }
   function openPhoto(index, origin = null) {
     if (!photos[index]) return;
     selected = index; lightboxReturn = origin || lightboxReturn;
     lightbox.hidden = false; shell.inert = true;
+    if (nav) { nav.hidden = true; nav.inert = true; }
     const photo = photos[index];
     photoFailed = false;
     $('.gallery-photo-error').hidden = true; $('.gallery-original').hidden = true;
     largeImage.hidden = false; largeImage.alt = photo.name;
-    largeImage.src = photo.displayUrl;
+    largeImage.removeAttribute('src');
+    media(photo, 'preview').then(url => {
+      if (selected !== index || lightbox.hidden) return;
+      largeImage.src = url; $('.gallery-original').href = url;
+    }).catch(() => { if (selected === index && !lightbox.hidden) largeImage.onerror(); });
     $('.gallery-lightbox figcaption').textContent = `${index + 1} / ${photos.length}`;
-    $('.gallery-original').href = photo.displayUrl;
     $('.gallery-prev').disabled = index === 0;
     $('.gallery-next').disabled = index === photos.length - 1;
     if (origin) $('.gallery-photo-close').focus();
   }
   largeImage.onerror = () => {
     photoFailed = true; largeImage.hidden = true;
-    $('.gallery-photo-error').hidden = false; $('.gallery-original').hidden = false;
+    $('.gallery-photo-error').hidden = false;
   };
   largeImage.onload = () => { if (!photoFailed) largeImage.hidden = false; };
   function closePhoto(restore = true) {
     lightbox.hidden = true; shell.inert = false; selected = -1; largeImage.removeAttribute('src');
+    if (nav) { nav.hidden = false; nav.inert = false; }
     if (restore && lightboxReturn?.isConnected) lightboxReturn.focus();
   }
   function renderQueueItem(item) {
@@ -238,7 +278,8 @@ export function createGallery({ config = {}, getLanguage = () => 'sk', onOpen = 
     }
     item.element.dataset.state = item.state;
     item.element.querySelector('.gallery-file-state').textContent = t(item.error || item.state, { size: Math.floor(limits.maxFileBytes / 1024 / 1024) });
-    const progress = item.element.querySelector('progress'); progress.value = item.progress;
+    const progress = item.element.querySelector('progress');
+    if (item.state === 'sending' || item.state === 'saving') progress.removeAttribute('value'); else progress.value = item.progress;
     progress.setAttribute('aria-label', `${item.file.name}: ${t(item.state)}`);
     const retry = item.element.querySelector('.gallery-file-retry'); retry.hidden = item.state !== 'failed'; retry.textContent = t('retry');
     const remove = item.element.querySelector('.gallery-file-remove');
@@ -262,30 +303,15 @@ export function createGallery({ config = {}, getLanguage = () => 'sk', onOpen = 
     $('.gallery-queue').hidden = !queue.length;
     pump();
   }
-  function upload(item) {
-    return new Promise((resolve, reject) => {
-      const xhr = new XMLHttpRequest();
-      xhr.open('POST', `${api}/photos`); xhr.timeout = 180000; xhr.responseType = 'json';
-      xhr.setRequestHeader('Content-Type', uploadMime(item.file));
-      xhr.setRequestHeader('X-File-Name', encodeURIComponent(item.file.name));
-      xhr.setRequestHeader('X-Upload-Id', item.id);
-      for (const [key, value] of Object.entries(headers)) xhr.setRequestHeader(key, value);
-      xhr.upload.onprogress = event => {
-        if (event.lengthComputable) {
-          item.progress = Math.min(95, Math.round(event.loaded / event.total * 95));
-          item.state = event.loaded === event.total ? 'saving' : 'sending'; renderQueueItem(item);
-        }
-      };
-      xhr.onload = () => {
-        if (xhr.status >= 200 && xhr.status < 300 && normalizePhoto(xhr.response?.photo)) resolve(xhr.response.photo);
-        else reject({ code: xhr.response?.error?.code, status: xhr.status });
-      };
-      xhr.onerror = xhr.ontimeout = () => reject({ code: 'NETWORK' });
-      xhr.send(item.file);
-    });
+  async function upload(item) {
+    const data = await preparePhoto(item.file);
+    item.state = 'saving'; renderQueueItem(item);
+    const result = await api.call('upload', { id: item.id, ...data });
+    if (!normalizePhoto(result?.photo)) throw {code:'STORAGE'};
+    return result.photo;
   }
   function pump() {
-    // The server serializes image decoding to keep HEIC memory use bounded.
+    // One conversion/upload at a time keeps mobile memory and free quotas bounded.
     while (active < 1) {
       const item = queue.find(value => value.state === 'waiting');
       if (!item) break;
@@ -316,40 +342,21 @@ export function createGallery({ config = {}, getLanguage = () => 'sk', onOpen = 
     if (event.key === 'ArrowRight' && selected < photos.length - 1) { event.preventDefault(); openPhoto(selected + 1); }
   });
   dialog.addEventListener('close', () => {
-    closePhoto(false); ++loadRevision; controller?.abort(); loading = false;
+    closePhoto(false); restoreNavigation(); ++loadRevision; loading = false;
     onClose();
-    if (restoreFocus?.isConnected) restoreFocus.focus({ preventScroll: true });
+    if (!routed && restoreFocus?.isConnected) restoreFocus.focus({ preventScroll: true });
   });
   function open(trigger) {
     if (dialog.open) return;
-    restoreFocus = trigger || document.activeElement;
-    refreshLanguage(); onOpen(); dialog.showModal(); $('.gallery-close').focus({ preventScroll: true });
+    restoreFocus = trigger || document.activeElement; routed = false;
+    refreshLanguage(); onOpen(); dialog.showModal(); dockNavigation(); $('.gallery-close').focus({ preventScroll: true });
     if (api) load(true); else setStatus('setup');
   }
-  function close() { if (dialog.open) dialog.close(); }
+  function close() { if (dialog.open) { restoreNavigation(); dialog.close(); } }
   refreshLanguage();
   return { open, close, refreshLanguage, isOpen: () => dialog.open };
 }
 
-export function validateApiBase(value) {
-  if (typeof value !== 'string' || !value.trim()) return null;
-  try {
-    const url = new URL(value);
-    if (url.username || url.password || url.search || url.hash) return null;
-    if (url.protocol !== 'https:' && !(url.protocol === 'http:' && ['localhost', '127.0.0.1', '[::1]'].includes(url.hostname))) return null;
-    return url.href.replace(/\/+$/, '');
-  } catch { return null; }
-}
-export function validateAssetUrl(value, base) {
-  if (typeof value !== 'string' || !value || !base) return null;
-  try {
-    const url = new URL(value, `${base}/`);
-    const api = new URL(base);
-    if (url.username || url.password) return null;
-    if (url.origin !== api.origin || !url.pathname.startsWith(`${api.pathname.replace(/\/+$/, '')}/photos/`)) return null;
-    return url.protocol === 'https:' || (url.protocol === 'http:' && ['localhost', '127.0.0.1', '[::1]'].includes(url.hostname)) ? url.href : null;
-  } catch { return null; }
-}
 export function uploadMime(file) {
   const extension = String(file.name).split('.').pop().toLowerCase();
   return file.type || ({ heic: 'image/heic', heif: 'image/heif', jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', webp: 'image/webp' }[extension] || 'application/octet-stream');
@@ -365,6 +372,7 @@ export function uploadErrorKey(error) {
   if (error?.status === 422 || /IMAGE_DIMENSIONS|ANIMATED_IMAGE|IMAGE_DECODE/.test(code)) return 'decode';
   if (error?.status === 401 || error?.status === 403 || /DENIED|UNAUTHORIZED|FORBIDDEN/.test(code)) return 'denied';
   if (/NETWORK|TIMEOUT/.test(code) || error?.status === 0) return 'network';
-  if (/DRIVE|STORAGE|QUOTA/.test(code)) return 'storage';
+  if (/QUOTA/.test(code)) return 'quota';
+  if (/DRIVE|STORAGE/.test(code)) return 'storage';
   return 'failed';
 }

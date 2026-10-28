@@ -11,7 +11,15 @@
 .gallery-brand .brand-monogram{--monogram-width:76px;width:76px;height:auto;stroke:none;display:block}
 .gallery-close,.gallery-photo-close{width:48px;height:48px;border:1px solid var(--line);border-radius:50%;display:grid;place-items:center;flex-shrink:0}
 .gallery-close svg,.gallery-photo-close svg{width:23px;height:23px}
-.gallery-scroll{overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;flex:1;min-height:0;padding:18px max(4vw,16px) max(40px,calc(env(safe-area-inset-bottom) + 24px))}
+.gallery-scroll{overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;flex:1;min-height:0;padding:18px max(4vw,16px) calc(var(--gallery-nav-height,65px) + env(safe-area-inset-bottom) + 62px);scroll-padding-bottom:calc(var(--gallery-nav-height,65px) + env(safe-area-inset-bottom) + 62px)}
+#wedding-gallery #bottom-nav{z-index:2;bottom:calc(env(safe-area-inset-bottom) + 22px);color:var(--ink);visibility:visible;isolation:isolate}
+#wedding-gallery #bottom-nav::before{content:"";position:absolute;z-index:-1;inset:-14px -26px calc(-22px - env(safe-area-inset-bottom));background:var(--paper)}
+#wedding-gallery #bottom-nav .nav-progress{background:var(--nav-track)}
+#wedding-gallery #bottom-nav #nav-fill,#wedding-gallery #bottom-nav .nav-dot.active{background:var(--ink)}
+#wedding-gallery #bottom-nav .nav-dot{border-color:var(--nav-border);background:var(--paper)}
+#wedding-gallery #bottom-nav .nav-dot.active{border-color:var(--ink);background:var(--ink)}
+#wedding-gallery #bottom-nav .nav-item{font-size:10px;line-height:normal;letter-spacing:.14em}
+#wedding-gallery #bottom-nav[hidden]{display:none}
 .gallery-intro{text-align:center;margin:0 auto 34px;max-width:800px}
 .gallery-intro h2{font:400 clamp(33px,4vw,52px)/1.12 'Cormorant Garamond',serif;letter-spacing:.025em;text-wrap:balance}
 .gallery-subtitle{margin:14px 0 0;color:var(--gallery-muted);font-size:13px}
@@ -53,4 +61,5 @@
 @media(min-width:1500px){.gallery-grid{grid-template-columns:repeat(5,minmax(0,1fr))}}
 @media(max-width:700px){.gallery-header{padding-bottom:12px}.gallery-scroll{padding-top:22px}.gallery-intro{margin-bottom:25px}.gallery-brand,.gallery-brand .brand-monogram{--monogram-width:65px;width:65px}.gallery-intro h2{font-size:37px}.gallery-subtitle{font-size:12px;max-width:280px;margin:13px auto 0}.gallery-actions{gap:9px;margin-top:25px}.gallery-actions button{font-size:9px;padding:12px 15px;letter-spacing:.09em;gap:8px}.gallery-actions svg{width:17px;height:17px}.gallery-limits{max-width:300px;margin:auto;font-size:9px}.gallery-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:3px}.gallery-lightbox{grid-template-columns:30px minmax(0,1fr) 30px;gap:3px;padding-left:6px;padding-right:6px}.gallery-prev,.gallery-next{width:30px;font-size:23px!important}.gallery-queue-item{gap:3px 4px}.gallery-file-retry{max-width:100px;padding-left:6px;padding-right:6px;font-size:10px!important}}
 @media(max-width:350px){.gallery-intro h2{font-size:31px}.gallery-actions button{padding:10px;font-size:8px}}
+@media(max-width:767px){#wedding-gallery #bottom-nav .nav-item{font-size:9px}}
 @media(prefers-reduced-motion:reduce){.wedding-gallery,.gallery-actions button,.gallery-tile img,.gallery-queue-item progress::-webkit-progress-value{transition:none}.gallery-tile:hover img{transform:none}}

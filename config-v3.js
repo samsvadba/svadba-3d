@@ -577,8 +577,7 @@ const config = {
     "backgroundMusic": "audio/shes-a-rainbow.mp3?v=cb14e941"
   },
   "gallery": {
-    "apiUrl": null,
-    "inviteKey": null
+    "scriptUrl": null
   },
   "ui": {
     "sk": {
