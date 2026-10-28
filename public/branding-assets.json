@@ -2,8 +2,8 @@
   "source": "branding/monogram.svg",
   "sourceSha256": "365d84b2286a4aace5b0fbec4955af93c999f64412f8fe66efe1c43f80f010f4",
   "configuration": {
-    "foreground": "#303D29",
-    "background": "#F4EBDC",
+    "foreground": "#000000",
+    "background": "#FFFFFF",
     "parts": {
       "s": null,
       "ampersand": null,
