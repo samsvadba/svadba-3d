@@ -6,7 +6,7 @@ input helper and theme tokens. Its Three.js scene, camera and controls are separ
 Production `intro-particles-v3.js` uses these same particle/choreography helpers
 on the native V3 renderer, camera and globe, with its existing header and footer.
 
-One 25.5-second GSAP timeline starts after the scene and shaders are ready. `pacing.js`
+One 22.1-second GSAP timeline starts after the scene and shaders are ready. `pacing.js`
 gives the rotating cloud four seconds to gather, followed by one final second
 of gentle coasting on the completed globe. These are one continuous motion.
 The close-up arrives at 7.5 s, the camera leaves the towns at 8.3 s and the stars
@@ -38,15 +38,18 @@ The still-transparent globe therefore cannot abruptly depth-cut the rotating clo
 over America. The returning geographic cloud uses the same gradual visibility
 with the actual sphere opacity, so its rear points do not abruptly disappear.
 
-The particle shaders are original code: one shared GPU point cloud morphs between
-geographic formation, seeded explosion, two small heart markers, their impact
-and a final shatter back onto the actual country-boundary geometry.
-The native globe badge's exact Bezier outline is sampled into 180 fine points per
-marker. Camera projection keeps them about 22 CSS pixels wide regardless of DPR
-or viewport; they never grow into full-sized twin hearts. `sampleHeartPose` drives
-their opposing looping paths and preserves approach velocity at the collision.
-The impact at 21.7 s produces a second particle burst, which reforms directly
-onto the original geographic positions from 22.4–25.3 s. There is no large
+The original GPU point cloud retains its geographic formation and seeded burst.
+Before drawing, dispersed dust fades away instead of condensing into tiny blobs.
+Two luminous pens then trace the native globe badge's exact Bezier contour in
+0.55 s (15.6–16.15 s). `heart-light-trails.js` samples one closed contour for
+both pens and ribbons. Two contours share one GPU ribbon mesh with a roughly
+one-CSS-pixel stroke, plus four point sprites for the pens and restrained halos.
+Camera projection keeps the hearts about 28 CSS pixels wide at any DPR/viewport.
+The cores fade after closing the line; only a few companion grains remain.
+`sampleHeartPose` drives a short pair of opposite spatial arcs with a gentle
+tilt, preserving approach velocity at their collision after 2.15 s of flight.
+The impact at 18.3 s produces a second particle burst, which reforms directly
+onto the original geographic positions from 19.0–21.9 s. There is no large
 shared-heart regather, hold or second shatter. The world-space morph has zero
 residual merge offset and fades into the native globe. Production then reveals
 Journey labels without a new entrance.
@@ -54,8 +57,10 @@ Journey labels without a new entrance.
 `2f7b1ed75ab0cf6f43b0062870c23631586fdc8f`. Its cached geometry and random streams
 remain intact to avoid changing the opening, explosion or seeded point variation;
 the large heart itself is no longer a render destination.
-The small-marker phase draws only 360 points in total, avoiding an opaque blob
-at icon size. Formation uses adaptive 16,000 / 42,000 / 60,000 points, while the
+The ribbon geometry, four pen sprites and 360 companion grain slots are created
+once; update reuses every GPU buffer. Drawing and pen position are analytic
+functions of the same reversible score, with no accumulated trail history.
+Formation uses adaptive 16,000 / 42,000 / 60,000 points, while the
 first explosion retains its 12,000 / 30,000 / 45,000 budget. All formation points
 return with a gradual opacity ramp during the compact-heart impact, then gather
 on Earth. No solid heart mesh or duplicated scene is introduced.

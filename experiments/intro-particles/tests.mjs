@@ -54,12 +54,13 @@ for (const [index, origin] of config.origins.entries()) {
 const separationKm = origins[0].angleTo(origins[1]) * 6371;
 assert.ok(separationKm > 20 && separationKm < 35);
 assert.deepEqual(STORY_PHASES.stars, [.37, .64]);
-assert.deepEqual(STORY_PHASES.gather, [.72, .795]);
+assert.deepEqual(STORY_PHASES.gather, [.72, .735]);
+assert.deepEqual(STORY_PHASES.trace, [.735, .795]);
 
-assert.equal(STORY_DURATION, 25.5);
+assert.equal(STORY_DURATION, 22.1);
 assert.deepEqual(STORY_PHASES.formation, [0,.144]);
 assert.deepEqual(STORY_PHASES.overview, [.144,.18]);
-for (const [seconds, score] of [[0,0],[4,.144],[5,.18],[7.5,.30],[8.12,.37],[8.3,.39],[13.3,.64],[15,.72],[15.6,.735],[18.2,.795],[21.7,.87],[22.4,.895],[25.3,.995],[25.5,1]]) {
+for (const [seconds, score] of [[0,0],[4,.144],[5,.18],[7.5,.30],[8.12,.37],[8.3,.39],[13.3,.64],[15,.72],[15.6,.735],[16.15,.795],[18.3,.87],[19,.895],[21.9,.995],[22.1,1]]) {
   assert.ok(Math.abs(toStoryProgress(seconds/STORY_DURATION)-score)<1e-10);
 }
 for (let milliseconds=0;milliseconds<=5000;milliseconds+=5) {
@@ -144,7 +145,7 @@ for (const count of [16000, 42000, 60000]) {
   for (const progress of [0,.105,.179,.18,.64,.795,.83,.86999,.87,.90,.93499,.935,.97,.999,1,.05]) {
     effect.update({progress,origins,merge:new THREE.Vector3(0,0,20),color:new THREE.Color('#303D29')});
     assert.equal(geometry.drawRange.start,0);
-    assert.equal(geometry.drawRange.count,progress<.18||progress>=.87?count:progress>=.795&&progress<.87?360:burstBudget,'Only the two compact marker contours are drawn between their formation and impact');
+    assert.equal(geometry.drawRange.count,progress<.18||progress>=.87?count:progress>=.735&&progress<.87?360:burstBudget,'Only a few companion grains remain during the light-drawn heart passage');
   }
   effect.dispose();
   assert.equal(effect.group.children.length, 0);
@@ -312,4 +313,4 @@ console.log('PASS — stable geometries/attributes; no independent clock; 1,001 
 console.log(`PASS — origins ${separationKm.toFixed(2)} km apart; minimum camera radius ${minimumCamera.toFixed(3)}; minimum star radius ${minimumStarRadius.toFixed(3)}.`);
 console.log(`PASS — star depth ≥${minimumStarDepth.toFixed(2)}, edge clearance ≥${edgeMargin.toFixed(1)} px; fixed trajectory basis; clean final globe handoff.`);
 console.log(`PASS — distinct star cores remain ≥${minimumSeparateCores.toFixed(1)} px apart through p=.61, without crossing before the p=.64 merger.`);
-console.log(`PASS — cloud rotates while gathering for four seconds, then the completed globe coasts one second; 720° with smooth start/stop (peak ${(greatestSpinSpeed/(2*Math.PI)).toFixed(3)} turns/s); shortened towns/retreat and 25.5-second compact-heart/direct-geographic-reform score.`);
+console.log(`PASS — cloud/globe opening stays unchanged; 720° with smooth start/stop (peak ${(greatestSpinSpeed/(2*Math.PI)).toFixed(3)} turns/s); 22.1-second light-drawn-heart/direct-geographic-reform score.`);
