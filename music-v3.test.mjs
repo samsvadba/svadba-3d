@@ -154,11 +154,9 @@ const rememberedOff = harness({ 'sm-sound': 'off' });
 rememberedOff.syncMusic();
 rememberedOff.dispatch('pointerup'); rememberedOff.dispatch('click'); rememberedOff.dispatch('keydown');
 rememberedOff.dispatch('visibilitychange'); await settle();
-assert.equal(rememberedOff.music.playCalls, 0, 'Remembered off survives startup, visibility and unlock events');
-assert.equal(rememberedOff.stats.contexts, 0);
-rememberedOff.sound.onclick(); await settle();
-assert.equal(rememberedOff.music.playCalls, 1, 'Original button can explicitly enable remembered-off audio');
-assert.equal(rememberedOff.storage.get('sm-sound'), 'on');
+assert.equal(rememberedOff.preferences.sound, true, 'Each new page load starts enabled, even after a previous mute');
+assert.equal(rememberedOff.music.playCalls, 1, 'Previous stored off cannot suppress startup playback');
+assert.equal(rememberedOff.stats.contexts, 1);
 
 for (const gesture of ['pointerup', 'click', 'keydown']) {
   const blocked = harness({}, { playResults: ['reject', 'resolve'] });

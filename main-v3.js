@@ -1223,7 +1223,7 @@ bindGlobeInput(globeSurface, {
 // Independent, persistent utility preferences; audio is never loaded without a source.
 function readPreference(key,fallback){try{return localStorage.getItem(key)||fallback;}catch{return fallback;}}
 function savePreference(key,value){try{localStorage.setItem(key,value);}catch{}}
-const preferences={sound:readPreference('sm-sound','on')==='on',theme:readPreference('sm-theme','light')==='dark'?'dark':'light',palette:readPreference('sm-palette','classic')==='olive'?'olive':'classic',language:readPreference('sm-language','sk')==='en'?'en':'sk'};
+const preferences={sound:true,theme:readPreference('sm-theme','light')==='dark'?'dark':'light',palette:readPreference('sm-palette','classic')==='olive'?'olive':'classic',language:readPreference('sm-language','sk')==='en'?'en':'sk'};
 const mood={value:preferences.theme==='dark'?1:0,palette:preferences.palette==='olive'?1:0};
 function getParticleTheme() {
   if (!particleTheme) {
