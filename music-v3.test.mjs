@@ -177,10 +177,14 @@ for (const gesture of ['pointerup', 'click', 'keydown']) {
 
 const blockedButton = harness({}, { playResults: ['reject', 'resolve'] });
 blockedButton.syncMusic(); await settle();
+assert.equal(blockedButton.sound.getAttribute('aria-pressed'), 'true', 'The icon reflects enabled sound, not autoplay permission');
 blockedButton.dispatch('pointerup', '#utility-sound'); blockedButton.dispatch('click', '#utility-sound');
 assert.equal(blockedButton.music.playCalls, 1, 'Global unlock ignores the sound button');
 blockedButton.sound.onclick(); await settle();
-assert.equal(blockedButton.music.playCalls, 2, 'First sound-button press starts blocked music');
+assert.equal(blockedButton.preferences.sound, false, 'The sound button always switches enabled sound off');
+assert.equal(blockedButton.music.playCalls, 1);
+blockedButton.sound.onclick(); await settle();
+assert.equal(blockedButton.music.playCalls, 2, 'Switching back on starts music');
 assert.equal(blockedButton.preferences.sound, true);
 blockedButton.sound.onclick();
 assert.equal(blockedButton.music.paused, true, 'Next press switches sound off normally');
@@ -223,7 +227,7 @@ assert.equal(suspended.stats.sources, 1);
 const deferredContext = harness({}, { contextState: 'suspended', resumeResults: ['reject', 'pending'] });
 deferredContext.syncMusic(); await settle();
 assert.equal(deferredContext.music.paused, true, 'The initial suspended context correctly waits for a gesture');
-deferredContext.sound.onclick(); await settle();
+deferredContext.dispatch('pointerup'); await settle();
 assert.equal(deferredContext.preferences.sound, true);
 assert.equal(deferredContext.music.playCalls, 2);
 assert.equal(deferredContext.music.paused, false, 'A gesture play success must not be paused while AudioContext.resume is still pending');

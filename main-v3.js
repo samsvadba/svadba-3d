@@ -1256,7 +1256,7 @@ const cityName=loc=>localized(loc.names)||loc.name;
 const countryText=loc=>preferences.language==='en'?(loc.countryEn||loc.subname):loc.subname;
 const memoryLocation=loc=>loc.special==='engagement'?`${t('engagement')} · ${loc.subname}`:preferences.language==='en'?(loc.descriptionEn||countryText(loc)):(loc.description||loc.subname);
 function syncSoundControl(){
-  const enabled=preferences.sound&&!musicBlocked;
+  const enabled=preferences.sound;
   $('utility-sound').setAttribute('aria-pressed',String(enabled));
   $('utility-sound').setAttribute('aria-label',t(enabled?'soundOn':'soundOff'));
   $('utility-sound').title=$('utility-sound').getAttribute('aria-label');
@@ -1317,7 +1317,7 @@ function syncMusic(userGesture=false){
   gsap.to(musicGain?.gain||music,{[musicGain?'value':'volume']:.45,duration:.8,ease:'sine.inOut'});
 }
 function toggleMusic(){
-  preferences.sound=preferences.sound&&musicBlocked?true:!preferences.sound;
+  preferences.sound=!preferences.sound;
   savePreference('sm-sound',preferences.sound?'on':'off');
   syncMusic(true);syncSoundControl();
   if(!config.audio.backgroundMusic)toast('noMusic');
