@@ -1246,8 +1246,7 @@ function getParticleTheme() {
 }
 let oliveGlobeColors;
 const appliedGlobeTheme={material:null,value:null,palette:null,markers:0};
-const music=new Audio();music.loop=true;music.preload='none';music.crossOrigin='anonymous';music.volume=0;music.id='background-music';music.hidden=true;document.body.append(music);
-let musicContext,musicGain;
+const music=new Audio();music.loop=true;music.preload='auto';music.autoplay=true;music.crossOrigin='anonymous';music.volume=0;music.id='background-music';music.hidden=true;document.body.append(music);
 let musicBlocked=false,musicPlayPending=null,musicPlayGesture=false,musicAttempt=0,musicFailed=false,toastTimer;
 music.addEventListener('error',()=>{musicAttempt++;musicPlayPending=null;musicPlayGesture=false;musicBlocked=false;musicFailed=true;music.pause();preferences.sound=false;savePreference('sm-sound','off');applyLanguage();toast('musicUnavailable');});
 const t=key=>config.ui[preferences.language][key]||key;
@@ -1266,55 +1265,31 @@ function syncMusic(userGesture=false){
   if(!preferences.sound||document.hidden||musicFailed||!config.audio.backgroundMusic){
     musicAttempt++;musicPlayPending=null;musicPlayGesture=false;
     if(!preferences.sound||musicFailed)musicBlocked=false;
-    gsap.killTweensOf(musicGain?.gain||music);music.pause();syncSoundControl();return;
+    gsap.killTweensOf(music);music.pause();syncSoundControl();return;
   }
   // A rejected autoplay attempt waits for a real gesture, without timer/focus retries.
   if(musicBlocked&&!userGesture)return;
-  if(userGesture){
-    musicBlocked=false;
-    if(musicPlayPending&&!musicPlayGesture&&musicContext&&musicContext.state!=='running'){musicAttempt++;musicPlayPending=null;}
-  }
-  // Reuse the same audio element; a gain stage also supports smooth ducking on iOS.
-  if(!musicContext){
-    const AudioContext=window.AudioContext||window.webkitAudioContext;
-    if(AudioContext){
-      try{musicContext=new AudioContext();musicGain=musicContext.createGain();musicGain.gain.value=0;musicContext.createMediaElementSource(music).connect(musicGain);musicGain.connect(musicContext.destination);music.volume=1;}catch{musicGain=null;music.volume=0;}
-    }
-  }
-  // Keep resume() and play() inside the same trusted input event on Safari.
-  // Do not await resume(): a blocked context may remain pending until a gesture.
-  const resuming=musicContext?.resume()||Promise.resolve();
-  resuming.catch(()=>{});
+  if(userGesture)musicBlocked=false;
   if(!music.getAttribute('src'))music.src=/^(https?:|\/)/.test(config.audio.backgroundMusic)?config.audio.backgroundMusic:asset(config.audio.backgroundMusic);
   if(musicPlayPending)return;
-  if(!music.paused&&(!musicContext||musicContext.state==='running')){syncSoundControl();return;}
+  if(!music.paused){syncSoundControl();return;}
   const attempt=++musicAttempt;
   const blocked=()=>{
     if(attempt!==musicAttempt||!preferences.sound||document.hidden)return;
-    musicBlocked=true;music.pause();gsap.killTweensOf(musicGain?.gain||music);
-    if(musicGain)musicGain.gain.value=0;else music.volume=0;
+    musicBlocked=true;music.pause();gsap.killTweensOf(music);music.volume=0;
     syncSoundControl();
   };
   let playing;
   try{playing=Promise.resolve(music.play());}catch(error){playing=Promise.reject(error);}
-  // A trusted gesture can unlock Web Audio after play() has already resolved.
-  // Wait for both without moving either call out of the original input event.
-  const pending=userGesture?Promise.all([playing,resuming]):playing;
+  const pending=playing;
   musicPlayGesture=userGesture;
   musicPlayPending=pending;
   pending.then(()=>{
     if(attempt!==musicAttempt||!preferences.sound||document.hidden)return;
-    if(musicContext&&musicContext.state!=='running'){blocked();return;}
     musicBlocked=false;syncSoundControl();
   },blocked).finally(()=>{if(attempt===musicAttempt){musicPlayPending=null;musicPlayGesture=false;}});
-  if(!userGesture)resuming.then(()=>{
-    // An initially allowed context may also finish resuming after the media.
-    if(attempt===musicAttempt&&musicBlocked&&preferences.sound&&!document.hidden&&musicContext?.state==='running'){
-      musicBlocked=false;musicPlayPending=null;syncMusic();
-    }
-  }).catch(()=>{});
-  gsap.killTweensOf(musicGain?.gain||music);
-  gsap.to(musicGain?.gain||music,{[musicGain?'value':'volume']:.45,duration:.8,ease:'sine.inOut'});
+  gsap.killTweensOf(music);
+  gsap.to(music,{volume:.45,duration:.8,ease:'sine.inOut'});
 }
 function toggleMusic(){
   preferences.sound=!preferences.sound;
@@ -1325,7 +1300,7 @@ function toggleMusic(){
 function unlockMusic(event){
   if(!preferences.sound||musicFailed||event.target.closest?.('#utility-sound'))return;
   if(event.type==='keydown'&&(event.repeat||['Shift','Control','Alt','Meta','Escape'].includes(event.key)))return;
-  if(musicBlocked||(musicContext&&musicContext.state!=='running')||(music.paused&&!musicPlayPending))syncMusic(true);
+  if(musicBlocked||(music.paused&&!musicPlayPending))syncMusic(true);
 }
 function toast(key){clearTimeout(toastTimer);$('utility-toast').dataset.key=key;$('utility-toast').textContent=t(key);$('utility-toast').hidden=false;toastTimer=setTimeout(()=>{$('utility-toast').hidden=true;},3200);}
 function applyGlobeTheme(){
