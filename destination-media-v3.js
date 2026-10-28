@@ -1,10 +1,37 @@
-// One music owner: destination films have no audio track, including on TV browsers.
-// The original configured URLs remain authoritative; these are delivery transforms.
+// Standard derived delivery strips the film's audio. TV diagnostics can bypass
+// this transform; original configured URLs remain authoritative and unchanged.
 export function destinationVideoUrl(source) {
   const url = new URL(source);
   if (url.hostname !== 'res.cloudinary.com' || !url.pathname.includes('/video/upload/')) return source;
   url.pathname = url.pathname.replace('/video/upload/', '/video/upload/ac_none,vc_h264,f_mp4/').replace(/,f_auto(?=[,/]|$)/g, '');
   return url.href;
+}
+
+// Bound both an unresolved play() and a decoder/network stall. Only advancing
+// media time counts as progress; canplay/playing/promise resolution do not.
+export function createDestinationWatchdog(video, { onTimeout, onProgress = () => {}, isHidden = () => document.hidden, now = () => performance.now(), repeat = setInterval, cancel = clearInterval, startupMs = 15000, stallMs = 10000 } = {}) {
+  let timer = null, lastAt = 0, lastTime = 0, advanced = 0, started = false, status = 'idle';
+  const snapshot = () => ({ active:timer !== null, advanced, started, status });
+  function stop() { if (timer !== null) cancel(timer);timer = null; }
+  function tick() {
+    if (timer === null) return;
+    if (isHidden()) { lastAt = now();lastTime = video.currentTime || 0;return; }
+    if (video.ended) { status = 'ended';stop();return; }
+    const time = video.currentTime || 0, delta = time-lastTime;
+    if (!video.paused && !video.seeking && delta > .02) {
+      advanced += delta;started = true;lastAt = now();status = 'advancing';onProgress(snapshot());
+    }
+    lastTime = time;
+    if (now()-lastAt >= (started ? stallMs : startupMs)) {
+      status = started ? 'stalled' : 'startup-timeout';stop();onTimeout(snapshot());
+    }
+  }
+  return {
+    start() { stop();lastAt = now();lastTime = video.currentTime || 0;advanced = 0;started = false;status = 'waiting';timer = repeat(tick,500); },
+    stop,
+    visibility() { lastAt = now();lastTime = video.currentTime || 0; },
+    snapshot,
+  };
 }
 
 // Fetch bytes, not hidden playing/decoding video elements. Keep only three ahead

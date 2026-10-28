@@ -16,6 +16,7 @@ function fixture(userAgent,clipboard){
   const video={currentTime:12,ended:false,pauses:0,loads:0,pause(){this.pauses++;},load(){this.loads++;},hasAttribute(){return true;},addEventListener(type,fn){events['video:'+type]=fn;}};
   const c={navigator:{userAgent,clipboard},document:{createElement(tag){return element('new-'+tag+'-'+elements.size);}},
     $:element,locations:[{instagramHighlight:url},{}],currentIndex:0,revision:3,state:'memory',destinationReady:true,
+    destinationWatchdog:{stop(){}},diagnosticPlayTimer:undefined,clearTimeout,tvVideoMode:false,destinationPlaybackFailed:false,
     fullscreenVideo:{active:true,closing:false,externalHold:false,resumeStory:false},storyActive:true,destinationVideo:video,videoScene:element('scene'),
     gsap:{to(){}},duration:n=>n,t:key=>config.ui.sk[key],pauseStory(){c.storyActive=false;},playFullscreenVideo(){c.plays=(c.plays||0)+1;},
     closeFullscreenVideo(){c.closed=true;},syncStoryUI(){},navigateDestination(offset){c.next=offset;},window:{open(){throw Error('Unexpected navigation');}}};

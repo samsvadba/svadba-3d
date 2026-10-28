@@ -55,6 +55,16 @@ body[data-state="memory"] #label-layer .city-label{visibility:visible}
 #destination-video-close svg{stroke:currentColor}
 #destination-video-status,#destination-video-retry{position:absolute;left:50%;top:45%;transform:translate(-50%,-50%);text-align:center;font:12px 'DM Sans',sans-serif;color:var(--ink)}
 #destination-video-retry{top:53%;padding:12px 18px;background:var(--paper);border:1px solid var(--line)}
+#destination-video-status{max-width:calc(100vw - 48px);padding:10px;background:var(--paper);color:var(--ink)}
+#destination-video-status:empty{display:none}
+#destination-video-return{position:absolute;left:50%;top:calc(53% + 64px);transform:translateX(-50%);padding:12px 18px;background:var(--paper);color:var(--ink);border:1px solid var(--line)}
+#tv-video-diagnostics{position:absolute;z-index:4;top:max(20px,env(safe-area-inset-top));left:24px;right:88px;max-height:70dvh;overflow:auto;padding:18px 22px;background:var(--paper);color:var(--ink);border:1px solid var(--line);font:clamp(14px,1.4vw,24px)/1.4 'DM Sans',sans-serif}
+#tv-video-diagnostics h2{font:inherit;letter-spacing:.12em;margin:0 0 8px}
+#tv-video-diagnostics pre{font:inherit;white-space:pre-wrap;overflow-wrap:anywhere;margin:10px 0}
+#tv-video-diagnostics .tv-test-actions{display:flex;flex-wrap:wrap;gap:10px}
+#tv-video-diagnostics button{font:inherit;border:1px solid currentColor;min-height:48px;padding:8px 14px}
+#tv-video-diagnostics button:disabled{opacity:.4}
+#tv-video-diagnostics .tv-test-help{font-size:.8em;margin:12px 0 0;opacity:.75}
 body[data-fullscreen-video] #persistent-header,body[data-fullscreen-video] #bottom-nav{visibility:hidden}
 /* Persistent global utilities, beneath the existing story navigation. */
 :root{color:var(--ink);background:var(--paper)}

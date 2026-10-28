@@ -41,7 +41,6 @@ function harness(saved={}) {
     $:id=>{if(id==='entry-button')return entry;if(id==='entry-screen')return entryScreen;assert.equal(id,'utility-sound');return sound;},t:key=>key,
     pauseStory:()=>stats.storyCalls++,particleIntro:{toggle:()=>stats.storyCalls++},
     applyLanguage(){},toast(){},
-    entryTransition:{leave(done){assert.equal(context.player.music.playCalls,1,'Music starts synchronously before the particle departure');done();}},
     gsap:{killTweensOf(){},to(target,options){if('volume' in options)target.volume=options.volume;options.onComplete?.();}},
   });
   vm.runInContext(production,context);

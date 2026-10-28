@@ -7,8 +7,8 @@ import { createWedding } from './wedding-v3.js';
 import { createOrigins } from './origins-v3.js';
 import { bindGlobeInput } from './globe-input-v3.js';
 import { createGallery } from './gallery-v3.js';
-import { createDestinationBuffer, createDestinationParticles, destinationVideoUrl } from './destination-media-v3.js';
-import { createEntryParticles } from './entry-particles-v3.js';
+import { createDestinationBuffer, createDestinationParticles, createDestinationWatchdog, destinationVideoUrl } from './destination-media-v3.js';
+import { createTVVideoDiagnostics } from './tv-video-diagnostics-v3.js';
 
 // Reference architecture: WeddingApp config, separate fullscreen screens,
 // interruptible GSAP section timelines, OrbitControls, flyToAndShow,
@@ -54,10 +54,24 @@ const clamp = (n,a,b) => Math.max(a,Math.min(b,n));
 const smoothstep = (a,b,n) => {const t=clamp((n-a)/(b-a),0,1);return t*t*(3-2*t);};
 const fullscreenVideo = { active:false, closing:false, timeline:null, externalHold:false, resumeStory:false };
 const videoScene=$('destination-video-scene'), destinationVideo=$('destination-video');
-const destinationBuffer=createDestinationBuffer(locations,{enabled:!navigator.connection?.saveData&&!/^(slow-)?2g$/.test(navigator.connection?.effectiveType||'')});
+const tvVideoMode=new URLSearchParams(location.search).get('tv-video')==='1';
+let tvVideoVariant=1, diagnosticPlayTimer, diagnosticAutoWaiting=false;
+const destinationBuffer=createDestinationBuffer(locations,{enabled:!tvVideoMode&&!navigator.connection?.saveData&&!/^(slow-)?2g$/.test(navigator.connection?.effectiveType||'')});
 const destinationParticles=createDestinationParticles($('destination-video-particles'),{reducedMotion,getColor:()=>getParticleTheme().ink.getStyle(),getBackground:()=>getParticleTheme().paper.getStyle()});
 let destinationSourceFallback=false;
 let destinationPlaybackPending=null;
+let destinationPlaybackFailed=false;
+const destinationWatchdog=createDestinationWatchdog(destinationVideo,{
+  onTimeout:status=>{failFullscreenVideo('videoTimeout');tvDiagnostics.timeout(status);},
+  onProgress:status=>{if(status.advanced>=.15)destinationParticles.reveal(destinationVideo);},
+});
+const tvDiagnostics=createTVVideoDiagnostics({
+  enabled:tvVideoMode,scene:videoScene,video:destinationVideo,
+  onVariant:switchTVVideoVariant,onDirectPlay:playTVVideoDirectly,
+  onBack:()=>{pauseStory();closeFullscreenVideo();},onSound:()=>toggleMusic(),
+  readMusic:()=>({enabled:preferences.sound,paused:music.paused,time:music.currentTime,error:music.error?.code}),
+  readWatchdog:()=>destinationWatchdog.snapshot(),
+});
 const androidInstagram = /Android/i.test(navigator.userAgent);
 let instagramCopy, instagramCopyHelp, instagramCopyField;
 if(androidInstagram){
@@ -79,6 +93,7 @@ function refreshInstagramCopy(){
 function holdInstagramDestination(){
   if(!fullscreenVideo.externalHold)fullscreenVideo.resumeStory=storyActive;
   fullscreenVideo.externalHold=true;
+  destinationWatchdog.stop();clearTimeout(diagnosticPlayTimer);
   destinationVideo.autoplay=false;
   pauseStory();destinationVideo.pause();
   // Return/focus never reopens Instagram or resumes the story; playback is explicit.
@@ -114,6 +129,7 @@ async function copyInstagramHighlight(event){
 
 function resetFullscreenVideo() {
   fullscreenVideo.timeline?.kill();
+  destinationWatchdog.stop();tvDiagnostics.close();clearTimeout(diagnosticPlayTimer);
   destinationParticles.stop();
   videoScene.style.removeProperty('--destination-backdrop');
   gsap.killTweensOf(destinationVideo);
@@ -135,6 +151,8 @@ function resetFullscreenVideo() {
 }
 
 function prepareFullscreenVideo(loc) {
+  destinationWatchdog.stop();clearTimeout(diagnosticPlayTimer);
+  diagnosticAutoWaiting=tvVideoMode&&tvVideoVariant!==3;
   // A single small still fills wide screens; never decode a second video.
   videoScene.style.removeProperty('--destination-backdrop');
   if(window.matchMedia('(min-width: 900px) and (min-aspect-ratio: 4/3)').matches){
@@ -145,11 +163,11 @@ function prepareFullscreenVideo(loc) {
       videoScene.style.setProperty('--destination-backdrop', 'url("'+backdrop+'")');
     }
   }
-  destinationPlaybackPending=null;
+  destinationPlaybackPending=null;destinationPlaybackFailed=false;
   destinationVideo.muted=true;destinationVideo.defaultMuted=true;destinationVideo.volume=0;destinationVideo.playsInline=true;
   destinationVideo.autoplay=false;destinationVideo.preload='auto';
   destinationSourceFallback=false;
-  destinationVideo.src=destinationBuffer.sourceFor(loc);destinationVideo.load();
+  destinationVideo.src=tvVideoMode?(tvVideoVariant===1?destinationVideoUrl(loc.fullscreenVideo):loc.fullscreenVideo):destinationBuffer.sourceFor(loc);destinationVideo.load();
   $('destination-video-title').textContent=cityName(loc);
   $('destination-video-country').textContent=countryText(loc);
   const highlight=$('destination-video-highlight');
@@ -161,37 +179,86 @@ function prepareFullscreenVideo(loc) {
   $('destination-video-status').textContent='';
   $('destination-video-retry').textContent=t('play');
   $('destination-video-retry').hidden=true;
+  $('destination-video-return').hidden=true;
   // Safari must see a visible muted video; the full-screen particle canvas
   // covers its first frame instead of hiding the media element with opacity:0.
   gsap.set(destinationVideo,{opacity:1,scale:reducedMotion.matches?1:1.035});
 }
 
-function playFullscreenVideo() {
+function playFullscreenVideo(manual=false) {
   if(!fullscreenVideo.active||fullscreenVideo.closing||fullscreenVideo.externalHold||document.hidden||destinationPlaybackPending)return;
+  if(destinationPlaybackFailed||(tvVideoMode&&tvVideoVariant===3&&!manual))return;
+  if(diagnosticAutoWaiting&&!manual)return;
   const request=revision, source=destinationVideo.getAttribute('src'), attempt={};
   destinationPlaybackPending=attempt;
   destinationVideo.muted=true;
+  if(!destinationWatchdog.snapshot().active)destinationWatchdog.start();
+  tvDiagnostics.attempt();
   let playing;
   try{playing=destinationVideo.play();}catch(error){playing=Promise.reject(error);}
-  Promise.resolve(playing).catch(error=>{
+  Promise.resolve(playing).then(()=>{
+    if(destinationPlaybackPending===attempt)tvDiagnostics.playResult();
+  }).catch(error=>{
     if(destinationPlaybackPending!==attempt||request!==revision||source!==destinationVideo.getAttribute('src')||!fullscreenVideo.active||fullscreenVideo.closing||fullscreenVideo.externalHold)return;
+    tvDiagnostics.playResult(error);
     // Loading/cancelling a source is not a request for another user gesture.
     if(error.name==='AbortError')return;
     // Some Safari versions reject a prefetched blob despite accepting the same
     // silent HTTPS film. Retry the original delivery once, never another player.
     if(fallbackDestinationSource())return;
-    destinationVideo.autoplay=false;
-    $('destination-video-status').textContent=t('videoTap');
-    $('destination-video-retry').hidden=false;
+    failFullscreenVideo(error.name==='NotAllowedError'?'videoTap':'videoError');
   }).finally(()=>{if(destinationPlaybackPending===attempt)destinationPlaybackPending=null;});
 }
 
 function fallbackDestinationSource() {
+  if(tvVideoMode)return false; // Never silently change a controlled TV trial.
   if(!destinationVideo.getAttribute('src')?.startsWith('blob:')||destinationSourceFallback)return false;
   destinationSourceFallback=true;destinationPlaybackPending=null;
   destinationVideo.src=destinationVideoUrl(locations[currentIndex].fullscreenVideo);destinationVideo.load();
   if(fullscreenVideo.active)playFullscreenVideo();
   return true;
+}
+
+function failFullscreenVideo(message) {
+  if(!fullscreenVideo.active||fullscreenVideo.closing||fullscreenVideo.externalHold)return;
+  destinationWatchdog.stop();destinationParticles.stop();clearTimeout(diagnosticPlayTimer);
+  destinationPlaybackPending=null;destinationPlaybackFailed=true;destinationVideo.autoplay=false;destinationVideo.pause();
+  $('destination-video-status').textContent=t(message);
+  $('destination-video-retry').textContent=t('play');$('destination-video-retry').hidden=tvVideoMode;
+  $('destination-video-return').hidden=tvVideoMode;
+  if(tvVideoMode)tvDiagnostics.focusRetry();else $('destination-video-retry').focus({preventScroll:true});
+}
+
+function scheduleTVAutomaticPlayback() {
+  diagnosticAutoWaiting=true;clearTimeout(diagnosticPlayTimer);
+  // Same delay in A and B: the variant switch must not silently grant autoplay
+  // permission. C alone calls play() synchronously inside its actual click.
+  diagnosticPlayTimer=setTimeout(()=>{
+    diagnosticAutoWaiting=false;
+    if(!fullscreenVideo.active||fullscreenVideo.closing||fullscreenVideo.externalHold||destinationPlaybackFailed)return;
+    destinationVideo.autoplay=true;playFullscreenVideo();
+  },6000);
+}
+
+function switchTVVideoVariant(variant) {
+  if(!tvVideoMode||!fullscreenVideo.active||fullscreenVideo.closing||!locations[currentIndex]?.fullscreenVideo)return;
+  destinationVideo.autoplay=false;destinationVideo.pause();
+  tvVideoVariant=variant;tvDiagnostics.variant(variant);
+  prepareFullscreenVideo(locations[currentIndex]);destinationParticles.start();
+  destinationWatchdog.start();
+  tvDiagnostics.open(locations[currentIndex],destinationVideo.getAttribute('src'));
+  scheduleTVAutomaticPlayback();
+}
+
+function playTVVideoDirectly() {
+  if(!tvVideoMode||tvVideoVariant===1||!fullscreenVideo.active||fullscreenVideo.closing)return;
+  tvVideoVariant=3;tvDiagnostics.variant(3);destinationVideo.autoplay=false;
+  diagnosticAutoWaiting=false;
+  destinationWatchdog.stop();clearTimeout(diagnosticPlayTimer);destinationPlaybackPending=null;destinationPlaybackFailed=false;
+  destinationVideo.pause();
+  $('destination-video-retry').hidden=true;$('destination-video-return').hidden=true;$('destination-video-status').textContent='';
+  if(destinationVideo.error)destinationVideo.load();
+  playFullscreenVideo(true); // Real button click -> play(), no await/animation.
 }
 
 destinationVideo.addEventListener('canplay',()=>{
@@ -201,6 +268,7 @@ destinationVideo.addEventListener('canplay',()=>{
 function openFullscreenVideo() {
   fullscreenVideo.active=true;
   destinationParticles.start();
+  if(tvVideoMode&&tvVideoVariant===3)destinationParticles.stop(); // Await the explicit button without an endless cloud.
   syncMusic();$('utility-controls').inert=true;
   document.body.dataset.fullscreenVideo='true';
   videoScene.inert=false;videoScene.setAttribute('aria-hidden','false');
@@ -208,15 +276,19 @@ function openFullscreenVideo() {
   // Make the media visible before requesting playback. The particles provide
   // the reveal; an invisible fading parent can block Safari autoplay.
   gsap.set(videoScene,{autoAlpha:1});
-  destinationVideo.autoplay=true;
+  if(tvVideoMode&&tvVideoVariant!==3)destinationWatchdog.start();
+  tvDiagnostics.open(locations[currentIndex],destinationVideo.getAttribute('src'));
+  destinationVideo.autoplay=!tvVideoMode;
   $('destination-video-close').focus({preventScroll:true});
-  playFullscreenVideo();
+  if(tvVideoMode&&tvVideoVariant!==3)scheduleTVAutomaticPlayback();
+  else playFullscreenVideo();
 }
 
 function closeFullscreenVideo(afterOverview=null) {
   if(typeof afterOverview!=='function')afterOverview=null;
   if(!fullscreenVideo.active||fullscreenVideo.closing)return;
   fullscreenVideo.closing=true;destinationReady=false;updateDestinationNavigation();
+  destinationWatchdog.stop();tvDiagnostics.close();clearTimeout(diagnosticPlayTimer);
   destinationVideo.autoplay=false;
   fullscreenVideo.timeline?.kill();
   destinationVideo.pause();
@@ -225,9 +297,10 @@ function closeFullscreenVideo(afterOverview=null) {
   }});
 }
 destinationVideo.addEventListener('playing',()=>{
-  if(!fullscreenVideo.active||fullscreenVideo.closing||fullscreenVideo.externalHold){destinationVideo.pause();return;}
+  if(!fullscreenVideo.active||fullscreenVideo.closing||fullscreenVideo.externalHold||destinationPlaybackFailed){destinationVideo.pause();return;}
   $('destination-video-status').textContent='';$('destination-video-retry').hidden=true;
-  destinationParticles.reveal(destinationVideo);
+  $('destination-video-return').hidden=true;
+  if(!destinationWatchdog.snapshot().active)destinationWatchdog.start();
   musicVideoRecoveryUntil=performance.now()+2000;musicVideoRecoveryUsed=false;
   syncMusic();
   gsap.to(destinationVideo,{opacity:1,scale:1,duration:duration(1.1),ease:'power2.out'});
@@ -235,11 +308,10 @@ destinationVideo.addEventListener('playing',()=>{
 destinationVideo.addEventListener('error',()=>{
   if(!destinationVideo.hasAttribute('src'))return;
   if(fallbackDestinationSource())return;
-  destinationParticles.stop();
-  $('destination-video-status').textContent=t('videoError');
-  $('destination-video-retry').hidden=false;
+  failFullscreenVideo('videoError');
 });
 $('destination-video-close').onclick=()=>{pauseStory();closeFullscreenVideo();};
+$('destination-video-return').onclick=()=>{pauseStory();closeFullscreenVideo();};
 // Native external navigation only: never reopen Instagram on focus/visibility/pageshow.
 $('destination-video-highlight').addEventListener('click',event=>{
   if(!fullscreenVideo.active||fullscreenVideo.closing||!locations[currentIndex]?.instagramHighlight){event.preventDefault();return;}
@@ -248,6 +320,8 @@ $('destination-video-highlight').addEventListener('click',event=>{
 });
 destinationVideo.addEventListener('ended',()=>{
   if(fullscreenVideo.externalHold)return;
+  destinationWatchdog.stop();
+  if(tvVideoMode)return; // Keep the result readable for a TV photograph; NEXT still works.
   storyActive?nextMemory():closeFullscreenVideo();
 });
 $('destination-video-retry').onclick=()=>{
@@ -257,12 +331,18 @@ $('destination-video-retry').onclick=()=>{
     if(destinationVideo.ended)destinationVideo.currentTime=0;
     if(destinationVideo.error)destinationVideo.load();
     $('destination-video-retry').textContent=t('play');$('destination-video-retry').hidden=true;
-    playFullscreenVideo();
-  }else{destinationVideo.load();playFullscreenVideo();}
+    destinationPlaybackPending=null;destinationPlaybackFailed=false;
+    playFullscreenVideo(true);
+  }else{
+    destinationPlaybackPending=null;destinationPlaybackFailed=false;
+    $('destination-video-retry').hidden=true;$('destination-video-return').hidden=true;$('destination-video-status').textContent='';
+    destinationVideo.load();playFullscreenVideo(true);
+  }
 };
 videoScene.addEventListener('keydown',event=>{
   if(event.key!=='Tab')return;
-  const focusable=[$('destination-video-highlight'),instagramCopy,instagramCopyField,$('destination-video-next'),$('destination-video-close'),$('destination-video-retry')].filter(el=>el&&!el.hidden&&!el.disabled);
+  const diagnosticButtons=tvVideoMode?[...videoScene.querySelectorAll('#tv-video-diagnostics button')]:[];
+  const focusable=[...diagnosticButtons,$('destination-video-highlight'),instagramCopy,instagramCopyField,$('destination-video-next'),$('destination-video-close'),$('destination-video-retry'),$('destination-video-return')].filter(el=>el&&!el.hidden&&!el.disabled);
   const first=focusable[0],last=focusable[focusable.length-1];
   if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus();}
   else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}
@@ -1419,6 +1499,7 @@ function applyLanguage(){
   text('#transition-screen .trans-line:first-child','journeyEntry');text('#transition-screen .trans-line:last-child','journey2');
   text('#globe-fallback','fallback');attr('three-canvas','canvas');attr('header-home','home');attr('bottom-nav','navigation');attr('label-layer','cities');
   attr('destination-video-close','back');attr('video-stop-btn','close');text('#destination-video-retry',fullscreenVideo.externalHold?'videoResume':'play');
+  text('#destination-video-return','videoReturn');
   refreshInstagramCopy();
   updateDestinationNavigation();syncStoryUI();
   weddingChapter?.refreshLanguage();
@@ -1435,7 +1516,7 @@ function applyLanguage(){
     if($('media-error').classList.contains('empty-memory'))$('media-error').textContent=t('comingSoon');
   }
   const status=$('destination-video-status');
-  for(const key of ['videoLoading','videoTap','videoError'])if(Object.values(config.ui).some(d=>d[key]===status.textContent)){status.textContent=t(key);break;}
+  for(const key of ['videoLoading','videoTap','videoError','videoTimeout'])if(Object.values(config.ui).some(d=>d[key]===status.textContent)){status.textContent=t(key);break;}
   $('utility-language').textContent=preferences.language.toUpperCase();attr('utility-language','language');attr('utility-gallery','photos');attr('utility-controls','controls');
   syncSoundControl();$('utility-mood').setAttribute('aria-label',themeControlLabel('classic'));
   $('utility-palette').setAttribute('aria-label',themeControlLabel('olive'));
@@ -1463,7 +1544,7 @@ $('utility-mood').onclick=()=>selectThemePair('classic');
 $('utility-palette').onclick=()=>selectThemePair('olive');
 $('utility-language').onclick=()=>{preferences.language=preferences.language==='sk'?'en':'sk';savePreference('sm-language',preferences.language);applyLanguage();};
 document.addEventListener('visibilitychange',syncMusic);
-document.addEventListener('visibilitychange',()=>{destinationBuffer.pause(document.hidden);destinationParticles.visibility();});
+document.addEventListener('visibilitychange',()=>{destinationBuffer.pause(document.hidden);destinationParticles.visibility();destinationWatchdog.visibility();});
 document.addEventListener('visibilitychange',()=>{
   if(document.hidden)weddingParticles?.suspend('visibility');else weddingParticles?.resume('visibility');
 });
@@ -1556,7 +1637,7 @@ $('entry-button').onclick=()=>{
   // Keep play() inside this real click, before imports or animation promises.
   preferences.sound=true;savePreference('sm-sound','on');syncMusic(true);syncSoundControl();
   $('entry-screen').inert=true;delete document.body.dataset.entryPending;
-  entryTransition.leave(()=>{$('entry-screen').hidden=true;});
+  gsap.to($('entry-screen'),{autoAlpha:0,duration:duration(.35),onComplete:()=>{$('entry-screen').hidden=true;}});
   finishLoading();
 };
 $('entry-button').focus({preventScroll:true});
@@ -1567,4 +1648,3 @@ document.querySelector('#header-home').innerHTML=weddingMonogram();
 document.querySelector('.preloader-monogram').innerHTML=weddingMonogram();
 const brandHero=document.querySelector('.title-layout h1');
 brandHero.classList.add('brand-names');brandHero.innerHTML=names();
-const entryTransition=createEntryParticles({screen:$('entry-screen'),canvas:$('entry-particles'),content:document.querySelector('.entry-content'),logo:$('entry-monogram'),button:$('entry-button'),reducedMotion});
