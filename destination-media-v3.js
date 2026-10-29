@@ -9,27 +9,38 @@ export function destinationVideoUrl(source) {
 
 // Bound both an unresolved play() and a decoder/network stall. Only advancing
 // media time counts as progress; canplay/playing/promise resolution do not.
-export function createDestinationWatchdog(video, { onTimeout, onProgress = () => {}, isHidden = () => document.hidden, now = () => performance.now(), repeat = setInterval, cancel = clearInterval, startupMs = 15000, stallMs = 10000 } = {}) {
+export function createDestinationWatchdog(video, { onTimeout, onProgress = () => {}, onError = () => {}, isHidden = () => document.hidden, now = () => performance.now(), repeat = setInterval, cancel = clearInterval, startupMs = 15000, stallMs = 10000 } = {}) {
   let timer = null, lastAt = 0, lastTime = 0, advanced = 0, started = false, status = 'idle';
-  const snapshot = () => ({ active:timer !== null, advanced, started, status });
-  function stop() { if (timer !== null) cancel(timer);timer = null; }
+  let beganAt = null, stoppedAt = null, lastTickAt = null, ticks = 0, stopReason = 'not-started';
+  const snapshot = () => {
+    const at = timer !== null ? now() : stoppedAt ?? beganAt ?? now(), budget = started ? stallMs : startupMs;
+    return { active:timer !== null, advanced, started, status, hidden:isHidden(), ticks, stopReason,
+      elapsedMs:beganAt === null ? 0 : at-beganAt, idleMs:beganAt === null ? 0 : at-lastAt,
+      remainingMs:beganAt === null ? startupMs : Math.max(0,budget-(at-lastAt)),
+      lastTickAgoMs:lastTickAt === null ? null : now()-lastTickAt };
+  };
+  function stop(reason='stopped') { if (timer !== null) cancel(timer);timer = null;stoppedAt = now();stopReason = reason; }
   function tick() {
     if (timer === null) return;
-    if (isHidden()) { lastAt = now();lastTime = video.currentTime || 0;return; }
-    if (video.ended) { status = 'ended';stop();return; }
+    try {
+    ticks++;lastTickAt = now();
+    // Visibility is not media progress. Resetting lastAt on each hidden tick
+    // previously made a paused TV wait forever without ever reaching timeout.
+    if (video.ended) { status = 'ended';stop('ended');return; }
     const time = video.currentTime || 0, delta = time-lastTime;
     if (!video.paused && !video.seeking && delta > .02) {
       advanced += delta;started = true;lastAt = now();status = 'advancing';onProgress(snapshot());
     }
     lastTime = time;
     if (now()-lastAt >= (started ? stallMs : startupMs)) {
-      status = started ? 'stalled' : 'startup-timeout';stop();onTimeout(snapshot());
+      status = started ? 'stalled' : 'startup-timeout';stop('timeout');onTimeout(snapshot());
     }
+    } catch(error) { status = 'exception';stop('exception');onError(error); }
   }
   return {
-    start() { stop();lastAt = now();lastTime = video.currentTime || 0;advanced = 0;started = false;status = 'waiting';timer = repeat(tick,500); },
+    start() { stop('restart');lastAt = beganAt = now();stoppedAt = lastTickAt = null;ticks = 0;stopReason = '';lastTime = video.currentTime || 0;advanced = 0;started = false;status = 'waiting';timer = repeat(tick,500); },
     stop,
-    visibility() { lastAt = now();lastTime = video.currentTime || 0; },
+    visibility() { if (timer !== null) tick(); },
     snapshot,
   };
 }

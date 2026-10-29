@@ -61,9 +61,11 @@ const destinationParticles=createDestinationParticles($('destination-video-parti
 let destinationSourceFallback=false;
 let destinationPlaybackPending=null;
 let destinationPlaybackFailed=false;
+let destinationPlaybackEpoch=0, destinationDeferredPlay=null;
 const destinationWatchdog=createDestinationWatchdog(destinationVideo,{
-  onTimeout:status=>{failFullscreenVideo('videoTimeout');tvDiagnostics.timeout(status);},
+  onTimeout:status=>{failFullscreenVideo('videoTimeout',!!destinationDeferredPlay&&document.hidden);tvDiagnostics.timeout(status);},
   onProgress:status=>{if(status.advanced>=.15)destinationParticles.reveal(destinationVideo);},
+  onError:error=>{tvDiagnostics.exception('watchdog tick',error);failFullscreenVideo('videoError');},
 });
 const tvDiagnostics=createTVVideoDiagnostics({
   enabled:tvVideoMode,scene:videoScene,video:destinationVideo,
@@ -71,6 +73,7 @@ const tvDiagnostics=createTVVideoDiagnostics({
   onBack:()=>{pauseStory();closeFullscreenVideo();},onSound:()=>toggleMusic(),
   readMusic:()=>({enabled:preferences.sound,paused:music.paused,time:music.currentTime,error:music.error?.code}),
   readWatchdog:()=>destinationWatchdog.snapshot(),
+  readControl:()=>({active:fullscreenVideo.active,closing:fullscreenVideo.closing,InstagramHold:fullscreenVideo.externalHold,failed:destinationPlaybackFailed,promisePending:!!destinationPlaybackPending,autoWaiting:diagnosticAutoWaiting,deferred:!!destinationDeferredPlay,epoch:destinationPlaybackEpoch,city:currentIndex}),
 });
 const androidInstagram = /Android/i.test(navigator.userAgent);
 let instagramCopy, instagramCopyHelp, instagramCopyField;
@@ -93,7 +96,7 @@ function refreshInstagramCopy(){
 function holdInstagramDestination(){
   if(!fullscreenVideo.externalHold)fullscreenVideo.resumeStory=storyActive;
   fullscreenVideo.externalHold=true;
-  destinationWatchdog.stop();clearTimeout(diagnosticPlayTimer);
+  destinationWatchdog.stop('Instagram-hold');cancelDestinationPlayback('Instagram-hold');
   destinationVideo.autoplay=false;
   pauseStory();destinationVideo.pause();
   // Return/focus never reopens Instagram or resumes the story; playback is explicit.
@@ -129,7 +132,7 @@ async function copyInstagramHighlight(event){
 
 function resetFullscreenVideo() {
   fullscreenVideo.timeline?.kill();
-  destinationWatchdog.stop();tvDiagnostics.close();clearTimeout(diagnosticPlayTimer);
+  destinationWatchdog.stop('scene-reset');cancelDestinationPlayback('scene-reset');tvDiagnostics.close();
   destinationParticles.stop();
   videoScene.style.removeProperty('--destination-backdrop');
   gsap.killTweensOf(destinationVideo);
@@ -151,7 +154,7 @@ function resetFullscreenVideo() {
 }
 
 function prepareFullscreenVideo(loc) {
-  destinationWatchdog.stop();clearTimeout(diagnosticPlayTimer);
+  destinationWatchdog.stop('prepare-destination');cancelDestinationPlayback('prepare-destination');
   diagnosticAutoWaiting=tvVideoMode&&tvVideoVariant!==3;
   // A single small still fills wide screens; never decode a second video.
   videoScene.style.removeProperty('--destination-backdrop');
@@ -185,29 +188,81 @@ function prepareFullscreenVideo(loc) {
   gsap.set(destinationVideo,{opacity:1,scale:reducedMotion.matches?1:1.035});
 }
 
-function playFullscreenVideo(manual=false) {
-  if(!fullscreenVideo.active||fullscreenVideo.closing||fullscreenVideo.externalHold||document.hidden||destinationPlaybackPending)return;
-  if(destinationPlaybackFailed||(tvVideoMode&&tvVideoVariant===3&&!manual))return;
-  if(diagnosticAutoWaiting&&!manual)return;
-  const request=revision, source=destinationVideo.getAttribute('src'), attempt={};
-  destinationPlaybackPending=attempt;
-  destinationVideo.muted=true;
-  if(!destinationWatchdog.snapshot().active)destinationWatchdog.start();
-  tvDiagnostics.attempt();
-  let playing;
-  try{playing=destinationVideo.play();}catch(error){playing=Promise.reject(error);}
-  Promise.resolve(playing).then(()=>{
-    if(destinationPlaybackPending===attempt)tvDiagnostics.playResult();
-  }).catch(error=>{
-    if(destinationPlaybackPending!==attempt||request!==revision||source!==destinationVideo.getAttribute('src')||!fullscreenVideo.active||fullscreenVideo.closing||fullscreenVideo.externalHold)return;
-    tvDiagnostics.playResult(error);
-    // Loading/cancelling a source is not a request for another user gesture.
-    if(error.name==='AbortError')return;
-    // Some Safari versions reject a prefetched blob despite accepting the same
-    // silent HTTPS film. Retry the original delivery once, never another player.
-    if(fallbackDestinationSource())return;
-    failFullscreenVideo(error.name==='NotAllowedError'?'videoTap':'videoError');
-  }).finally(()=>{if(destinationPlaybackPending===attempt)destinationPlaybackPending=null;});
+function cancelDestinationPlayback(reason,{keepDeferred=false}={}) {
+  if(diagnosticPlayTimer!==undefined){
+    clearTimeout(diagnosticPlayTimer);diagnosticPlayTimer=undefined;
+    tvDiagnostics.timer('cancelled',reason);
+  }
+  diagnosticAutoWaiting=false;destinationPlaybackPending=null;
+  if(!keepDeferred){
+    if(destinationDeferredPlay)tvDiagnostics.control('deferred-cancelled',reason);
+    destinationDeferredPlay=null;destinationPlaybackEpoch++;
+  }
+}
+
+function destinationPlaybackTicket(manual=false) {
+  return {epoch:destinationPlaybackEpoch,revision,index:currentIndex,source:destinationVideo.getAttribute('src'),manual};
+}
+
+function destinationTicketCurrent(ticket) {
+  return ticket.epoch===destinationPlaybackEpoch&&ticket.revision===revision&&ticket.index===currentIndex&&ticket.source===destinationVideo.getAttribute('src');
+}
+
+function resumeDeferredDestinationPlay(origin) {
+  const ticket=destinationDeferredPlay;
+  if(!ticket)return;
+  if(document.hidden){tvDiagnostics.returned(origin,'document.hidden; deferred attempt retained');return;}
+  // Consume before calling play: focus/pageshow/visibilitychange cannot duplicate it.
+  destinationDeferredPlay=null;
+  if(!destinationTicketCurrent(ticket)||!fullscreenVideo.active||fullscreenVideo.closing||fullscreenVideo.externalHold){
+    tvDiagnostics.returned(origin,'deferred attempt cancelled: destination changed / scene closed / Instagram hold');return;
+  }
+  if(ticket.timedOut){
+    destinationPlaybackFailed=false;
+    $('destination-video-status').textContent='';$('destination-video-retry').hidden=true;$('destination-video-return').hidden=true;
+  }
+  tvDiagnostics.control('deferred-resumed',origin);
+  destinationWatchdog.stop('deferred-resume');
+  playFullscreenVideo(ticket.manual,'visibility-resume');
+}
+
+function playFullscreenVideo(manual=false,origin='automatic') {
+  let step='guards';
+  const blocked=reason=>tvDiagnostics.returned(origin,reason);
+  try{
+    if(!fullscreenVideo.active){blocked('scene inactive');return;}
+    if(fullscreenVideo.closing){blocked('scene closing');return;}
+    if(fullscreenVideo.externalHold){blocked('Instagram hold');return;}
+    if(destinationPlaybackPending){blocked('play promise already pending');return;}
+    if(destinationPlaybackFailed){blocked('failed; explicit retry required');return;}
+    if(tvVideoMode&&tvVideoVariant===3&&!manual){blocked('variant 3 awaits a real click');return;}
+    if(diagnosticAutoWaiting&&!manual){blocked('6 s timer has not fired');return;}
+    step='watchdog-start';
+    if(!destinationWatchdog.snapshot().active)destinationWatchdog.start();
+    if(document.hidden){
+      destinationVideo.autoplay=false;
+      if(origin!=='visibility-resume')destinationDeferredPlay=destinationPlaybackTicket(manual);
+      blocked('document.hidden; play deferred for this destination');return;
+    }
+    const ticket=destinationPlaybackTicket(manual),attempt={};
+    destinationDeferredPlay=null;destinationPlaybackPending=attempt;
+    step='media-setup';destinationVideo.muted=true;
+    step='diagnostic-attempt';tvDiagnostics.attempt();
+    step='video.play';
+    let playing;
+    try{playing=destinationVideo.play();}catch(error){tvDiagnostics.exception(step,error);playing=Promise.reject(error);}
+    Promise.resolve(playing).then(()=>{
+      if(destinationPlaybackPending===attempt)tvDiagnostics.playResult();
+    }).catch(error=>{
+      if(destinationPlaybackPending!==attempt||!destinationTicketCurrent(ticket)||!fullscreenVideo.active||fullscreenVideo.closing||fullscreenVideo.externalHold){blocked('stale play rejection; scene/attempt changed');return;}
+      tvDiagnostics.playResult(error);
+      // A cancelled load is bounded by the same watchdog, never a retry loop.
+      if(error.name==='AbortError'){blocked('play rejected: AbortError; watchdog remains active');return;}
+      if(fallbackDestinationSource()){blocked('blob rejected; existing HTTPS fallback started');return;}
+      failFullscreenVideo(error.name==='NotAllowedError'?'videoTap':'videoError');
+    }).catch(error=>{tvDiagnostics.exception('play-rejection-handler',error);failFullscreenVideo('videoError');})
+      .finally(()=>{if(destinationPlaybackPending===attempt)destinationPlaybackPending=null;});
+  }catch(error){tvDiagnostics.exception('playFullscreenVideo / '+step,error);failFullscreenVideo('videoError');}
 }
 
 function fallbackDestinationSource() {
@@ -219,10 +274,11 @@ function fallbackDestinationSource() {
   return true;
 }
 
-function failFullscreenVideo(message) {
+function failFullscreenVideo(message,keepDeferred=false) {
   if(!fullscreenVideo.active||fullscreenVideo.closing||fullscreenVideo.externalHold)return;
-  destinationWatchdog.stop();destinationParticles.stop();clearTimeout(diagnosticPlayTimer);
-  destinationPlaybackPending=null;destinationPlaybackFailed=true;destinationVideo.autoplay=false;destinationVideo.pause();
+  destinationWatchdog.stop(message);destinationParticles.stop();cancelDestinationPlayback(message,{keepDeferred});
+  if(keepDeferred&&destinationDeferredPlay)destinationDeferredPlay.timedOut=true;
+  destinationPlaybackFailed=true;destinationVideo.autoplay=false;destinationVideo.pause();
   $('destination-video-status').textContent=t(message);
   $('destination-video-retry').textContent=t('play');$('destination-video-retry').hidden=tvVideoMode;
   $('destination-video-return').hidden=tvVideoMode;
@@ -230,14 +286,21 @@ function failFullscreenVideo(message) {
 }
 
 function scheduleTVAutomaticPlayback() {
-  diagnosticAutoWaiting=true;clearTimeout(diagnosticPlayTimer);
+  cancelDestinationPlayback('schedule-automatic-test');diagnosticAutoWaiting=true;
+  const ticket=destinationPlaybackTicket();
   // Same delay in A and B: the variant switch must not silently grant autoplay
   // permission. C alone calls play() synchronously inside its actual click.
-  diagnosticPlayTimer=setTimeout(()=>{
-    diagnosticAutoWaiting=false;
-    if(!fullscreenVideo.active||fullscreenVideo.closing||fullscreenVideo.externalHold||destinationPlaybackFailed)return;
-    destinationVideo.autoplay=true;playFullscreenVideo();
-  },6000);
+  try{
+    const timer=setTimeout(()=>{
+      try{
+        if(diagnosticPlayTimer!==timer||!destinationTicketCurrent(ticket)){tvDiagnostics.returned('6 s timer','cancelled/stale timer or destination');return;}
+        diagnosticPlayTimer=undefined;diagnosticAutoWaiting=false;
+        tvDiagnostics.timer('fired','calling playFullscreenVideo');
+        playFullscreenVideo(false,'6 s timer');
+      }catch(error){tvDiagnostics.exception('6 s timer callback',error);failFullscreenVideo('videoError');}
+    },6000);
+    diagnosticPlayTimer=timer;tvDiagnostics.timer('scheduled','6000 ms; current destination only');
+  }catch(error){tvDiagnostics.exception('schedule 6 s timer',error);failFullscreenVideo('videoError');}
 }
 
 function switchTVVideoVariant(variant) {
@@ -253,16 +316,15 @@ function switchTVVideoVariant(variant) {
 function playTVVideoDirectly() {
   if(!tvVideoMode||tvVideoVariant===1||!fullscreenVideo.active||fullscreenVideo.closing)return;
   tvVideoVariant=3;tvDiagnostics.variant(3);destinationVideo.autoplay=false;
-  diagnosticAutoWaiting=false;
-  destinationWatchdog.stop();clearTimeout(diagnosticPlayTimer);destinationPlaybackPending=null;destinationPlaybackFailed=false;
+  destinationWatchdog.stop('direct-click');cancelDestinationPlayback('direct-click');destinationPlaybackFailed=false;
   destinationVideo.pause();
   $('destination-video-retry').hidden=true;$('destination-video-return').hidden=true;$('destination-video-status').textContent='';
   if(destinationVideo.error)destinationVideo.load();
-  playFullscreenVideo(true); // Real button click -> play(), no await/animation.
+  playFullscreenVideo(true,'direct-click'); // Real button click -> play(), no await/animation.
 }
 
 destinationVideo.addEventListener('canplay',()=>{
-  if(destinationVideo.paused&&!destinationVideo.ended&&$('destination-video-retry').hidden)playFullscreenVideo();
+  if(destinationVideo.paused&&!destinationVideo.ended&&$('destination-video-retry').hidden)playFullscreenVideo(false,'canplay');
 });
 
 function openFullscreenVideo() {
@@ -276,19 +338,19 @@ function openFullscreenVideo() {
   // Make the media visible before requesting playback. The particles provide
   // the reveal; an invisible fading parent can block Safari autoplay.
   gsap.set(videoScene,{autoAlpha:1});
-  if(tvVideoMode&&tvVideoVariant!==3)destinationWatchdog.start();
+  if(!tvVideoMode||tvVideoVariant!==3)destinationWatchdog.start();
   tvDiagnostics.open(locations[currentIndex],destinationVideo.getAttribute('src'));
   destinationVideo.autoplay=!tvVideoMode;
   $('destination-video-close').focus({preventScroll:true});
   if(tvVideoMode&&tvVideoVariant!==3)scheduleTVAutomaticPlayback();
-  else playFullscreenVideo();
+  else playFullscreenVideo(false,'scene-open');
 }
 
 function closeFullscreenVideo(afterOverview=null) {
   if(typeof afterOverview!=='function')afterOverview=null;
   if(!fullscreenVideo.active||fullscreenVideo.closing)return;
   fullscreenVideo.closing=true;destinationReady=false;updateDestinationNavigation();
-  destinationWatchdog.stop();tvDiagnostics.close();clearTimeout(diagnosticPlayTimer);
+  destinationWatchdog.stop('scene-close');cancelDestinationPlayback('scene-close');tvDiagnostics.close();
   destinationVideo.autoplay=false;
   fullscreenVideo.timeline?.kill();
   destinationVideo.pause();
@@ -326,17 +388,18 @@ destinationVideo.addEventListener('ended',()=>{
 });
 $('destination-video-retry').onclick=()=>{
   if(!fullscreenVideo.active||fullscreenVideo.closing)return;
+  destinationWatchdog.stop('explicit-retry');cancelDestinationPlayback('explicit-retry');
   if(fullscreenVideo.externalHold){
     fullscreenVideo.externalHold=false;fullscreenVideo.resumeStory=false;
     if(destinationVideo.ended)destinationVideo.currentTime=0;
     if(destinationVideo.error)destinationVideo.load();
     $('destination-video-retry').textContent=t('play');$('destination-video-retry').hidden=true;
     destinationPlaybackPending=null;destinationPlaybackFailed=false;
-    playFullscreenVideo(true);
+    playFullscreenVideo(true,'Instagram-resume-click');
   }else{
     destinationPlaybackPending=null;destinationPlaybackFailed=false;
     $('destination-video-retry').hidden=true;$('destination-video-return').hidden=true;$('destination-video-status').textContent='';
-    destinationVideo.load();playFullscreenVideo(true);
+    destinationVideo.load();playFullscreenVideo(true,'retry-click');
   }
 };
 videoScene.addEventListener('keydown',event=>{
@@ -1544,7 +1607,8 @@ $('utility-mood').onclick=()=>selectThemePair('classic');
 $('utility-palette').onclick=()=>selectThemePair('olive');
 $('utility-language').onclick=()=>{preferences.language=preferences.language==='sk'?'en':'sk';savePreference('sm-language',preferences.language);applyLanguage();};
 document.addEventListener('visibilitychange',syncMusic);
-document.addEventListener('visibilitychange',()=>{destinationBuffer.pause(document.hidden);destinationParticles.visibility();destinationWatchdog.visibility();});
+document.addEventListener('visibilitychange',()=>{destinationBuffer.pause(document.hidden);destinationParticles.visibility();resumeDeferredDestinationPlay('visibilitychange');destinationWatchdog.visibility();});
+window.addEventListener('focus',()=>resumeDeferredDestinationPlay('focus'));
 document.addEventListener('visibilitychange',()=>{
   if(document.hidden)weddingParticles?.suspend('visibility');else weddingParticles?.resume('visibility');
 });
@@ -1606,7 +1670,7 @@ $('three-canvas').addEventListener('keydown',event=>{
   camera.position.setFromSpherical(spherical); controls.update(); idleSince=performance.now()+1800;
 });
 // BFCache restores the existing section and playback state, never a fresh intro.
-window.addEventListener('pageshow', () => { if (particleIntro?.active) particleIntro.resume('page');weddingParticles?.resume('page'); });
+window.addEventListener('pageshow', () => { if (particleIntro?.active) particleIntro.resume('page');weddingParticles?.resume('page');resumeDeferredDestinationPlay('pageshow'); });
 
 let loaded = false;
 function finishLoading() {

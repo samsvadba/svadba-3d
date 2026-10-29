@@ -38,7 +38,7 @@ assert.match(main,/destinationParticles\.reveal\(destinationVideo\)/);
 // player rejects an invisible media element, making the old ordering fail here.
 const playback=main.slice(main.indexOf('function prepareFullscreenVideo('),main.indexOf('function closeFullscreenVideo('));
 function playerFixture({blob=false,outcomes=[],tv=false}={}) {
-  const events=new Map(),elements=new Map(),deferred=new Map();let plays=0,timerId=0,bufferCalls=0,stops=0;
+  const events=new Map(),elements=new Map(),deferred=new Map(),trace=[];let plays=0,timerId=0,bufferCalls=0,stops=0;
   const element=id=>{if(!elements.has(id))elements.set(id,{hidden:true,style:{removeProperty(){},setProperty(){}},setAttribute(){},focus(){}});return elements.get(id);};
   const video={src:'',paused:true,ended:false,opacity:0,currentTime:0,load(){},pause(){this.paused=true;},getAttribute(){return this.src;},addEventListener:(type,fn)=>events.set(type,fn),
     play(){plays++;assert.equal(element('scene').autoAlpha,1,'scene is visible before play');assert.equal(this.opacity,1,'video is visible beneath the particles');assert.equal(this.muted,true);assert.equal(this.playsInline,true);
@@ -46,14 +46,14 @@ function playerFixture({blob=false,outcomes=[],tv=false}={}) {
   const state={active:false,closing:false,externalHold:false};
   const watch={active:false,start(){this.active=true;},stop(){this.active=false;},snapshot(){return {active:this.active};}};
   const context=vm.createContext({destinationVideo:video,videoScene:element('scene'),fullscreenVideo:state,destinationPlaybackPending:null,destinationSourceFallback:false,
-    tvVideoMode:tv,tvVideoVariant:1,diagnosticPlayTimer:undefined,diagnosticAutoWaiting:false,destinationPlaybackFailed:false,destinationWatchdog:watch,
-    tvDiagnostics:{open(){},attempt(){},variant(){},playResult(){},focusRetry(){}},setTimeout:fn=>{deferred.set(++timerId,fn);return timerId;},clearTimeout:id=>deferred.delete(id),
-    document:{hidden:false,body:{dataset:{}}},window:{matchMedia:()=>({matches:false})},revision:1,currentIndex:0,locations:config.locations,reducedMotion:{matches:false},
+    tvVideoMode:tv,tvVideoVariant:1,diagnosticPlayTimer:undefined,diagnosticAutoWaiting:false,destinationPlaybackFailed:false,destinationWatchdog:watch,destinationPlaybackEpoch:0,destinationDeferredPlay:null,
+    tvDiagnostics:Object.fromEntries(['open','attempt','variant','playResult','focusRetry','control','returned','timer','exception'].map(name=>[name,(...args)=>trace.push([name,...args])])),setTimeout:fn=>{deferred.set(++timerId,fn);return timerId;},clearTimeout:id=>deferred.delete(id),
+    document:{hidden:false,visibilityState:'visible',body:{dataset:{}}},window:{matchMedia:()=>({matches:false})},revision:1,currentIndex:0,locations:config.locations,reducedMotion:{matches:false},
     destinationBuffer:{sourceFor:()=>{bufferCalls++;return blob?'blob:cached':silent;}},destinationVideoUrl,destinationParticles:{start(){},stop(){stops++;}},syncMusic(){},refreshInstagramCopy(){},
     cityName:loc=>loc.key,countryText:()=>'',t:key=>key,$:element,gsap:{set:(target,values)=>Object.assign(target,values)}});
   vm.runInContext(playback,context);
   context.prepareFullscreenVideo(config.locations[0]);assert.equal(plays,0,'preparing never plays a hidden film');
-  return {context,state,video,events,element,watch,plays:()=>plays,bufferCalls:()=>bufferCalls,stops:()=>stops,open:()=>context.openFullscreenVideo(),runDeferred(){const tasks=[...deferred.values()];deferred.clear();tasks.forEach(fn=>fn());}};
+  return {context,state,video,events,element,watch,trace,deferred,plays:()=>plays,bufferCalls:()=>bufferCalls,stops:()=>stops,open:()=>context.openFullscreenVideo(),runDeferred(){const tasks=[...deferred.values()];deferred.clear();tasks.forEach(fn=>fn());}};
 }
 const automatic=playerFixture();automatic.open();await settle();
 assert.equal(automatic.video.paused,false);assert.equal(automatic.video.autoplay,true);assert.equal(automatic.element('destination-video-retry').hidden,true);
@@ -88,6 +88,44 @@ assert.ok(hung.stops()>0,'timeout clears particles even without play rejection')
 const retryHandler=main.slice(main.indexOf("$('destination-video-retry').onclick="),main.indexOf("videoScene.addEventListener('keydown'"));
 vm.runInContext(retryHandler,hung.context);hung.element('destination-video-retry').onclick();
 assert.equal(hung.plays(),2,'retry immediately calls the same player after an unresolved attempt');await settle();assert.equal(hung.video.paused,false);
+
+// Regression: readyState=4 can coexist with a hidden document. The six-second
+// callback must retain its intent, rather than losing the only play attempt.
+const hiddenTrial=playerFixture({tv:true});hiddenTrial.open();hiddenTrial.context.document.hidden=true;hiddenTrial.runDeferred();
+assert.equal(hiddenTrial.plays(),0);assert.ok(hiddenTrial.context.destinationDeferredPlay);assert.equal(hiddenTrial.watch.active,true);
+assert.ok(hiddenTrial.trace.some(e=>e[0]==='timer'&&e[1]==='scheduled'));
+assert.ok(hiddenTrial.trace.some(e=>e[0]==='timer'&&e[1]==='fired'));
+assert.ok(hiddenTrial.trace.some(e=>e[0]==='returned'&&e[2].includes('document.hidden')));
+hiddenTrial.context.document.hidden=false;hiddenTrial.context.resumeDeferredDestinationPlay('visibilitychange');
+hiddenTrial.context.resumeDeferredDestinationPlay('focus');hiddenTrial.context.resumeDeferredDestinationPlay('pageshow');
+assert.equal(hiddenTrial.plays(),1,'foreground resumes exactly once, even with three lifecycle events');await settle();
+const hiddenTimeout=playerFixture({tv:true});hiddenTimeout.open();hiddenTimeout.context.document.hidden=true;hiddenTimeout.runDeferred();
+hiddenTimeout.context.failFullscreenVideo('videoTimeout',true);assert.ok(hiddenTimeout.stops()>0);assert.ok(hiddenTimeout.context.destinationDeferredPlay.timedOut);
+hiddenTimeout.context.document.hidden=false;hiddenTimeout.context.resumeDeferredDestinationPlay('visibilitychange');
+assert.equal(hiddenTimeout.plays(),1,'a deferred timeout retains one foreground attempt, without keeping the overlay');await settle();
+for(const change of ['closing','externalHold','inactive','city','revision','source','cancel']){
+  const f=playerFixture({tv:true});f.open();f.context.document.hidden=true;f.runDeferred();
+  if(change==='inactive')f.state.active=false;
+  else if(change==='city')f.context.currentIndex=1;
+  else if(change==='revision')f.context.revision++;
+  else if(change==='source')f.video.src='https://example.org/another.mp4';
+  else if(change==='cancel')f.context.cancelDestinationPlayback('scene-close');
+  else f.state[change]=true;
+  f.context.document.hidden=false;f.context.resumeDeferredDestinationPlay('focus');assert.equal(f.plays(),0,change+' cancels stale intent');
+}
+const hiddenOpen=playerFixture();hiddenOpen.context.document.hidden=true;hiddenOpen.open();
+assert.equal(hiddenOpen.watch.active,true,'normal hidden scene also has a watchdog before play is called');
+const cancelledTimer=playerFixture({tv:true});cancelledTimer.open();const stale=[...cancelledTimer.deferred.values()][0];
+cancelledTimer.context.cancelDestinationPlayback('Instagram-hold');stale();assert.equal(cancelledTimer.plays(),0);
+assert.ok(cancelledTimer.trace.some(e=>e[0]==='timer'&&e[1]==='cancelled'&&e[2]==='Instagram-hold'));
+assert.ok(cancelledTimer.trace.some(e=>e[0]==='returned'&&e[2].includes('stale timer')));
+for(const [key,value,reason] of [['active',false,'scene inactive'],['closing',true,'scene closing'],['externalHold',true,'Instagram hold']]){
+  const f=playerFixture();f.state.active=true;f.state[key]=value;f.context.playFullscreenVideo();
+  assert.ok(f.trace.some(e=>e[0]==='returned'&&e[2]===reason),'guard explains '+reason);
+}
+const setupException=playerFixture();Object.defineProperty(setupException.video,'muted',{set(){throw Error('test setup exception');}});setupException.open();
+assert.equal(setupException.plays(),0);assert.ok(setupException.trace.some(e=>e[0]==='exception'&&e[1].includes('media-setup')));
+assert.ok(setupException.stops()>0,'an exception before play clears particles and exposes recovery');
 assert.match(main,/enabled:!tvVideoMode&&/,'TV trials disable all speculative downloads');
 assert.doesNotMatch(main,/createEntryParticles|entryTransition/,'entry particle animation removed');
 
@@ -99,8 +137,14 @@ guard.start();clock=14999;tickWatch();assert.equal(failures.length,0);clock=1500
 assert.deepEqual(failures,['startup-timeout'],'a never-settled play times out');tickWatch();assert.equal(failures.length,1,'stale ticks cannot repeat the failure');
 clock=20000;guard.start();clock=20500;watched.currentTime=.8;watched.paused=false;tickWatch();assert.equal(guard.snapshot().advanced,.8);
 clock=30499;tickWatch();assert.equal(failures.length,1);clock=30500;tickWatch();assert.equal(failures[1],'stalled');
-clock=40000;watched.currentTime=0;guard.start();hidden=true;clock=60000;tickWatch();hidden=false;guard.visibility();clock=60001;tickWatch();assert.equal(failures.length,2,'hidden time is not counted as a visible loading failure');
-watched.ended=true;tickWatch();assert.equal(guard.snapshot().active,false);assert.equal(failures.length,2);assert.ok(cancellations>=3);
+clock=40000;watched.currentTime=0;guard.start();hidden=true;clock=45000;tickWatch();clock=50000;guard.visibility();clock=55000;guard.visibility();
+assert.equal(failures.length,3,'hidden polls and visibility events never reset the deadline');assert.equal(guard.snapshot().stopReason,'timeout');
+hidden=false;clock=60000;guard.start();clock=65000;guard.visibility();clock=70000;guard.visibility();clock=75000;tickWatch();assert.equal(failures.length,4,'visible paused scene also fails at exactly 15 seconds');
+clock=80000;guard.start();watched.ended=true;tickWatch();assert.equal(guard.snapshot().active,false);assert.equal(failures.length,4);assert.ok(cancellations>=5);
+assert.equal(guard.snapshot().status,'ended');assert.equal(guard.snapshot().stopReason,'ended');
+let watchError;watched.ended=false;watched.paused=false;watched.currentTime=0;
+const errorGuard=createDestinationWatchdog(watched,{now:()=>clock,isHidden:()=>false,repeat:fn=>{tickWatch=fn;return 1;},cancel(){},onProgress(){throw Error('test progress exception');},onError:error=>watchError=error});
+errorGuard.start();clock+=500;watched.currentTime=1;tickWatch();assert.equal(errorGuard.snapshot().active,false);assert.equal(watchError.message,'test progress exception');
 
 // The portrait transition must span both viewport axes, including after the
 // cloud has gathered, rather than fitting a small 9:16 frame at the centre.
@@ -121,4 +165,4 @@ try {
   }
   particles.stop();
 } finally {for(const [key,value] of savedGlobals){if(value===undefined)delete globalThis[key];else globalThis[key]=value;}}
-console.log('PASS: buffer bounds; automatic/direct TV variants with exact URLs and no cache; unresolved-play/stall deadlines; retry/back and overlay cleanup; hold/close guards; full particle coverage. TV hardware remains untested.');
+console.log('PASS: TV timer schedule/fire/cancel; hidden deferred attempt resumes once; stale/hold/close cancellation; guard/exception telemetry; fixed 15s/10s deadlines including hidden/visibility; retry and overlay cleanup; unchanged video sources/cache variants; particle coverage. TV hardware remains untested.');

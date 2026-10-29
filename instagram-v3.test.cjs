@@ -16,7 +16,7 @@ function fixture(userAgent,clipboard){
   const video={currentTime:12,ended:false,pauses:0,loads:0,pause(){this.pauses++;},load(){this.loads++;},hasAttribute(){return true;},addEventListener(type,fn){events['video:'+type]=fn;}};
   const c={navigator:{userAgent,clipboard},document:{createElement(tag){return element('new-'+tag+'-'+elements.size);}},
     $:element,locations:[{instagramHighlight:url},{}],currentIndex:0,revision:3,state:'memory',destinationReady:true,
-    destinationWatchdog:{stop(){}},diagnosticPlayTimer:undefined,clearTimeout,tvVideoMode:false,destinationPlaybackFailed:false,
+    destinationWatchdog:{stop(){}},cancelDestinationPlayback(){c.cancelled=true;},diagnosticPlayTimer:undefined,clearTimeout,tvVideoMode:false,destinationPlaybackFailed:false,
     fullscreenVideo:{active:true,closing:false,externalHold:false,resumeStory:false},storyActive:true,destinationVideo:video,videoScene:element('scene'),
     gsap:{to(){}},duration:n=>n,t:key=>config.ui.sk[key],pauseStory(){c.storyActive=false;},playFullscreenVideo(){c.plays=(c.plays||0)+1;},
     closeFullscreenVideo(){c.closed=true;},syncStoryUI(){},navigateDestination(offset){c.next=offset;},window:{open(){throw Error('Unexpected navigation');}}};
@@ -31,6 +31,7 @@ function event(){return {prevented:false,stopped:false,preventDefault(){this.pre
       f.events['destination-video-highlight:click'](e);
       assert.equal(e.prevented,false);assert.equal(e.stopped,true);
       assert.equal(f.c.fullscreenVideo.externalHold,true);assert.equal(f.c.storyActive,false);
+      assert.equal(f.c.cancelled,true,'Instagram hold cancels any deferred play/timer');
       assert.equal(f.element('destination-video-retry').hidden,false);
       f.events['video:ended']();assert.equal(f.c.next,undefined);assert.equal(f.c.closed,undefined);
       f.events['video:playing']();assert.ok(f.video.pauses>=2);
