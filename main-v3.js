@@ -383,7 +383,7 @@ $('destination-video-highlight').addEventListener('click',event=>{
 destinationVideo.addEventListener('ended',()=>{
   if(fullscreenVideo.externalHold)return;
   destinationWatchdog.stop();
-  if(tvVideoMode)return; // Keep the result readable for a TV photograph; NEXT still works.
+  tvDiagnostics.control('ended',storyActive?'continue to next destination':'return to Journey');
   storyActive?nextMemory():closeFullscreenVideo();
 });
 $('destination-video-retry').onclick=()=>{

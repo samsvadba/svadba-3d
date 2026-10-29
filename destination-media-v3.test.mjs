@@ -79,6 +79,15 @@ trials.runDeferred();await settle();assert.equal(trials.plays(),2);
 trials.context.playTVVideoDirectly();assert.equal(trials.plays(),3,'variant 3 calls play synchronously in the real button handler');
 assert.equal(trials.video.src,first,'the click trial retains the same original URL');await settle();
 trials.video.paused=true;trials.events.get('canplay')();await settle();assert.equal(trials.plays(),3,'manual trial never auto-reopens');
+const endedHandler=main.slice(main.indexOf("destinationVideo.addEventListener('ended'"),main.indexOf("$('destination-video-retry').onclick="));
+for(const tv of [false,true]){
+  const finished=playerFixture({tv});let next=0,back=0;
+  Object.assign(finished.context,{storyActive:true,nextMemory(){next++;},closeFullscreenVideo(){back++;}});
+  vm.runInContext(endedHandler,finished.context);finished.events.get('ended')();
+  assert.equal(next,1,'ended advances Story, including TV diagnostics');
+  finished.context.storyActive=false;finished.events.get('ended')();assert.equal(back,1,'Explore returns to Journey');
+  finished.state.externalHold=true;finished.events.get('ended')();assert.equal(next,1);assert.equal(back,1,'Instagram hold never advances automatically');
+}
 const manualNext=playerFixture({tv:true});manualNext.context.tvVideoVariant=3;manualNext.context.prepareFullscreenVideo(config.locations[0]);manualNext.open();
 assert.equal(manualNext.plays(),0);assert.ok(manualNext.stops()>0,'waiting for the explicit TV button never leaves an endless particle overlay');
 const hung=playerFixture({outcomes:['pending']});hung.open();hung.context.failFullscreenVideo('videoTimeout');
