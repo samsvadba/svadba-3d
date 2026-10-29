@@ -56,9 +56,11 @@ function playerFixture({blob=false,outcomes=[],tv=false}={}) {
   return {context,state,video,events,element,watch,trace,deferred,plays:()=>plays,bufferCalls:()=>bufferCalls,stops:()=>stops,open:()=>context.openFullscreenVideo(),runDeferred(){const tasks=[...deferred.values()];deferred.clear();tasks.forEach(fn=>fn());}};
 }
 const automatic=playerFixture();automatic.open();await settle();
-assert.equal(automatic.video.paused,false);assert.equal(automatic.video.autoplay,true);assert.equal(automatic.element('destination-video-retry').hidden,true);
-const blobRejected=playerFixture({blob:true,outcomes:['NotAllowedError']});blobRejected.open();await settle();
-assert.equal(blobRejected.plays(),2);assert.equal(blobRejected.video.src,silent);assert.equal(blobRejected.video.paused,false,'HTTPS fallback starts without a new tap');
+assert.equal(automatic.video.paused,false);assert.equal(automatic.video.autoplay,false);assert.equal(automatic.element('destination-video-retry').hidden,true);
+assert.equal(automatic.plays(),1,'normal page calls play immediately, without the six-second diagnostic timer');assert.equal(automatic.deferred.size,0);
+const directProduction=playerFixture({blob:true});directProduction.open();await settle();
+assert.equal(directProduction.bufferCalls(),0,'normal page bypasses blob sources just like the successful TV trial');
+assert.equal(directProduction.plays(),1);assert.equal(directProduction.video.src,silent);assert.equal(directProduction.video.paused,false);
 const interrupted=playerFixture({outcomes:['AbortError']});interrupted.open();await settle();
 assert.equal(interrupted.element('destination-video-retry').hidden,true,'source cancellation is not reported as gesture denial');
 interrupted.events.get('canplay')();await settle();assert.equal(interrupted.video.paused,false);
@@ -135,7 +137,7 @@ for(const [key,value,reason] of [['active',false,'scene inactive'],['closing',tr
 const setupException=playerFixture();Object.defineProperty(setupException.video,'muted',{set(){throw Error('test setup exception');}});setupException.open();
 assert.equal(setupException.plays(),0);assert.ok(setupException.trace.some(e=>e[0]==='exception'&&e[1].includes('media-setup')));
 assert.ok(setupException.stops()>0,'an exception before play clears particles and exposes recovery');
-assert.match(main,/enabled:!tvVideoMode&&/,'TV trials disable all speculative downloads');
+assert.match(main,/createDestinationBuffer\(locations,\{enabled:false\}\)/,'normal and diagnostic pages both disable speculative blob downloads');
 assert.doesNotMatch(main,/createEntryParticles|entryTransition/,'entry particle animation removed');
 
 // Timed checks use a deterministic clock, not sleeping or a real media endpoint.

@@ -56,7 +56,9 @@ const fullscreenVideo = { active:false, closing:false, timeline:null, externalHo
 const videoScene=$('destination-video-scene'), destinationVideo=$('destination-video');
 const tvVideoMode=new URLSearchParams(location.search).get('tv-video')==='1';
 let tvVideoVariant=1, diagnosticPlayTimer, diagnosticAutoWaiting=false;
-const destinationBuffer=createDestinationBuffer(locations,{enabled:!tvVideoMode&&!navigator.connection?.saveData&&!/^(slow-)?2g$/.test(navigator.connection?.effectiveType||'')});
+// Use the HTTPS delivery verified on TV. Blob downloads/prefetch can leave
+// embedded TV players stuck; the visible video still preloads before its flight.
+const destinationBuffer=createDestinationBuffer(locations,{enabled:false});
 const destinationParticles=createDestinationParticles($('destination-video-particles'),{reducedMotion,getColor:()=>getParticleTheme().ink.getStyle(),getBackground:()=>getParticleTheme().paper.getStyle()});
 let destinationSourceFallback=false;
 let destinationPlaybackPending=null;
@@ -170,7 +172,7 @@ function prepareFullscreenVideo(loc) {
   destinationVideo.muted=true;destinationVideo.defaultMuted=true;destinationVideo.volume=0;destinationVideo.playsInline=true;
   destinationVideo.autoplay=false;destinationVideo.preload='auto';
   destinationSourceFallback=false;
-  destinationVideo.src=tvVideoMode?(tvVideoVariant===1?destinationVideoUrl(loc.fullscreenVideo):loc.fullscreenVideo):destinationBuffer.sourceFor(loc);destinationVideo.load();
+  destinationVideo.src=tvVideoMode&&tvVideoVariant!==1?loc.fullscreenVideo:destinationVideoUrl(loc.fullscreenVideo);destinationVideo.load();
   $('destination-video-title').textContent=cityName(loc);
   $('destination-video-country').textContent=countryText(loc);
   const highlight=$('destination-video-highlight');
@@ -340,7 +342,7 @@ function openFullscreenVideo() {
   gsap.set(videoScene,{autoAlpha:1});
   if(!tvVideoMode||tvVideoVariant!==3)destinationWatchdog.start();
   tvDiagnostics.open(locations[currentIndex],destinationVideo.getAttribute('src'));
-  destinationVideo.autoplay=!tvVideoMode;
+  destinationVideo.autoplay=false; // One explicit play() path, as in the verified TV trial.
   $('destination-video-close').focus({preventScroll:true});
   if(tvVideoMode&&tvVideoVariant!==3)scheduleTVAutomaticPlayback();
   else playFullscreenVideo(false,'scene-open');
