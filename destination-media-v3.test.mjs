@@ -48,6 +48,7 @@ function playerFixture({blob=false,outcomes=[],tv=false}={}) {
   const context=vm.createContext({destinationVideo:video,videoScene:element('scene'),fullscreenVideo:state,destinationPlaybackPending:null,destinationSourceFallback:false,
     tvVideoMode:tv,tvVideoVariant:1,diagnosticPlayTimer:undefined,diagnosticAutoWaiting:false,destinationPlaybackFailed:false,destinationWatchdog:watch,destinationPlaybackEpoch:0,destinationDeferredPlay:null,
     tvDiagnostics:Object.fromEntries(['open','attempt','variant','playResult','focusRetry','control','returned','timer','exception'].map(name=>[name,(...args)=>trace.push([name,...args])])),setTimeout:fn=>{deferred.set(++timerId,fn);return timerId;},clearTimeout:id=>deferred.delete(id),
+    videoPlayLog:{begin(){return {};},result(){}},
     document:{hidden:false,visibilityState:'visible',body:{dataset:{}}},window:{matchMedia:()=>({matches:false})},revision:1,currentIndex:0,locations:config.locations,reducedMotion:{matches:false},
     destinationBuffer:{sourceFor:()=>{bufferCalls++;return blob?'blob:cached':silent;}},destinationVideoUrl,destinationParticles:{start(){},stop(){stops++;}},syncMusic(){},refreshInstagramCopy(){},
     cityName:loc=>loc.key,countryText:()=>'',t:key=>key,$:element,gsap:{set:(target,values)=>Object.assign(target,values)}});

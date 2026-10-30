@@ -9,6 +9,7 @@ import { bindGlobeInput } from './globe-input-v3.js';
 import { createGallery } from './gallery-v3.js';
 import { createDestinationBuffer, createDestinationParticles, createDestinationWatchdog, destinationVideoUrl } from './destination-media-v3.js';
 import { createTVVideoDiagnostics } from './tv-video-diagnostics-v3.js';
+import { createVideoPlayLog } from './video-play-log-v3.js';
 
 // Reference architecture: WeddingApp config, separate fullscreen screens,
 // interruptible GSAP section timelines, OrbitControls, flyToAndShow,
@@ -76,6 +77,10 @@ const tvDiagnostics=createTVVideoDiagnostics({
   readMusic:()=>({enabled:preferences.sound,paused:music.paused,time:music.currentTime,error:music.error?.code}),
   readWatchdog:()=>destinationWatchdog.snapshot(),
   readControl:()=>({active:fullscreenVideo.active,closing:fullscreenVideo.closing,InstagramHold:fullscreenVideo.externalHold,failed:destinationPlaybackFailed,promisePending:!!destinationPlaybackPending,autoWaiting:diagnosticAutoWaiting,deferred:!!destinationDeferredPlay,epoch:destinationPlaybackEpoch,city:currentIndex}),
+});
+const videoPlayLog=createVideoPlayLog({
+  enabled:!tvVideoMode&&new URLSearchParams(location.search).get('video-log')==='1',video:destinationVideo,
+  readContext:()=>({city:locations[currentIndex]?.key,index:currentIndex,revision,state,active:fullscreenVideo.active,closing:fullscreenVideo.closing,InstagramHold:fullscreenVideo.externalHold}),
 });
 const androidInstagram = /Android/i.test(navigator.userAgent);
 let instagramCopy, instagramCopyHelp, instagramCopyField;
@@ -251,11 +256,14 @@ function playFullscreenVideo(manual=false,origin='automatic') {
     step='media-setup';destinationVideo.muted=true;
     step='diagnostic-attempt';tvDiagnostics.attempt();
     step='video.play';
+    const playRecord=videoPlayLog.begin({manual,origin});
     let playing;
-    try{playing=destinationVideo.play();}catch(error){tvDiagnostics.exception(step,error);playing=Promise.reject(error);}
+    try{playing=destinationVideo.play();}catch(error){videoPlayLog.result(playRecord,error);tvDiagnostics.exception(step,error);playing=Promise.reject(error);}
     Promise.resolve(playing).then(()=>{
+      videoPlayLog.result(playRecord);
       if(destinationPlaybackPending===attempt)tvDiagnostics.playResult();
     }).catch(error=>{
+      videoPlayLog.result(playRecord,error);
       if(destinationPlaybackPending!==attempt||!destinationTicketCurrent(ticket)||!fullscreenVideo.active||fullscreenVideo.closing||fullscreenVideo.externalHold){blocked('stale play rejection; scene/attempt changed');return;}
       tvDiagnostics.playResult(error);
       // A cancelled load is bounded by the same watchdog, never a retry loop.
