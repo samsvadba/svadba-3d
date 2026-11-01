@@ -4,14 +4,15 @@
   const palettes=Object.freeze([
     {id:'classic',sk:'Neutrálna',en:'Classic',dark:'#20221f',light:'#f5f4f0',darkInk:'#ece9df',lightInk:'#292a28'},
     {id:'olive',sk:'Olive & Ivory',en:'Olive & Ivory',dark:'#303D29',light:'#F4EBDC',darkInk:'#F4EBDC',lightInk:'#303D29'},
-    {id:'red',sk:'Červená / staroružová',en:'Red / dusty rose',dark:'#743E4C',deeper:'#4F2936',light:'#F3E5E7',secondary:'#FAF2F3',accent:'#D9A5AE'},
-    {id:'orange',sk:'Oranžová / terakota',en:'Orange / terracotta',dark:'#85513D',deeper:'#59362B',light:'#F4E8DF',secondary:'#FBF4EE',accent:'#DDB197'},
-    {id:'yellow',sk:'Žltá / šampanská',en:'Yellow / champagne',dark:'#75603A',deeper:'#4F4028',light:'#F4EEDC',secondary:'#FBF7EB',accent:'#DCC58E'},
-    {id:'green',sk:'Zelená / šalviová',en:'Green / sage',dark:'#3E6155',deeper:'#293F38',light:'#E7EEE5',secondary:'#F3F7EF',accent:'#ADC6AE'},
-    {id:'turquoise',sk:'Tyrkysová',en:'Turquoise',dark:'#32646A',deeper:'#22454B',light:'#E3EFEE',secondary:'#F1F8F6',accent:'#9AC8C5'},
-    {id:'blue',sk:'Modrá / dymová',en:'Blue / dusty blue',dark:'#415C7C',deeper:'#2C3E56',light:'#E7EDF3',secondary:'#F3F6FA',accent:'#AEC3D9'},
-    {id:'indigo',sk:'Indigo',en:'Indigo',dark:'#4F526F',deeper:'#34364D',light:'#EAEAF2',secondary:'#F5F4F9',accent:'#B8B9D4'},
-    {id:'purple',sk:'Fialová / slivková',en:'Purple / plum',dark:'#644568',deeper:'#432F49',light:'#F0E7F0',secondary:'#F9F3F8',accent:'#CEAED0'},
+    // Digital adaptations inspired by WGSN/Coloro 2027 and RAL 2027+, not licensed color matches.
+    {id:'red',sk:'Červená / koralová',en:'Red / coral',dark:'#AC2846',deeper:'#4B1423',light:'#FF8294',secondary:'#FFA9B4',accent:'#FF9BAE'},
+    {id:'orange',sk:'Oranžová / energická',en:'Orange / energetic',dark:'#AE4308',deeper:'#4F2008',light:'#FFB15A',secondary:'#FFC98E',accent:'#FFAD66'},
+    {id:'yellow',sk:'Žltá / topásová',en:'Yellow / topaz',dark:'#806300',deeper:'#423300',light:'#FFDB4D',secondary:'#FFE883',accent:'#FFE16A'},
+    {id:'green',sk:'Zelená / lúčna',en:'Green / meadow',dark:'#1E6C46',deeper:'#143A26',light:'#91D68E',secondary:'#B8E9AC',accent:'#A5E894'},
+    {id:'turquoise',sk:'Tyrkysová / oceánska',en:'Turquoise / ocean',dark:'#006A79',deeper:'#003E49',light:'#62D4D4',secondary:'#9AE7E3',accent:'#6AE4E4'},
+    {id:'blue',sk:'Modrá / žiarivá',en:'Blue / luminous',dark:'#263DA2',deeper:'#15235D',light:'#8EB8FF',secondary:'#B4CFFF',accent:'#88B7FF'},
+    {id:'indigo',sk:'Indigo',en:'Indigo',dark:'#423A92',deeper:'#282250',light:'#ADACF2',secondary:'#CECAFF',accent:'#B4B0FF'},
+    {id:'purple',sk:'Fialová / ametystová',en:'Purple / amethyst',dark:'#6B2D96',deeper:'#3F1B5F',light:'#C8A2E9',secondary:'#E0C5F5',accent:'#D6AEFF'},
   ].map(Object.freeze));
   const byId=Object.fromEntries(palettes.map(p=>[p.id,p]));
   const rgb=hex=>[1,3,5].map(i=>parseInt(hex.slice(i,i+2),16)/255);
