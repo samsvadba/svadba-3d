@@ -10,14 +10,14 @@ const ids = ['classic', 'olive', 'red', 'orange', 'yellow', 'green', 'turquoise'
 const expected = {
   classic: ['#20221f', '#f5f4f0', '#ece9df', '#292a28'],
   olive: ['#303D29', '#F4EBDC', '#F4EBDC', '#303D29'],
-  red: ['#9D2742', '#FFE0E7', '#5E182E', '#FFF0F3', '#FF7B92'],
-  orange: ['#9B411B', '#FFE4D2', '#672813', '#FFF2E7', '#FF9D60'],
-  yellow: ['#8A6010', '#FFF0B8', '#5E420A', '#FFF8DC', '#FFCE55'],
-  green: ['#0D7051', '#D9F7E6', '#074734', '#F0FFF5', '#61E3A4'],
-  turquoise: ['#0A7385', '#DDF7FA', '#074653', '#F0FCFE', '#62E0E9'],
-  blue: ['#2454A3', '#DEEAFE', '#15366D', '#F0F6FF', '#83B6FF'],
-  indigo: ['#413C99', '#E6E3FF', '#28245F', '#F3F1FF', '#A49BFF'],
-  purple: ['#451F61', '#F1D9F8', '#321949', '#F6E8FC', '#A846D9'],
+  red: ['#743E4C', '#F3E5E7', '#4F2936', '#FAF2F3', '#D9A5AE'],
+  orange: ['#85513D', '#F4E8DF', '#59362B', '#FBF4EE', '#DDB197'],
+  yellow: ['#75603A', '#F4EEDC', '#4F4028', '#FBF7EB', '#DCC58E'],
+  green: ['#3E6155', '#E7EEE5', '#293F38', '#F3F7EF', '#ADC6AE'],
+  turquoise: ['#32646A', '#E3EFEE', '#22454B', '#F1F8F6', '#9AC8C5'],
+  blue: ['#415C7C', '#E7EDF3', '#2C3E56', '#F3F6FA', '#AEC3D9'],
+  indigo: ['#4F526F', '#EAEAF2', '#34364D', '#F5F4F9', '#B8B9D4'],
+  purple: ['#644568', '#F0E7F0', '#432F49', '#F9F3F8', '#CEAED0'],
 };
 const linear = hex => [1, 3, 5].map(i => {
   const v = parseInt(hex.slice(i, i + 2), 16) / 255;
