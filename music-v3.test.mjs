@@ -36,7 +36,7 @@ function harness(saved={}) {
     pause(){this.paused=true;}
   }
   const context=vm.createContext({
-    Audio:AudioMock,config,document,base:'/svadba-3d/',fullscreenVideo,queueMicrotask,performance:{now:()=>100},testStats:stats,duration:value=>value,
+    Audio:AudioMock,config,themeSystem:{initial:{mode:'dark',palette:'classic'}},document,base:'/svadba-3d/',fullscreenVideo,queueMicrotask,performance:{now:()=>100},testStats:stats,duration:value=>value,
     localStorage:{getItem:key=>storage.get(key),setItem:(key,value)=>storage.set(key,value)},
     $:id=>{if(id==='entry-button')return entry;if(id==='entry-screen')return entryScreen;assert.equal(id,'utility-sound');return sound;},t:key=>key,
     pauseStory:()=>stats.storyCalls++,particleIntro:{toggle:()=>stats.storyCalls++},

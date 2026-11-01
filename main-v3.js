@@ -10,6 +10,8 @@ import { createGallery } from './gallery-v3.js';
 import { createDestinationBuffer, createDestinationParticles, createDestinationWatchdog, destinationVideoUrl } from './destination-media-v3.js';
 import { createTVVideoDiagnostics } from './tv-video-diagnostics-v3.js';
 import { createVideoPlayLog } from './video-play-log-v3.js';
+import { createThemePicker } from './theme-picker-v3.js';
+import './theme-v3.css';
 
 // Reference architecture: WeddingApp config, separate fullscreen screens,
 // interruptible GSAP section timelines, OrbitControls, flyToAndShow,
@@ -1089,14 +1091,15 @@ function animate(time) {
   overviewMaterial.opacity=.26*(1-mix*.86);
   wireMaterial.opacity=.08*(1-detail*.94);
   const selectedCountry=currentIndex>=0?countryByCity[locations[currentIndex].key]:null;
+  const geographyInk=getParticleTheme().ink;
   for(const layer of detailLayers){
     const target=layer.iso===selectedCountry?journeyMotion.focus:0;
     layer.emphasis+=(target-layer.emphasis)*(1-Math.exp(-dt*5));
     // The existing vector contour becomes dark; neighbors remain light, without fills.
     const night=mood.value,e=layer.emphasis;
     layer.material.color.setRGB((.392-.27*e)*(1-night)+(.69+.23*e)*night,(.408-.28*e)*(1-night)+(.70+.20*e)*night,(.373-.26*e)*(1-night)+(.65+.22*e)*night);
-    // Emphasis uses opacity; all Olive boundaries share the exact foreground colour.
-    layer.material.color.lerp(oliveGlobeColors.ink,mood.palette);
+    // Emphasis uses opacity; coloured boundaries share the palette foreground.
+    layer.material.color.lerp(geographyInk,mood.palette);
     layer.material.opacity=detailReady*(detail*.19+layer.emphasis*.76);
     layer.line.visible=layer.material.opacity>.002;
   }
@@ -1429,29 +1432,27 @@ bindGlobeInput(globeSurface, {
 // Independent, persistent utility preferences; audio is never loaded without a source.
 function readPreference(key,fallback){try{return localStorage.getItem(key)||fallback;}catch{return fallback;}}
 function savePreference(key,value){try{localStorage.setItem(key,value);}catch{}}
-const preferences={sound:false,theme:'dark',palette:'classic',language:readPreference('sm-language','sk')==='en'?'en':'sk'};
-const mood={value:preferences.theme==='dark'?1:0,palette:preferences.palette==='olive'?1:0};
+const themeSystem=globalThis.SMWeddingTheme;
+const preferences={sound:false,theme:themeSystem.initial.mode,palette:themeSystem.initial.palette,language:readPreference('sm-language','sk')==='en'?'en':'sk'};
+function themeTweenValues(selected){return Object.fromEntries(Object.entries(selected.colors).flatMap(([role,rgb])=>rgb.map((v,i)=>[role+['R','G','B'][i],v])));}
+const mood={value:preferences.theme==='dark'?1:0,palette:preferences.palette==='classic'?0:1,revision:0,...themeTweenValues(themeSystem.initial)};
+let palettePicker;
 function getParticleTheme() {
   if (!particleTheme) {
-    const css = getComputedStyle(document.documentElement);
     particleTheme = {
-      lightPaper:new THREE.Color('#f5f4f0'),darkPaper:new THREE.Color('#20221f'),
-      lightInk:new THREE.Color('#292a28'),darkInk:new THREE.Color('#ece9df'),
-      oliveColor:new THREE.Color(css.getPropertyValue('--olive').trim()),ivory:new THREE.Color(css.getPropertyValue('--ivory').trim()),
-      paper:new THREE.Color(),ink:new THREE.Color(),pairPaper:new THREE.Color(),pairInk:new THREE.Color(),
+      paper:new THREE.Color(),ink:new THREE.Color(),globeLine:new THREE.Color(),globePoint:new THREE.Color(),
       dark:0,olive:0,
     };
   }
-  const theme=particleTheme,n=mood.value,p=mood.palette;
-  theme.pairPaper.copy(theme.ivory).lerp(theme.oliveColor,n);
-  theme.pairInk.copy(theme.oliveColor).lerp(theme.ivory,n);
-  theme.paper.copy(theme.lightPaper).lerp(theme.darkPaper,n).lerp(theme.pairPaper,p);
-  theme.ink.copy(theme.lightInk).lerp(theme.darkInk,n).lerp(theme.pairInk,p);
-  theme.dark=n;theme.olive=p;
+  const theme=particleTheme;
+  theme.paper.setRGB(mood.paperR,mood.paperG,mood.paperB);
+  theme.ink.setRGB(mood.inkR,mood.inkG,mood.inkB);
+  theme.globeLine.setRGB(mood.lineR,mood.lineG,mood.lineB);
+  theme.globePoint.setRGB(mood.pointR,mood.pointG,mood.pointB);
+  theme.dark=mood.value;theme.olive=mood.palette; // Existing intro API: non-Classic blend weight.
   return theme;
 }
-let oliveGlobeColors;
-const appliedGlobeTheme={material:null,value:null,palette:null,markers:0};
+const appliedGlobeTheme={material:null,revision:null,markers:0};
 const music=new Audio();music.loop=true;music.preload='none';music.crossOrigin='anonymous';music.volume=0;music.id='background-music';music.hidden=true;document.body.append(music);
 let musicBlocked=false,musicPlayPending=null,musicPlayGesture=false,musicAttempt=0,musicFailed=false,toastTimer;
 let musicVideoRecoveryUntil=0,musicVideoRecoveryUsed=false;
@@ -1516,41 +1517,34 @@ function toast(key){clearTimeout(toastTimer);$('utility-toast').dataset.key=key;
 function applyGlobeTheme(){
   if(!globeMaterial)return;
   // Recolour only while the mood changes or geometry is newly created.
-  if(appliedGlobeTheme.material===globeMaterial&&appliedGlobeTheme.value===mood.value&&appliedGlobeTheme.palette===mood.palette&&appliedGlobeTheme.markers===markerData.length)return;
-  Object.assign(appliedGlobeTheme,{material:globeMaterial,value:mood.value,palette:mood.palette,markers:markerData.length});
-  // Cache linear-space colours from the same CSS tokens used by the interface.
-  if(!oliveGlobeColors){
-    const css=getComputedStyle(document.documentElement);
-    oliveGlobeColors={olive:new THREE.Color(css.getPropertyValue('--olive').trim()),ivory:new THREE.Color(css.getPropertyValue('--ivory').trim()),paper:new THREE.Color(),ink:new THREE.Color()};
-  }
+  if(appliedGlobeTheme.material===globeMaterial&&appliedGlobeTheme.revision===mood.revision&&appliedGlobeTheme.markers===markerData.length)return;
+  Object.assign(appliedGlobeTheme,{material:globeMaterial,revision:mood.revision,markers:markerData.length});
+  const theme=getParticleTheme();
   const n=mood.value;
-  oliveGlobeColors.paper.copy(oliveGlobeColors.ivory).lerp(oliveGlobeColors.olive,n);
-  oliveGlobeColors.ink.copy(oliveGlobeColors.olive).lerp(oliveGlobeColors.ivory,n);
   globeMaterial.color.setRGB(.913*(1-n)+.014*n,.905*(1-n)+.016*n,.871*(1-n)+.014*n);
   overviewMaterial.color.setRGB(.127*(1-n)+.68*n,.138*(1-n)+.70*n,.114*(1-n)+.64*n);
   wireMaterial.color.setRGB(.27*(1-n)+.65*n,.28*(1-n)+.67*n,.26*(1-n)+.61*n);
-  globeMaterial.color.lerp(oliveGlobeColors.paper,mood.palette);
-  overviewMaterial.color.lerp(oliveGlobeColors.ink,mood.palette);
-  wireMaterial.color.lerp(oliveGlobeColors.ink,mood.palette);
-  for(const item of markerData)item.mesh?.material.color.setRGB(.019*(1-n)+.84*n,.02*(1-n)+.81*n,.018*(1-n)+.72*n).lerp(oliveGlobeColors.ink,mood.palette);
+  globeMaterial.color.lerp(theme.paper,mood.palette);
+  overviewMaterial.color.lerp(theme.globeLine,mood.palette);
+  wireMaterial.color.lerp(theme.globeLine,mood.palette);
+  for(const item of markerData)item.mesh?.material.color.setRGB(.019*(1-n)+.84*n,.02*(1-n)+.81*n,.018*(1-n)+.72*n).lerp(theme.globePoint,mood.palette);
 }
-function nextThemeFor(palette){return preferences.palette===palette&&preferences.theme==='dark'?'light':'dark';}
-function themeControlLabel(palette){return t(palette==='olive'?(nextThemeFor(palette)==='dark'?'paletteOlive':'paletteIvory'):(nextThemeFor(palette)==='dark'?'classicDark':'classicLight'));}
-function selectThemePair(palette){
-  preferences.theme=nextThemeFor(palette);preferences.palette=palette;
+function selectThemePalette(palette){
+  if(!themeSystem.palettes.some(p=>p.id===palette))return;
+  preferences.palette=palette;
   savePreference('sm-theme',preferences.theme);savePreference('sm-palette',palette);applyMood();
 }
+function toggleThemeMode(){preferences.theme=preferences.theme==='dark'?'light':'dark';savePreference('sm-theme',preferences.theme);applyMood();}
+function syncThemeControls(){
+  $('utility-mood').setAttribute('aria-pressed',String(preferences.theme==='dark'));
+  $('utility-mood').setAttribute('aria-label',t(preferences.theme==='dark'?'themeLight':'themeDark'));
+  $('utility-mood').title=$('utility-mood').getAttribute('aria-label');palettePicker?.refresh();
+}
 function applyMood(animate=true){
-  document.documentElement.dataset.theme=preferences.theme;
-  document.documentElement.dataset.palette=preferences.palette;
-  $('utility-mood').setAttribute('aria-pressed',String(preferences.palette==='classic'&&preferences.theme==='dark'));
-  $('utility-mood').setAttribute('aria-label',themeControlLabel('classic'));
-  $('utility-mood').title=$('utility-mood').getAttribute('aria-label');
-  $('utility-palette').setAttribute('aria-pressed',String(preferences.palette==='olive'));
-  $('utility-palette').setAttribute('aria-label',themeControlLabel('olive'));
-  $('utility-palette').title=$('utility-palette').getAttribute('aria-label');
-  document.querySelector('meta[name="theme-color"]')?.setAttribute('content',getComputedStyle(document.documentElement).getPropertyValue('--paper').trim());
-  gsap.to(mood,{value:preferences.theme==='dark'?1:0,palette:preferences.palette==='olive'?1:0,duration:animate?duration(.5):0,overwrite:true,onUpdate:applyGlobeTheme});
+  const selected=themeSystem.apply(document.documentElement,preferences.palette,preferences.theme);
+  syncThemeControls();
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content',selected.tokens.paper);
+  gsap.to(mood,{value:preferences.theme==='dark'?1:0,palette:selected.nonClassic?1:0,revision:mood.revision+1,...themeTweenValues(selected),duration:animate?duration(.45):0,overwrite:true,onUpdate:applyGlobeTheme});
 }
 function applyLanguage(){
   $('entry-button-text').textContent=t('enter');$('entry-button').setAttribute('aria-label',t('enterWithSound'));
@@ -1591,8 +1585,7 @@ function applyLanguage(){
   const status=$('destination-video-status');
   for(const key of ['videoLoading','videoTap','videoError','videoTimeout'])if(Object.values(config.ui).some(d=>d[key]===status.textContent)){status.textContent=t(key);break;}
   $('utility-language').textContent=preferences.language.toUpperCase();attr('utility-language','language');attr('utility-gallery','photos');attr('utility-controls','controls');
-  syncSoundControl();$('utility-mood').setAttribute('aria-label',themeControlLabel('classic'));
-  $('utility-palette').setAttribute('aria-label',themeControlLabel('olive'));
+  syncSoundControl();syncThemeControls();
   if(!$('utility-toast').hidden)$('utility-toast').textContent=t($('utility-toast').dataset.key);
   $('journey-scene').setAttribute('aria-label','Journey — '+t('journey1'));
   $('transition-screen').setAttribute('aria-label',t('prepare'));
@@ -1613,8 +1606,8 @@ $('utility-gallery').onclick=()=>{
   });
   galleryChapter.open($('utility-gallery'));
 };
-$('utility-mood').onclick=()=>selectThemePair('classic');
-$('utility-palette').onclick=()=>selectThemePair('olive');
+palettePicker=createThemePicker({trigger:$('utility-palette'),container:$('utility-controls'),palettes:themeSystem.palettes,getSelection:()=>preferences.palette,onSelect:selectThemePalette,getLanguage:()=>preferences.language,getLabel:()=>t('choosePalette'),reducedMotion});
+$('utility-mood').onclick=toggleThemeMode;
 $('utility-language').onclick=()=>{preferences.language=preferences.language==='sk'?'en':'sk';savePreference('sm-language',preferences.language);applyLanguage();};
 document.addEventListener('visibilitychange',syncMusic);
 document.addEventListener('visibilitychange',()=>{destinationBuffer.pause(document.hidden);destinationParticles.visibility();resumeDeferredDestinationPlay('visibilitychange');destinationWatchdog.visibility();});

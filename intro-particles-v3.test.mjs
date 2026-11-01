@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import * as THREE from 'three';
+import './public/theme-v3.js';
 import config from './config-v3.js';
 import { createParticles, HEART_BOUNDS } from './experiments/intro-particles/particles.js';
 import { createChoreography } from './experiments/intro-particles/choreography.js';
@@ -122,13 +123,14 @@ try {
   const range = elements['#particle-intro-progress']; range.value = '890'; range.emit('input'); controller.render(390, 844);
   near(controller.progress, .89); assert.equal(controller.mode, 'manual');
   const cloudCamera = camera.position.clone();
-  for (const [paper, ink, dark, olive] of [
-    ['#f5f4f0', '#292a28', 0, 0], ['#11120f', '#f5f4f0', 1, 0],
-    ['#303D29', '#F4EBDC', 1, 1], ['#F4EBDC', '#303D29', 0, 1],
-  ]) {
-    theme.paper.set(paper); theme.ink.set(ink); theme.dark = dark; theme.olive = olive;
+  const cloudGeometry = effect.children[0].geometry;
+  for (const palette of SMWeddingTheme.palettes) for (const mode of ['light', 'dark']) {
+    const selected = SMWeddingTheme.get(palette.id, mode);
+    theme.paper.set(selected.tokens.paper); theme.ink.set(selected.tokens.ink);
+    theme.dark = Number(mode === 'dark'); theme.olive = Number(selected.nonClassic);
     controller.render(390, 844); near(controller.progress, .89);
     assert.ok(camera.position.distanceTo(cloudCamera) < 1e-9, 'Theme switching cannot restart or move the story');
+    assert.equal(effect.children[0].geometry, cloudGeometry, 'Theme changes must reuse particle geometry');
     assert.ok(effect.children[0].material.uniforms.uColor.value.equals(theme.ink));
   }
   language = 'en'; controller.refreshLanguage();
@@ -161,7 +163,7 @@ try {
   controller.toggle(); controller.suspend('context'); controller.resume('context');
   assert.equal(controller.mode, 'manual'); assert.equal(clock().paused(), true);
   assert.ok(modes.includes('auto') && modes.includes('manual') && modes.includes('complete'));
-  console.log('Native intro controller passed: one scene, synchronous first frame, manual takeover/seek, four themes without reset, final camera handoff, cleanup, visibility/context pause and restart.');
+  console.log('Native intro controller passed: one scene, synchronous first frame, manual takeover/seek, twenty themes without reset or geometry replacement, final camera handoff, cleanup, visibility/context pause and restart.');
 } finally {
   controller?.leave(); gsap.globalTimeline.clear(); gsap.ticker.sleep();
   for (const [key, descriptor] of oldGlobals) {

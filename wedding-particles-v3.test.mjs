@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import * as THREE from 'three';
+import './public/theme-v3.js';
 import { createWeddingParticles } from './wedding-particles-v3.js';
 const { gsap } = createRequire(import.meta.url)('gsap');
 const mainSource = await readFile(new URL('./main-v3.js', import.meta.url), 'utf8');
@@ -208,13 +209,14 @@ try {
   assert.ok(reveal > 0 && reveal < 1, 'Native HTML should crossfade only after particles reach the invitation.');
   const beforeTheme = camera.position.clone(), beforeQuaternion = camera.quaternion.clone();
   const clock = currentClock(); const progress = effectPoints().material.uniforms.uProgress.value;
-  for (const [paper, ink, dark, olive] of [
-    ['#f5f4f0', '#292a28', 0, 0], ['#11120f', '#f5f4f0', 1, 0],
-    ['#303D29', '#F4EBDC', 1, 1], ['#F4EBDC', '#303D29', 0, 1],
-  ]) {
-    theme.paper.set(paper); theme.ink.set(ink); theme.dark = dark; theme.olive = olive;
+  const themeGeometry = effectPoints().geometry;
+  for (const palette of SMWeddingTheme.palettes) for (const mode of ['light', 'dark']) {
+    const selected = SMWeddingTheme.get(palette.id, mode);
+    theme.paper.set(selected.tokens.paper); theme.ink.set(selected.tokens.ink);
+    theme.dark = Number(mode === 'dark'); theme.olive = Number(selected.nonClassic);
     controller.render(390, 844);
     near(effectPoints().material.uniforms.uProgress.value, progress); assert.ok(camera.position.distanceTo(beforeTheme) < 1e-8);
+    assert.equal(effectPoints().geometry, themeGeometry, 'Theme changes must reuse particle geometry');
     assert.ok(camera.quaternion.angleTo(beforeQuaternion) < 1e-7, 'Palette changes cannot restart camera motion.');
     const colors = Object.values(effectPoints().material.uniforms).map(uniform => uniform.value).filter(value => value?.isColor);
     assert.ok(colors.some(color => color.equals(theme.ink)), 'The particle ink must follow the exact active palette.');
@@ -264,7 +266,7 @@ try {
   controller.dispose(); assert.deepEqual(scene.children, originalSceneChildren);
   await checkNativeRouting();
 
-  console.log('Wedding particles: synchronous frame, cancellation/restore, one-time settled handoff, four palettes, resize/translation projection, suspension, target validation, direct fallback and asynchronous routing races passed.');
+  console.log('Wedding particles: synchronous frame, cancellation/restore, one-time settled handoff, twenty themes without geometry replacement, resize/translation projection, suspension, target validation, direct fallback and asynchronous routing races passed.');
 } finally {
   controller.leave(); controller.dispose(); gsap.globalTimeline.clear(); gsap.ticker.sleep();
   for (const [key, descriptor] of oldGlobals) {
