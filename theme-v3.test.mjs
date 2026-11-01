@@ -80,7 +80,7 @@ vm.runInNewContext(bootstrap, blockedContext);
 assert.equal(blockedContext.document.documentElement.dataset.palette, 'classic');
 assert.equal(blockedContext.document.documentElement.dataset.mode, 'dark');
 const html = await readFile(new URL('./index-v3.html', import.meta.url), 'utf8');
-const bootstrapTag = html.match(/<script\b[^>]*src=["'][^"']*theme-v3\.js["'][^>]*>/)?.[0];
+const bootstrapTag = html.match(/<script\b[^>]*src=["'][^"']*theme-v3\.js(?:\?[^"']*)?["'][^>]*>/)?.[0];
 assert.ok(bootstrapTag, 'Shared palette bootstrap must run in the document head');
 assert.ok(!/\b(?:async|defer|type=["']module)/.test(bootstrapTag), 'First-paint bootstrap must be blocking');
 assert.ok(html.indexOf(bootstrapTag) < html.indexOf('<style'), 'Theme must hydrate before the first background style');
