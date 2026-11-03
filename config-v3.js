@@ -574,7 +574,7 @@ const config = {
     ]
   },
   "audio": {
-    "backgroundMusic": "audio/shes-a-rainbow.mp3?v=cb14e941"
+    "backgroundMusic": "audio/shes-a-rainbow.mp3?v=ee17ccb5"
   },
   "gallery": {
     "scriptUrl": "https://script.google.com/macros/s/AKfycbwxFnRegApDLUKB1I58dKVf9JHbLan495tptu_wj-7XJHOy3ttBThbZtCsJEe7oiFK46w/exec"

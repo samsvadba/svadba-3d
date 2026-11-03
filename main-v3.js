@@ -181,7 +181,7 @@ function prepareFullscreenVideo(loc) {
   destinationSourceFallback=false;
   destinationVideo.src=tvVideoMode&&tvVideoVariant!==1?loc.fullscreenVideo:destinationVideoUrl(loc.fullscreenVideo);destinationVideo.load();
   $('destination-video-title').textContent=cityName(loc);
-  $('destination-video-country').textContent=countryText(loc);
+  $('destination-video-country').textContent=loc.key==='trnava'?memoryLocation(loc):countryText(loc);
   const highlight=$('destination-video-highlight');
   highlight.hidden=!loc.instagramHighlight;
   $('destination-video-highlight-text').textContent=t('moreFromTrip');
@@ -1577,7 +1577,7 @@ function applyLanguage(){
   for(const item of markerData){const loc=locations[item.index];item.element.setAttribute('aria-label',cityName(loc)+' — '+countryText(loc));item.element.querySelector('.city-subname').textContent=countryText(loc);item.element.querySelector('.city-name').textContent=cityName(loc);}
   if(currentIndex>=0){
     const loc=locations[currentIndex];$('modal-location').textContent=memoryLocation(loc);
-    $('destination-video-country').textContent=countryText(loc);
+    $('destination-video-country').textContent=loc.key==='trnava'?memoryLocation(loc):countryText(loc);
     $('destination-video-highlight-text').textContent=t('moreFromTrip');
     $('modal-city').textContent=cityName(loc);$('destination-video-title').textContent=cityName(loc);
     if($('media-error').classList.contains('empty-memory'))$('media-error').textContent=t('comingSoon');
