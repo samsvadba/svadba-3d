@@ -6,17 +6,10 @@ import * as THREE from 'three';
 import './public/theme-v3.js';
 
 const api = globalThis.SMWeddingTheme;
-const ids = ['classic', 'olive', 'red', 'orange', 'yellow', 'green', 'turquoise', 'blue', 'indigo', 'purple'];
+const ids = ['classic', 'olive', 'purple'];
 const expected = {
   classic: ['#20221f', '#f5f4f0', '#ece9df', '#292a28'],
   olive: ['#303D29', '#F4EBDC', '#F4EBDC', '#303D29'],
-  red: ['#AC2846', '#FF8294', '#4B1423', '#FFA9B4', '#FF9BAE'],
-  orange: ['#AE4308', '#FFB15A', '#4F2008', '#FFC98E', '#FFAD66'],
-  yellow: ['#806300', '#FFDB4D', '#423300', '#FFE883', '#FFE16A'],
-  green: ['#1E6C46', '#91D68E', '#143A26', '#B8E9AC', '#A5E894'],
-  turquoise: ['#006A79', '#62D4D4', '#003E49', '#9AE7E3', '#6AE4E4'],
-  blue: ['#263DA2', '#8EB8FF', '#15235D', '#B4CFFF', '#88B7FF'],
-  indigo: ['#423A92', '#ADACF2', '#282250', '#CECAFF', '#B4B0FF'],
   purple: ['#6B2D96', '#C8A2E9', '#3F1B5F', '#E0C5F5', '#D6AEFF'],
 };
 const linear = hex => [1, 3, 5].map(i => {
@@ -60,6 +53,9 @@ for (const id of ids) for (const mode of ['light', 'dark']) {
   assert.equal(restored, theme, 'Existing storage keys must restore the exact selection');
 }
 assert.equal(api.get('unknown', 'light'), api.get('classic', 'light'));
+for (const removed of ['red', 'orange', 'yellow', 'green', 'turquoise', 'blue', 'indigo']) {
+  for (const mode of ['light', 'dark']) assert.equal(api.restore(storage({'sm-palette': removed, 'sm-theme': mode})), api.get('classic', mode), 'Removed saved colors must fall back safely and preserve mode');
+}
 assert.equal(api.get('purple', 'invalid'), api.get('purple', 'dark'));
 assert.equal(api.restore(storage({})), api.get());
 assert.equal(api.restore({getItem() {throw new Error('Storage blocked');}}), api.get());
@@ -146,4 +142,4 @@ for (const id of ids) for (const mode of ['light', 'dark']) {
   context.applyGlobeTheme(); nearColor(context.getParticleTheme().paper, particle.paper);
 }
 markerGeometry.dispose(); markerMaterial.dispose(); globeMaterial.dispose(); overviewMaterial.dispose(); wireMaterial.dispose();
-console.log('Theme V3 passed: all twenty exact themes, original palettes, contrast, linear WebGL colors and real material reuse, blocked/legacy storage, blocking hydration, and independent palette/mode controls.');
+console.log('Theme V3 passed: all six exact themes, original palettes, contrast, linear WebGL colors and real material reuse, removed/blocked/legacy storage, blocking hydration, and independent palette/mode controls.');

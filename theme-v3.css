@@ -30,8 +30,8 @@ html[data-colored="true"] .w-input::placeholder{color:var(--muted);opacity:1}
 /* The picker travels with the existing utility bar into the gallery's modal dialog. */
 #utility-controls .theme-picker{
   position:absolute;right:0;bottom:calc(100% + 12px);z-index:5;
-  display:grid;grid-template-columns:repeat(5,minmax(0,44px));gap:2px;
-  width:240px;max-width:calc(100vw - 24px);padding:5px;
+  display:grid;grid-template-columns:repeat(3,minmax(0,44px));gap:2px;
+  width:146px;max-width:calc(100vw - 24px);padding:5px;
   color:var(--ink);background:var(--paper);border:1px solid var(--border,var(--line));border-radius:8px;
   box-shadow:0 6px 24px color-mix(in srgb,var(--ink) 14%,transparent);
   opacity:0;visibility:hidden;pointer-events:none;transform:translateY(5px) scale(.96);transform-origin:80% 100%;

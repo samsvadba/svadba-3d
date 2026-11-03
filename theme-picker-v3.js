@@ -27,11 +27,11 @@ export function createThemePicker({trigger,container,palettes,getSelection,onSel
   }
   trigger.addEventListener('click',()=>opened?close(true):open());
   panel.addEventListener('keydown',event=>{
-    const i=buttons.indexOf(document.activeElement);let next;
+    const i=buttons.indexOf(document.activeElement),columns=Math.min(3,buttons.length);let next;
     if(event.key==='ArrowRight')next=(i+1)%buttons.length;
     else if(event.key==='ArrowLeft')next=(i+buttons.length-1)%buttons.length;
-    else if(event.key==='ArrowDown')next=(i+5)%buttons.length;
-    else if(event.key==='ArrowUp')next=(i+buttons.length-5)%buttons.length;
+    else if(event.key==='ArrowDown')next=(i+columns)%buttons.length;
+    else if(event.key==='ArrowUp')next=(i+buttons.length-columns)%buttons.length;
     else if(event.key==='Home')next=0;else if(event.key==='End')next=buttons.length-1;
     else if(event.key==='Tab'){close();return;}
     if(next!==undefined){event.preventDefault();event.stopPropagation();buttons.forEach((b,j)=>b.tabIndex=j===next?0:-1);buttons[next].focus();}
