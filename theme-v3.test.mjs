@@ -10,7 +10,7 @@ const ids = ['classic', 'olive', 'purple'];
 const expected = {
   classic: ['#20221f', '#f5f4f0', '#ece9df', '#292a28'],
   olive: ['#303D29', '#F4EBDC', '#F4EBDC', '#303D29'],
-  purple: ['#6B2D96', '#C8A2E9', '#3F1B5F', '#E0C5F5', '#D6AEFF'],
+  purple: ['#5B247F', '#C8A2E9', '#C8A2E9', '#5B247F'],
 };
 const linear = hex => [1, 3, 5].map(i => {
   const v = parseInt(hex.slice(i, i + 2), 16) / 255;
@@ -24,7 +24,7 @@ function root() {
 assert.deepEqual(api.palettes.map(p => p.id), ids);
 assert.equal(api.initial.palette, 'classic'); assert.equal(api.initial.mode, 'dark');
 for (const id of ids) for (const mode of ['light', 'dark']) {
-  const theme = api.get(id, mode), [dark, light, third, fourth, accent] = expected[id];
+  const theme = api.get(id, mode), [dark, light, third, fourth] = expected[id];
   assert.equal(theme.palette, id); assert.equal(theme.mode, mode);
   assert.equal(theme.tokens.paper, mode === 'dark' ? dark : light);
   assert.equal(theme.colored, !['classic', 'olive'].includes(id));
@@ -34,9 +34,13 @@ for (const id of ids) for (const mode of ['light', 'dark']) {
     assert.match(theme.tokens[name], /^#[0-9a-f]{6}$/i, `${id}/${mode}: ${name}`);
   }
   if (theme.colored) {
-    assert.equal(theme.tokens.ink, mode === 'dark' ? '#FFFFFF' : third);
-    assert.equal(theme.tokens.surface, mode === 'dark' ? third : fourth);
-    assert.equal(theme.tokens.accent, mode === 'dark' ? accent : dark);
+    const foreground = mode === 'dark' ? third : fourth;
+    for (const name of ['ink', 'muted', 'accent', 'line', 'border', 'globe-line', 'globe-point', 'origin', 'connector', 'selected-border']) {
+      assert.equal(theme.tokens[name], foreground, 'Purple graphics and text must use the opposite purple shade');
+    }
+    for (const name of ['surface', 'bg-secondary', 'media-paper', 'video-backdrop', 'embed-paper']) assert.equal(theme.tokens[name], theme.tokens.paper);
+    assert.equal(theme.tokens['video-ink'], light, 'Video captions retain the light purple foreground');
+    assert.equal(api.get(id, mode === 'dark' ? 'light' : 'dark').tokens.ink, theme.tokens.paper, 'Mode changes must swap the same two purple colors');
     for (const name of ['ink', 'muted']) assert.ok(api.contrast(theme.tokens[name], theme.tokens.paper) >= 4.5, `${id}/${mode}: ${name} requires 4.5:1`);
     for (const name of ['border', 'globe-line', 'globe-point']) assert.ok(api.contrast(theme.tokens[name], theme.tokens.paper) >= 3, `${id}/${mode}: ${name} requires 3:1`);
   } else assert.equal(theme.tokens.ink, mode === 'dark' ? third : fourth);
