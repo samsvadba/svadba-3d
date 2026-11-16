@@ -1,7 +1,7 @@
 const PLANETS = [
   { body: .095, orbit: 7.7, heading: -.23, tilt: .22, phase: .27, speed: .031, opacity: .40, saturn: true },
   { body: .060, orbit: 5.8, heading: -.46, tilt: .67, phase: -.43, speed: .047, opacity: .255 },
-  { body: .037, orbit: 4.6, heading: .27, tilt: .39, phase: .38, speed: .067, opacity: .22 },
+  { body: .037, orbit: 4.6, heading: -2.375, tilt: .39, phase: .38, speed: .067, opacity: .22 },
   { body: .049, orbit: 7.1, heading: .31, tilt: 1.08, phase: .64, speed: .038, opacity: .25 },
   { body: .030, orbit: 5.1, heading: -.10, tilt: -.47, phase: .44, speed: .058, opacity: .20 },
   { body: .031, orbit: 9.7, heading: .66, tilt: -.09, phase: -.54, speed: .023, opacity: .20, desktop: true },
@@ -134,12 +134,15 @@ export function createJourneyOrbits(THREE, scene, globeRadius) {
     transparent:true, depthWrite:!!saturn,
   });
   const planets = PLANETS.map(definition => {
-    // Each orbit is a tilted plane in world space. Turning the globe also
-    // changes the view of the planets, including the angle of the ring.
+    // Preserve each planet's initial position and the tilt of Saturn's ring.
+    // Its subsequent path revolves around Earth's north–south axis.
     const x = Math.cos(definition.heading), z = Math.sin(definition.heading);
     const tilt = Math.cos(definition.tilt);
     const away = new THREE.Vector3(-x * tilt, -Math.sin(definition.tilt), -z * tilt);
     const across = new THREE.Vector3(-z, 0, x);
+    const radius = globeRadius * definition.orbit;
+    const start = away.clone().multiplyScalar(Math.cos(definition.phase) * radius)
+      .addScaledVector(across, Math.sin(definition.phase) * radius);
     const material = planetMaterial(definition.saturn);
     const mesh = new THREE.Mesh(sphere, material);
     mesh.scale.setScalar(globeRadius * definition.body);
@@ -149,7 +152,12 @@ export function createJourneyOrbits(THREE, scene, globeRadius) {
       mesh.add(ring);
     }
     group.add(mesh);
-    return {definition, away, across, mesh, material};
+    return {
+      definition, mesh, material, radius,
+      height: start.y,
+      axisRadius: Math.hypot(start.x, start.z),
+      azimuth: Math.atan2(start.z, start.x),
+    };
   });
 
   const starMaterial = new THREE.MeshBasicMaterial({transparent: true, depthWrite: false});
@@ -176,16 +184,11 @@ export function createJourneyOrbits(THREE, scene, globeRadius) {
   // At a city close-up the globe may fill the entire canvas. Put a quiet
   // foreground layer at the edges so it remains visible even at that zoom.
   const edgeStars = createEdgeStars(THREE, lighting.uInk);
-  const companion = new THREE.Mesh(sphere, planetMaterial(false));
-  companion.name = 'Journey companion planet';
-  companion.renderOrder = 3;
-  group.add(edgeStars, companion);
+  group.add(edgeStars);
 
   const towardCamera = new THREE.Vector3();
-  const projected = new THREE.Vector3();
   const { smoothstep } = THREE.MathUtils;
   let orbitTime = 0;
-  let companionReveal;
 
   return {
     update({camera, distance, overviewDistance, dt = 0, theme, reducedMotion = false, visible = true, pixelRatio = 1}) {
@@ -201,14 +204,11 @@ export function createJourneyOrbits(THREE, scene, globeRadius) {
       lighting.uNight.value=night;
       const globeProjection = Math.sqrt(distance * distance - globeRadius * globeRadius) / globeRadius;
       towardCamera.copy(camera.position).normalize();
-      let planetCoverage = 0;
-      for (const {definition, away, across, mesh, material} of planets) {
-        const {desktop, phase, speed, orbit, saturn} = definition;
+      for (const {definition, mesh, material, radius, height, axisRadius, azimuth} of planets) {
+        const {desktop, speed, saturn} = definition;
         if (opacity <= .002 || (desktop && mobile)) { mesh.visible = false; continue; }
-        const angle = phase + orbitTime * speed;
-        const radius = globeRadius * orbit;
-        mesh.position.copy(away).multiplyScalar(Math.cos(angle) * radius)
-          .addScaledVector(across, Math.sin(angle) * radius);
+        const angle = azimuth - orbitTime * speed;
+        mesh.position.set(axisRadius * Math.cos(angle), height, axisRadius * Math.sin(angle));
         const depth = mesh.position.dot(towardCamera);
         const projectedOffset = Math.sqrt(Math.max(0, radius * radius - depth * depth))
           * globeProjection / Math.max(1, distance - depth);
@@ -217,13 +217,6 @@ export function createJourneyOrbits(THREE, scene, globeRadius) {
         mesh.visible = fade > .002;
         material.uniforms.uOpacity.value = fade * (definition.opacity + .065 * night);
         if (saturn) ringMaterial.uniforms.uOpacity.value = fade * (.34 + .085 * night);
-        if (mesh.visible) {
-          projected.copy(mesh.position).project(camera);
-          if (Math.abs(projected.z) < 1) {
-            const edge = Math.max(Math.abs(projected.x), Math.abs(projected.y));
-            planetCoverage = Math.max(planetCoverage, fade * (1 - smoothstep(edge, .69, .99)));
-          }
-        }
       }
       stars.visible = opacity > .002;
       stars.count = mobile ? MOBILE_STARS : DESKTOP_STARS;
@@ -238,19 +231,6 @@ export function createJourneyOrbits(THREE, scene, globeRadius) {
         .04 * towardCamera.x + .023 * Math.sin(orbitTime * .18),
         .035 * towardCamera.z + .018 * Math.cos(orbitTime * .13),
       );
-
-      const targetReveal = 1 - smoothstep(planetCoverage, .22, .77);
-      if (companionReveal === undefined || reducedMotion) companionReveal = targetReveal;
-      else companionReveal += (targetReveal - companionReveal) * (1 - Math.exp(-dt * 9));
-      companion.visible = companionReveal > .01;
-      companion.material.uniforms.uOpacity.value = companionReveal * (.42 + .085 * night);
-      const x = .55 + .11 * towardCamera.x + .055 * Math.sin(orbitTime * .17);
-      const y = .63 + .055 * towardCamera.z + .039 * Math.cos(orbitTime * .14);
-      const projection = camera.projectionMatrix.elements;
-      const depth = 1;
-      companion.position.set((x + projection[8]) * depth / projection[0], (y + projection[9]) * depth / projection[5], -depth)
-        .applyQuaternion(camera.quaternion).add(camera.position);
-      companion.scale.setScalar((mobile ? .015 : .018) * depth / projection[5]);
     },
     hide() { group.visible = false; },
   };
