@@ -8,7 +8,7 @@ import './public/theme-v3.js';
 const api = globalThis.SMWeddingTheme;
 const ids = ['classic', 'olive', 'purple'];
 const expected = {
-  classic: ['#20221f', '#f5f4f0', '#ece9df', '#292a28'],
+  classic: ['#20221f', '#f8f8f8', '#ece9df', '#282828'],
   olive: ['#303D29', '#F4EBDC', '#F4EBDC', '#303D29'],
   purple: ['#5B247F', '#C8A2E9', '#C8A2E9', '#5B247F'],
 };
@@ -147,8 +147,16 @@ for (const id of ids) for (const mode of ['light', 'dark']) {
     nearColor(wireMaterial.color, new THREE.Color(selected.tokens['globe-line']));
     nearColor(markerMaterial.color, new THREE.Color(selected.tokens['globe-point']));
   } else {
-    nearColor(globeMaterial.color, new THREE.Color().setRGB(.913 * (1 - n) + .014 * n, .905 * (1 - n) + .016 * n, .871 * (1 - n) + .014 * n));
-    nearColor(overviewMaterial.color, new THREE.Color().setRGB(.127 * (1 - n) + .68 * n, .138 * (1 - n) + .70 * n, .114 * (1 - n) + .64 * n));
+    nearColor(globeMaterial.color, n ? new THREE.Color().setRGB(.014,.016,.014) : new THREE.Color().setScalar(.94));
+    nearColor(overviewMaterial.color, n ? new THREE.Color().setRGB(.68,.70,.64) : new THREE.Color().setScalar(.13));
+    if(!n) {
+      nearColor(wireMaterial.color, new THREE.Color().setScalar(.27));
+      nearColor(markerMaterial.color, new THREE.Color().setScalar(.02));
+      for(const token of ['paper','ink','line','surface','media-paper','connector','selected-border','empty-ink']) {
+        const hex=selected.tokens[token];
+        assert.equal(hex.slice(1,3).repeat(3),hex.slice(1),`Classic light ${token} should be neutral gray`);
+      }
+    }
   }
   assert.equal(context.globeMaterial, globeMaterial); assert.equal(context.overviewMaterial, overviewMaterial); assert.equal(context.wireMaterial, wireMaterial);
   assert.equal(mesh.geometry, markerGeometry); assert.equal(mesh.material, markerMaterial); assert.deepEqual(mesh.position.toArray(), [1, 2, 3]);

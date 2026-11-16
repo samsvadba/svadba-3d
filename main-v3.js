@@ -6,6 +6,7 @@ import './style-v3.css';
 import { createWedding } from './wedding-v3.js';
 import { createOrigins } from './origins-v3.js';
 import { bindGlobeInput } from './globe-input-v3.js';
+import { createJourneyOrbits } from './journey-orbits-v3.js';
 import { createGallery } from './gallery-v3.js';
 import { createDestinationBuffer, createDestinationParticles, createDestinationWatchdog, createJourneyWakeLock, destinationVideoSources, destinationVideoUrl } from './destination-media-v3.js';
 import { createTVVideoDiagnostics } from './tv-video-diagnostics-v3.js';
@@ -49,6 +50,8 @@ const journeyMotion = { focus: 0, spin: 0 };
 const entranceSweep = Math.PI * 1.65;
 let globeFlight, lastFrame = 0, idleSince = 0, dragging = false, layoutDirty = true;
 let globeMesh, globeMaterial, overviewMaterial, overviewGeometry, wireMaterial, detailPromise, detailReady = 0;
+let journeyOrbits;
+const orbitFrame = {};
 const detailLayers = [];
 const countryByCity=Object.fromEntries(locations.map(loc=>[loc.key,loc.countryCode]));
 const layout = { minY:100, maxY:500, margin:20, modal:null };
@@ -450,6 +453,7 @@ videoScene.addEventListener('keydown',event=>{
 
 function setState(next) {
   state = next;
+  if(next!=='journey')journeyOrbits?.hide();
   if(next==='wedding')destinationBuffer.clear();
   if(next==='intro'||next==='wedding'){pauseStory();}
   syncStoryUI();
@@ -945,8 +949,9 @@ async function ensureGlobeScene() {
       scene.add(globeGroup);
       originMarkers=createOrigins(globeSurface,config.origins,{THREE,gsap,reducedMotion,radius:GLOBE_RADIUS+.17});
       originMarkers.refreshLanguage(t('originLabel'));
-      globeMesh = new THREE.Mesh(new THREE.SphereGeometry(GLOBE_RADIUS, 128, 96), (globeMaterial=new THREE.MeshBasicMaterial({color: 0xf5f4f0})));
+      globeMesh = new THREE.Mesh(new THREE.SphereGeometry(GLOBE_RADIUS, 128, 96), (globeMaterial=new THREE.MeshBasicMaterial({color: 0xf8f8f8})));
       globeGroup.add(globeMesh);
+      journeyOrbits=createJourneyOrbits(THREE,scene,GLOBE_RADIUS);
       wireMaterial=new THREE.LineBasicMaterial({color:0x8e918c,transparent:true,opacity:.08,depthWrite:false});
       const netSource=new THREE.IcosahedronGeometry(GLOBE_RADIUS,3);
       const netEdges=new THREE.WireframeGeometry(netSource);
@@ -1106,7 +1111,8 @@ function animate(time) {
     controls.update(dt);
   }
   camera.updateMatrixWorld();globeGroup.updateMatrixWorld(true);
-  const detail=smoothstep(0,1,(36-camera.position.length())/18);
+  const distance=camera.position.length();
+  const detail=smoothstep(0,1,(36-distance)/18);
   if(detail>0&&!detailPromise)loadGeographicDetail();
   if(detailLayers.length)detailReady+=(1-detailReady)*(1-Math.exp(-dt*3));
   const mix=detail*detailReady;
@@ -1118,13 +1124,15 @@ function animate(time) {
   overviewMaterial.opacity=overviewOpacity*(1-mix*.90);
   wireMaterial.opacity=.08*(1-detail*.94);
   const selectedCountry=currentIndex>=0?countryByCity[locations[currentIndex].key]:null;
-  const geographyInk=getParticleTheme().ink;
+  const theme=getParticleTheme();
+  const geographyInk=theme.ink;
   for(const layer of detailLayers){
     const target=layer.iso===selectedCountry?journeyMotion.focus:0;
     layer.emphasis+=(target-layer.emphasis)*(1-Math.exp(-dt*5));
     // Keep the selected contour distinct without making it opaque.
     const e=layer.emphasis;
-    layer.material.color.setRGB((.392-.27*e)*(1-night)+(.69+.23*e)*night,(.408-.28*e)*(1-night)+(.70+.20*e)*night,(.373-.26*e)*(1-night)+(.65+.22*e)*night);
+    const light=.39-.27*e;
+    layer.material.color.setRGB(light*(1-night)+(.69+.23*e)*night,light*(1-night)+(.70+.20*e)*night,light*(1-night)+(.65+.22*e)*night);
     // Emphasis uses opacity; coloured boundaries share the palette foreground.
     layer.material.color.lerp(geographyInk,mood.palette);
     layer.material.opacity=detailReady*(borderOpacity+(selectedOpacity-borderOpacity)*e);
@@ -1132,6 +1140,12 @@ function animate(time) {
   }
   updateGeographicLabels(dt);
   originMarkers?.update(camera,globeGroup,view.width,view.height,state==='journey'&&!cameraMoving&&!entranceActive?Number(gsap.getProperty($('label-layer'),'opacity')):0,state==='journey'&&!cameraMoving);
+  if(state==='journey'){
+    orbitFrame.camera=camera;orbitFrame.distance=distance;orbitFrame.overviewDistance=overviewDistance();
+    orbitFrame.dt=dt;orbitFrame.theme=theme;orbitFrame.reducedMotion=reducedMotion.matches;
+    orbitFrame.visible=!cameraMoving&&!entranceActive;
+    journeyOrbits.update(orbitFrame);
+  }
   renderer.render(scene,camera);
   updateConnector();
 }
@@ -1575,13 +1589,13 @@ function applyGlobeTheme(){
   Object.assign(appliedGlobeTheme,{material:globeMaterial,revision:mood.revision,markers:markerData.length});
   const theme=getParticleTheme();
   const n=mood.value;
-  globeMaterial.color.setRGB(.913*(1-n)+.014*n,.905*(1-n)+.016*n,.871*(1-n)+.014*n);
-  overviewMaterial.color.setRGB(.127*(1-n)+.68*n,.138*(1-n)+.70*n,.114*(1-n)+.64*n);
-  wireMaterial.color.setRGB(.27*(1-n)+.65*n,.28*(1-n)+.67*n,.26*(1-n)+.61*n);
+  globeMaterial.color.setRGB(.94*(1-n)+.014*n,.94*(1-n)+.016*n,.94*(1-n)+.014*n);
+  overviewMaterial.color.setRGB(.13*(1-n)+.68*n,.13*(1-n)+.70*n,.13*(1-n)+.64*n);
+  wireMaterial.color.setRGB(.27*(1-n)+.65*n,.27*(1-n)+.67*n,.27*(1-n)+.61*n);
   globeMaterial.color.lerp(theme.paper,mood.palette);
   overviewMaterial.color.lerp(theme.globeLine,mood.palette);
   wireMaterial.color.lerp(theme.globeLine,mood.palette);
-  for(const item of markerData)item.mesh?.material.color.setRGB(.019*(1-n)+.84*n,.02*(1-n)+.81*n,.018*(1-n)+.72*n).lerp(theme.globePoint,mood.palette);
+  for(const item of markerData)item.mesh?.material.color.setRGB(.02*(1-n)+.84*n,.02*(1-n)+.81*n,.02*(1-n)+.72*n).lerp(theme.globePoint,mood.palette);
 }
 function selectThemePalette(palette){
   if(!themeSystem.palettes.some(p=>p.id===palette))return;
@@ -1597,7 +1611,6 @@ function syncThemeControls(){
 function applyMood(animate=true){
   const selected=themeSystem.apply(document.documentElement,preferences.palette,preferences.theme);
   syncThemeControls();
-  document.querySelector('meta[name="theme-color"]')?.setAttribute('content',selected.tokens.paper);
   gsap.to(mood,{value:preferences.theme==='dark'?1:0,palette:selected.nonClassic?1:0,revision:mood.revision+1,...themeTweenValues(selected),duration:animate?duration(.45):0,overwrite:true,onUpdate:applyGlobeTheme});
 }
 function applyLanguage(){

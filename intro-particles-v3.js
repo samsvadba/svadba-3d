@@ -185,17 +185,17 @@ export function createParticleIntro({
   }
   function paintGeography(pose, theme) {
     const n = Number(theme.dark), palette = Number(theme.olive);
-    globeMaterial.color.setRGB(.913 * (1 - n) + .014 * n, .905 * (1 - n) + .016 * n, .871 * (1 - n) + .014 * n).lerp(theme.paper, palette);
-    overviewMaterial.color.setRGB(.127 * (1 - n) + .68 * n, .138 * (1 - n) + .70 * n, .114 * (1 - n) + .64 * n).lerp(theme.ink, palette);
-    wireMaterial.color.setRGB(.27 * (1 - n) + .65 * n, .28 * (1 - n) + .67 * n, .26 * (1 - n) + .61 * n).lerp(theme.ink, palette);
-    markerColor.setRGB(.019 * (1 - n) + .84 * n, .02 * (1 - n) + .81 * n, .018 * (1 - n) + .72 * n).lerp(theme.ink, palette);
+    globeMaterial.color.setRGB(.94 * (1 - n) + .014 * n, .94 * (1 - n) + .016 * n, .94 * (1 - n) + .014 * n).lerp(theme.paper, palette);
+    overviewMaterial.color.setRGB(.13 * (1 - n) + .68 * n, .13 * (1 - n) + .70 * n, .13 * (1 - n) + .64 * n).lerp(theme.ink, palette);
+    wireMaterial.color.setRGB(.27 * (1 - n) + .65 * n, .27 * (1 - n) + .67 * n, .27 * (1 - n) + .61 * n).lerp(theme.ink, palette);
+    markerColor.setRGB(.02 * (1 - n) + .84 * n, .02 * (1 - n) + .81 * n, .02 * (1 - n) + .72 * n).lerp(theme.ink, palette);
     for (const origin of originData) origin.material.color.copy(markerColor);
     const detail = smooth(0, 1, (36 - camera.position.length()) / 18);
     const mix = detailLayers.length ? detail : 0;
     overviewMaterial.opacity = .26 * (1 - mix * .86) * pose.geographyOpacity;
     wireMaterial.opacity = .08 * (1 - detail * .94) * pose.geographyOpacity;
     for (const layer of detailLayers) {
-      layer.material.color.setRGB(.392 * (1 - n) + .69 * n, .408 * (1 - n) + .70 * n, .373 * (1 - n) + .65 * n).lerp(theme.ink, palette);
+      layer.material.color.setRGB(.39 * (1 - n) + .69 * n, .39 * (1 - n) + .70 * n, .39 * (1 - n) + .65 * n).lerp(theme.ink, palette);
       layer.material.opacity = detail * .19 * pose.geographyOpacity;
       if (layer.iso === 'SVK') {
         layer.material.opacity = THREE.MathUtils.lerp(layer.material.opacity, .9 * pose.geographyOpacity, pose.originFocus);

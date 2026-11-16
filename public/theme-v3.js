@@ -2,7 +2,7 @@
 (function(scope){
   'use strict';
   const palettes=Object.freeze([
-    {id:'classic',sk:'Neutrálna',en:'Classic',dark:'#20221f',light:'#f5f4f0',darkInk:'#ece9df',lightInk:'#292a28'},
+    {id:'classic',sk:'Neutrálna',en:'Classic',dark:'#20221f',light:'#f8f8f8',darkInk:'#ece9df',lightInk:'#282828'},
     {id:'olive',sk:'Olive & Ivory',en:'Olive & Ivory',dark:'#303D29',light:'#F4EBDC',darkInk:'#F4EBDC',lightInk:'#303D29'},
     {id:'purple',sk:'Fialová / ametystová',en:'Purple / amethyst',dark:'#5B247F',light:'#C8A2E9'},
   ].map(Object.freeze));
@@ -17,12 +17,13 @@
     if(cache.has(key))return cache.get(key);
     const colored=!['classic','olive'].includes(p.id),nonClassic=p.id!=='classic';
     const paper=night?p.dark:p.light,ink=colored?(night?p.light:p.dark):night?p.darkInk:p.lightInk;
-    const muted=ink,line=nonClassic?ink:night?'#56594f':'#d5d3cc',accent=ink;
+    const muted=ink,line=nonClassic?ink:night?'#56594f':'#d5d5d5',accent=ink;
+    const surface=nonClassic?paper:night?'#292c26':'#ededed';
     const tokens={paper,ink,muted,accent,line,border:line,
-      surface:nonClassic?paper:night?'#292c26':'#e8e6df',
+      surface,
       'bg-secondary':paper,'globe-line':ink,'globe-point':ink,
-      connector:nonClassic?ink:night?'#c1c4b8':'#777a72','selected-border':nonClassic?ink:night?'#aeb3a2':'#8b8c84',
-      'media-paper':nonClassic?paper:night?'#292c26':'#e8e6df',origin:colored?ink:night?'#c48b94':'#80434c','empty-ink':nonClassic?muted:'#77796f',
+      connector:nonClassic?ink:night?'#c1c4b8':'#777777','selected-border':nonClassic?ink:night?'#aeb3a2':'#8b8b8b',
+      'media-paper':surface,origin:colored?ink:night?'#c48b94':'#80434c','empty-ink':nonClassic?muted:night?'#77796f':'#757575',
       'nav-track':nonClassic?line:'#8886','nav-border':nonClassic?line:'#888','video-ink':colored?p.light:p.id==='olive'?'#F4EBDC':'#FFFFFF',
       'video-backdrop':nonClassic?paper:'#24231f',
       'hover-paper':nonClassic?ink:'#ffffff18','hover-ink':nonClassic?paper:'inherit','embed-paper':nonClassic?paper:'#fff',
@@ -46,6 +47,7 @@
     for(const [name,value] of Object.entries(selected.tokens))root.style.setProperty('--'+name,value);
     const neutral=get('classic',selected.mode).tokens;
     root.style.setProperty('--entry-paper',neutral.paper);root.style.setProperty('--entry-ink',neutral.ink);
+    root.ownerDocument?.querySelector('meta[name="theme-color"]')?.setAttribute('content',selected.tokens.paper);
     return selected;
   }
   let initial=get();
