@@ -66,6 +66,51 @@ const ringFragment = `
   }
 `;
 
+function createEdgeStars(THREE, ink) {
+  const count = 96, positions = [], sizes = [];
+  const goldenAngle = Math.PI * (3 - Math.sqrt(5));
+  for (let i = 0; i < count; i++) {
+    const angle = i * goldenAngle;
+    const x = Math.cos(angle), y = Math.sin(angle);
+    const lane = (.58 + (i * .754877666 % 1) * .34) / Math.max(Math.abs(x), Math.abs(y));
+    positions.push(x * lane, y * lane * .75, 0);
+    sizes.push(1.25 + (i * .41421356 % 1) ** 2 * 1.65);
+  }
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geometry.setAttribute('aSize', new THREE.Float32BufferAttribute(sizes, 1));
+  const material = new THREE.ShaderMaterial({
+    transparent: true, depthTest: false, depthWrite: false,
+    uniforms: {uInk:ink, uOpacity:{value:0}, uPixelRatio:{value:1}, uDrift:{value:new THREE.Vector2()}},
+    vertexShader: `
+      attribute float aSize;
+      uniform float uPixelRatio;
+      uniform vec2 uDrift;
+      varying float vBrightness;
+      void main() {
+        gl_Position = vec4(position.xy + uDrift, 0.0, 1.0);
+        gl_PointSize = aSize * uPixelRatio;
+        vBrightness = mix(0.55, 1.0, smoothstep(1.25, 2.90, aSize));
+      }
+    `,
+    fragmentShader: `
+      uniform vec3 uInk;
+      uniform float uOpacity;
+      varying float vBrightness;
+      void main() {
+        float point = 1.0 - smoothstep(0.10, 0.49, length(gl_PointCoord - 0.5));
+        gl_FragColor = vec4(uInk, point * vBrightness * uOpacity);
+        #include <colorspace_fragment>
+      }
+    `,
+  });
+  const stars = new THREE.Points(geometry, material);
+  stars.name = 'Journey edge stars';
+  stars.frustumCulled = false;
+  stars.renderOrder = 2;
+  return stars;
+}
+
 export function createJourneyOrbits(THREE, scene, globeRadius) {
   const group = new THREE.Group();
   group.name = 'Journey orbits';
@@ -83,6 +128,11 @@ export function createJourneyOrbits(THREE, scene, globeRadius) {
   ring.rotation.x = -Math.PI / 2;
   ring.renderOrder = 1;
   const up = new THREE.Vector3(0, 1, 0);
+  const planetMaterial = saturn => new THREE.ShaderMaterial({
+    vertexShader:planetVertex, fragmentShader:planetFragment,
+    uniforms:{...lighting,uOpacity:{value:0},uBands:{value:saturn ? .12 : .025}},
+    transparent:true, depthWrite:!!saturn,
+  });
   const planets = PLANETS.map(definition => {
     // Each orbit is a tilted plane in world space. Turning the globe also
     // changes the view of the planets, including the angle of the ring.
@@ -90,13 +140,7 @@ export function createJourneyOrbits(THREE, scene, globeRadius) {
     const tilt = Math.cos(definition.tilt);
     const away = new THREE.Vector3(-x * tilt, -Math.sin(definition.tilt), -z * tilt);
     const across = new THREE.Vector3(-z, 0, x);
-    const material = new THREE.ShaderMaterial({
-      vertexShader:planetVertex, fragmentShader:planetFragment,
-      uniforms:{...lighting,uOpacity:{value:0},uBands:{value:definition.saturn ? .12 : .025}},
-      transparent:true,
-      // Saturn's body occludes the far side of its ring.
-      depthWrite:!!definition.saturn,
-    });
+    const material = planetMaterial(definition.saturn);
     const mesh = new THREE.Mesh(sphere, material);
     mesh.scale.setScalar(globeRadius * definition.body);
     if (definition.saturn) {
@@ -129,15 +173,25 @@ export function createJourneyOrbits(THREE, scene, globeRadius) {
   stars.computeBoundingSphere();
   group.add(stars);
 
+  // At a city close-up the globe may fill the entire canvas. Put a quiet
+  // foreground layer at the edges so it remains visible even at that zoom.
+  const edgeStars = createEdgeStars(THREE, lighting.uInk);
+  const companion = new THREE.Mesh(sphere, planetMaterial(false));
+  companion.name = 'Journey companion planet';
+  companion.renderOrder = 3;
+  group.add(edgeStars, companion);
+
   const towardCamera = new THREE.Vector3();
+  const projected = new THREE.Vector3();
   const { smoothstep } = THREE.MathUtils;
   let orbitTime = 0;
+  let companionReveal;
 
   return {
-    update({camera, distance, overviewDistance, dt = 0, theme, reducedMotion = false, visible = true}) {
-      const opacity = visible ? smoothstep(distance / overviewDistance, .62, .94) : 0;
-      group.visible = opacity > .002;
-      if (!group.visible) return;
+    update({camera, distance, overviewDistance, dt = 0, theme, reducedMotion = false, visible = true, pixelRatio = 1}) {
+      group.visible = visible;
+      if (!visible) return;
+      const opacity = smoothstep(distance / overviewDistance, .62, .94);
       if (!reducedMotion) orbitTime += dt;
 
       const mobile = camera.view ? camera.view.fullWidth < 768 : camera.aspect < .85;
@@ -147,9 +201,10 @@ export function createJourneyOrbits(THREE, scene, globeRadius) {
       lighting.uNight.value=night;
       const globeProjection = Math.sqrt(distance * distance - globeRadius * globeRadius) / globeRadius;
       towardCamera.copy(camera.position).normalize();
+      let planetCoverage = 0;
       for (const {definition, away, across, mesh, material} of planets) {
         const {desktop, phase, speed, orbit, saturn} = definition;
-        if (desktop && mobile) { mesh.visible = false; continue; }
+        if (opacity <= .002 || (desktop && mobile)) { mesh.visible = false; continue; }
         const angle = phase + orbitTime * speed;
         const radius = globeRadius * orbit;
         mesh.position.copy(away).multiplyScalar(Math.cos(angle) * radius)
@@ -162,11 +217,40 @@ export function createJourneyOrbits(THREE, scene, globeRadius) {
         mesh.visible = fade > .002;
         material.uniforms.uOpacity.value = fade * (definition.opacity + .065 * night);
         if (saturn) ringMaterial.uniforms.uOpacity.value = fade * (.34 + .085 * night);
+        if (mesh.visible) {
+          projected.copy(mesh.position).project(camera);
+          if (Math.abs(projected.z) < 1) {
+            const edge = Math.max(Math.abs(projected.x), Math.abs(projected.y));
+            planetCoverage = Math.max(planetCoverage, fade * (1 - smoothstep(edge, .69, .99)));
+          }
+        }
       }
+      stars.visible = opacity > .002;
       stars.count = mobile ? MOBILE_STARS : DESKTOP_STARS;
       stars.rotation.y = orbitTime * .006;
       starMaterial.color.copy(theme.ink).lerp(theme.paper, .22);
       starMaterial.opacity = opacity * (.265 + .065 * night);
+
+      edgeStars.geometry.setDrawRange(0, mobile ? 64 : 96);
+      edgeStars.material.uniforms.uPixelRatio.value = pixelRatio;
+      edgeStars.material.uniforms.uOpacity.value = (.25 + .08 * night) * (1 - .84 * opacity);
+      edgeStars.material.uniforms.uDrift.value.set(
+        .04 * towardCamera.x + .023 * Math.sin(orbitTime * .18),
+        .035 * towardCamera.z + .018 * Math.cos(orbitTime * .13),
+      );
+
+      const targetReveal = 1 - smoothstep(planetCoverage, .22, .77);
+      if (companionReveal === undefined || reducedMotion) companionReveal = targetReveal;
+      else companionReveal += (targetReveal - companionReveal) * (1 - Math.exp(-dt * 9));
+      companion.visible = companionReveal > .01;
+      companion.material.uniforms.uOpacity.value = companionReveal * (.42 + .085 * night);
+      const x = .55 + .11 * towardCamera.x + .055 * Math.sin(orbitTime * .17);
+      const y = .63 + .055 * towardCamera.z + .039 * Math.cos(orbitTime * .14);
+      const projection = camera.projectionMatrix.elements;
+      const depth = 1;
+      companion.position.set((x + projection[8]) * depth / projection[0], (y + projection[9]) * depth / projection[5], -depth)
+        .applyQuaternion(camera.quaternion).add(camera.position);
+      companion.scale.setScalar((mobile ? .015 : .018) * depth / projection[5]);
     },
     hide() { group.visible = false; },
   };

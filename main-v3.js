@@ -454,7 +454,7 @@ videoScene.addEventListener('keydown',event=>{
 
 function setState(next) {
   state = next;
-  if(next!=='journey')journeyOrbits?.hide();
+  if(next!=='journey'&&next!=='memory')journeyOrbits?.hide();
   if(!['journey','transition','memory'].includes(next)) {
     for(const { back } of rearGlobeLines) back.visible=false;
   }
@@ -1172,10 +1172,11 @@ function animate(time) {
   }
   updateGeographicLabels(dt);
   originMarkers?.update(camera,globeGroup,view.width,view.height,state==='journey'&&!cameraMoving&&!entranceActive?Number(gsap.getProperty($('label-layer'),'opacity')):0,state==='journey'&&!cameraMoving);
-  if(state==='journey'){
+  if(state==='journey'||state==='memory'){
     orbitFrame.camera=camera;orbitFrame.distance=distance;orbitFrame.overviewDistance=overviewDistance();
     orbitFrame.dt=dt;orbitFrame.theme=theme;orbitFrame.reducedMotion=reducedMotion.matches;
-    orbitFrame.visible=!cameraMoving&&!entranceActive;
+    orbitFrame.visible=!entranceActive&&!fullscreenVideo.active;
+    orbitFrame.pixelRatio=renderer.getPixelRatio();
     journeyOrbits.update(orbitFrame);
   }
   renderer.render(scene,camera);
