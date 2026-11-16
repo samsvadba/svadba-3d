@@ -61,8 +61,14 @@ for (const removed of ['red', 'orange', 'yellow', 'green', 'turquoise', 'blue', 
   for (const mode of ['light', 'dark']) assert.equal(api.restore(storage({'sm-palette': removed, 'sm-theme': mode})), api.get('classic', mode), 'Removed saved colors must fall back safely and preserve mode');
 }
 assert.equal(api.get('purple', 'invalid'), api.get('purple', 'dark'));
-assert.equal(api.restore(storage({})), api.get());
-assert.equal(api.restore({getItem() {throw new Error('Storage blocked');}}), api.get());
+const localTime = (hour,minute=0) => new Date(2026,10,16,hour,minute);
+for (const [time,mode] of [[localTime(6,59),'dark'],[localTime(7),'light'],[localTime(18,59),'light'],[localTime(19),'dark']]) {
+  assert.equal(api.restore(storage({}),time), api.get('classic',mode));
+  assert.equal(api.restore(storage({'sm-theme':'invalid'}),time), api.get('classic',mode));
+}
+assert.equal(api.restore({getItem() {throw new Error('Storage blocked');}},localTime(12)), api.get('classic','light'));
+assert.equal(api.restore(storage({'sm-theme':'dark','sm-palette':'purple'}),localTime(12)), api.get('purple','dark'));
+assert.equal(api.restore(storage({'sm-theme':'light'}),localTime(22)), api.get('classic','light'));
 
 // Execute the exact blocking head script with browser-like roots, before main loads.
 const bootstrap = await readFile(new URL('./public/theme-v3.js', import.meta.url), 'utf8');
@@ -75,10 +81,14 @@ for (const id of ids) for (const mode of ['light', 'dark']) {
   assert.equal(documentRoot.dataset.palette, id); assert.equal(documentRoot.dataset.theme, mode);
   assert.equal(documentRoot.variables.get('--paper'), api.get(id, mode).tokens.paper);
 }
-const blockedContext = {document: {documentElement: root()}, localStorage: {getItem() {throw new Error('Private storage');}}};
+const blockedContext = {
+  document: {documentElement: root()},
+  Date: class {getHours(){return 12;}},
+  get localStorage(){throw new Error('Private storage');},
+};
 vm.runInNewContext(bootstrap, blockedContext);
 assert.equal(blockedContext.document.documentElement.dataset.palette, 'classic');
-assert.equal(blockedContext.document.documentElement.dataset.mode, 'dark');
+assert.equal(blockedContext.document.documentElement.dataset.mode, 'light');
 const html = await readFile(new URL('./index-v3.html', import.meta.url), 'utf8');
 const bootstrapTag = html.match(/<script\b[^>]*src=["'][^"']*theme-v3\.js(?:\?[^"']*)?["'][^>]*>/)?.[0];
 assert.ok(bootstrapTag, 'Shared palette bootstrap must run in the document head');

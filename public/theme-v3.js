@@ -32,12 +32,25 @@
       colors:Object.freeze({paper:linear(paper),ink:linear(ink),line:linear(tokens['globe-line']),point:linear(tokens['globe-point'])})});
     cache.set(key,result);return result;
   }
-  function restore(storage){try{return get(storage.getItem('sm-palette')||'classic',storage.getItem('sm-theme')||'dark');}catch{return get();}}
+  function restore(storage,now=new Date()){
+    const hour=now.getHours();
+    const defaultMode=hour>=7&&hour<19?'light':'dark';
+    try{
+      const savedMode=storage?.getItem('sm-theme');
+      const mode=savedMode==='light'||savedMode==='dark'?savedMode:defaultMode;
+      return get(storage?.getItem('sm-palette')||'classic',mode);
+    }catch{return get('classic',defaultMode);}
+  }
   function apply(root,palette,mode){
     const selected=get(palette,mode);root.dataset.palette=selected.palette;root.dataset.theme=root.dataset.mode=selected.mode;root.dataset.colored=String(selected.colored);
     for(const [name,value] of Object.entries(selected.tokens))root.style.setProperty('--'+name,value);return selected;
   }
   let initial=get();
-  if(typeof document!=='undefined'){try{initial=restore(scope.localStorage);}catch{}apply(document.documentElement,initial.palette,initial.mode);}
+  if(typeof document!=='undefined'){
+    let storage;
+    try{storage=scope.localStorage;}catch{}
+    initial=restore(storage);
+    apply(document.documentElement,initial.palette,initial.mode);
+  }
   scope.SMWeddingTheme=Object.freeze({palettes,get,restore,apply,initial,contrast});
 })(globalThis);
