@@ -72,7 +72,12 @@ export async function preparePhoto(file) {
       if (blob.size > byteLimit) throw {code:'IMAGE_DECODE'};
       return blobBase64(blob);
     }
-    return { name:file.name, original:await blobBase64(file), thumbnail:await jpeg(480,.76,180000), preview:await jpeg(1600,.84,800000) };
+    return {
+      name:file.name,
+      original:await blobBase64(file),
+      thumbnail:await jpeg(360,.62,65000),
+      preview:await jpeg(1600,.84,800000),
+    };
   } finally { URL.revokeObjectURL(image.src); }
 }
 function decodeImage(blob) {

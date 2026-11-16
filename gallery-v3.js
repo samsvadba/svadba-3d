@@ -96,7 +96,7 @@ export function createGallery({ config = {}, getLanguage = () => 'sk', onOpen = 
   const lightbox = $('.gallery-lightbox'), largeImage = $('.gallery-large-photo');
   const queue = [], photos = [], photoNodes = new Map();
   let ready = false, loading = false, cursor = null, restoreFocus = null;
-  let active = 0, selected = -1, lightboxReturn = null, loadRevision = 0;
+  let active = 0, selected = -1, lightboxReturn = null, loadRevision = 0, photoRevision = 0;
   let statusKey = api ? 'loading' : 'setup', photoFailed = false;
   const mobileCamera = 'capture' in cameraInput && matchMedia('(pointer: coarse)').matches;
   cameraButton.hidden = !mobileCamera;
@@ -199,13 +199,17 @@ export function createGallery({ config = {}, getLanguage = () => 'sk', onOpen = 
     return { id: candidate.id, name: String(candidate.name || t('photo')).slice(0, 300) };
   }
   const mediaCache = new Map();
-  let mediaTail = Promise.resolve();
+  const thumbnailLanes = Array.from({length:3}, () => Promise.resolve());
+  let nextThumbnailLane = 0;
   function media(photo, variant) {
     const key = `${photo.id}:${variant}`;
     if (!mediaCache.has(key)) {
-      // Serial RPCs stay well below Apps Script's execution/concurrency quotas.
-      const result = (variant === 'preview' ? Promise.resolve() : mediaTail.catch(() => {})).then(() => api.call('media', { id: photo.id, variant })).then(jpegObjectUrl);
-      mediaCache.set(key, result); if (variant === 'thumbnail') mediaTail = result;
+      // Keep thumbnail traffic bounded and let a clicked photo load immediately.
+      const lane = variant === 'thumbnail' ? nextThumbnailLane++ % thumbnailLanes.length : -1;
+      const available = lane < 0 ? Promise.resolve() : thumbnailLanes[lane];
+      const result = available.then(() => api.call('media', { id: photo.id, variant })).then(jpegObjectUrl);
+      mediaCache.set(key, result);
+      if (lane >= 0) thumbnailLanes[lane] = result.catch(() => {});
       result.catch(() => mediaCache.delete(key));
     }
     return mediaCache.get(key);
@@ -241,6 +245,7 @@ export function createGallery({ config = {}, getLanguage = () => 'sk', onOpen = 
   }
   function openPhoto(index, origin = null) {
     if (!photos[index]) return;
+    const request = ++photoRevision;
     selected = index; lightboxReturn = origin || lightboxReturn;
     lightbox.hidden = false; shell.inert = true;
     if (nav) { nav.hidden = true; nav.inert = true; }
@@ -249,11 +254,14 @@ export function createGallery({ config = {}, getLanguage = () => 'sk', onOpen = 
     photoFailed = false;
     $('.gallery-photo-error').hidden = true; $('.gallery-original').hidden = true;
     largeImage.hidden = false; largeImage.alt = photo.name;
-    largeImage.removeAttribute('src');
+    const thumbnail = photoNodes.get(photo.id)?.querySelector('img')?.getAttribute('src');
+    if (thumbnail) largeImage.src = thumbnail;
+    else largeImage.removeAttribute('src');
+    const stillOpen = () => request === photoRevision && !lightbox.hidden;
     media(photo, 'preview').then(url => {
-      if (selected !== index || lightbox.hidden) return;
+      if (!stillOpen()) return;
       largeImage.src = url; $('.gallery-original').href = url;
-    }).catch(() => { if (selected === index && !lightbox.hidden) largeImage.onerror(); });
+    }).catch(() => { if (stillOpen() && !thumbnail) largeImage.onerror(); });
     $('.gallery-lightbox figcaption').textContent = `${index + 1} / ${photos.length}`;
     $('.gallery-prev').disabled = index === 0;
     $('.gallery-next').disabled = index === photos.length - 1;
@@ -265,6 +273,7 @@ export function createGallery({ config = {}, getLanguage = () => 'sk', onOpen = 
   };
   largeImage.onload = () => { if (!photoFailed) largeImage.hidden = false; };
   function closePhoto(restore = true) {
+    ++photoRevision;
     lightbox.hidden = true; shell.inert = false; selected = -1; largeImage.removeAttribute('src');
     if (dialog.open && nav) { nav.hidden = false; nav.inert = false; }
     if (dialog.open && utilities) { utilities.hidden = false; utilities.inert = false; }
