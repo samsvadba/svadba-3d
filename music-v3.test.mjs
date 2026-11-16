@@ -24,7 +24,7 @@ const settle=async()=>{for(let i=0;i<10;i++)await Promise.resolve();};
 function harness(saved={},tvVideoMode=false) {
   const storage=new Map(Object.entries(saved)),attributes=new Map(),events=new Map();
   const sound={setAttribute:(key,value)=>attributes.set(key,value),getAttribute:key=>attributes.get(key)};
-  const stats={audio:0,storyCalls:0,entries:0,videoLoads:0};
+  const stats={audio:0,storyCalls:0,entries:0,videoLoads:0,wakePrepared:0};
   const entry={},entryScreen={};
   const document={hidden:false,body:{dataset:{entryPending:'true'},append(){}},addEventListener:(type,fn)=>events.set(type,fn)};
   const fullscreenVideo={active:false,closing:false,externalHold:false};
@@ -38,6 +38,7 @@ function harness(saved={},tvVideoMode=false) {
   const context=vm.createContext({
     Audio:AudioMock,config,themeSystem:{initial:{mode:'dark',palette:'classic'}},document,base:'/svadba-3d/',fullscreenVideo,queueMicrotask,performance:{now:()=>100},testStats:stats,duration:value=>value,
     tvVideoMode,destinationVideo:{load(){assert.equal(stats.entries,0);stats.videoLoads++;}},
+    requestStoryWakeLockAtEntry(){assert.equal(stats.entries,0);stats.wakePrepared++;},
     localStorage:{getItem:key=>storage.get(key),setItem:(key,value)=>storage.set(key,value)},
     $:id=>{if(id==='entry-button')return entry;if(id==='entry-screen')return entryScreen;assert.equal(id,'utility-sound');return sound;},t:key=>key,
     pauseStory:()=>stats.storyCalls++,particleIntro:{toggle:()=>stats.storyCalls++},
@@ -85,6 +86,7 @@ for(const saved of [{},{'sm-sound':'on'},{'sm-sound':'off'}]) {
 }
 const entry=harness();
 entry.enter();
+assert.equal(entry.stats.wakePrepared,1,'the screen lock request starts in the entry tap');
 assert.equal(entry.stats.videoLoads,1,'entry initializes the Journey player inside the gesture');
 await settle();
 assert.equal(entry.music.paused,false,'Entry click starts music before asynchronous story work');

@@ -1394,12 +1394,30 @@ function nextMemory(){
 }
 
 
-function syncJourneyWakeLock(){
+function shouldKeepStoryScreenAwake(){
   const activeVideo=fullscreenVideo.active&&!fullscreenVideo.closing;
-  const inJourney=state==='journey'||state==='memory';
-  setJourneyWakeLock(!tvVideoMode&&inJourney&&
-    !fullscreenVideo.externalHold&&!(activeVideo&&destinationPlaybackFailed)&&
-    (storyActive||activeVideo));
+  if(tvVideoMode||galleryChapter?.isOpen()||fullscreenVideo.externalHold||(activeVideo&&destinationPlaybackFailed))return false;
+  if(state==='intro'){
+    return particleIntro?.active
+      ? particleIntro.mode==='auto'
+      : !reducedMotion.matches&&document.body.dataset.introPending==='true';
+  }
+  if(autoStoryPending&&(state==='transition'||state==='journey'))return true;
+  return (state==='journey'||state==='memory')&&(storyActive||activeVideo);
+}
+
+function syncJourneyWakeLock(){
+  if(shouldKeepStoryScreenAwake())setJourneyWakeLock(true);
+  // Intro completion and Journey setup run in the same task. Keep the
+  // lock across that handoff so Safari doesn't have to grant it again.
+  else queueMicrotask(()=>{if(!shouldKeepStoryScreenAwake())setJourneyWakeLock(false);});
+}
+
+function requestStoryWakeLockAtEntry(){
+  const view=new URLSearchParams(location.search).get('view');
+  if(!tvVideoMode&&(view==='journey'||(view!=='wedding'&&particleIntroEnabled&&!reducedMotion.matches))){
+    setJourneyWakeLock(true);
+  }
 }
 
 function syncStoryUI(){
@@ -1632,8 +1650,8 @@ $('utility-sound').onclick=toggleMusic;
 $('utility-gallery').onclick=()=>{
   if(!galleryChapter)galleryChapter=createGallery({
     config:config.gallery,getLanguage:()=>preferences.language,
-    onOpen:()=>{particleIntro?.suspend('gallery');if(storyActive)pauseStory();},
-    onClose:()=>particleIntro?.resume('gallery'),
+    onOpen:()=>{particleIntro?.suspend('gallery');if(storyActive)pauseStory();queueMicrotask(syncJourneyWakeLock);},
+    onClose:()=>{particleIntro?.resume('gallery');syncJourneyWakeLock();},
   });
   galleryChapter.open($('utility-gallery'));
 };
@@ -1732,6 +1750,8 @@ $('preloader-percentage').textContent = '50%';
 $('loading-ring').style.setProperty('--p','50%');
 $('entry-button').onclick=()=>{
   if(loaded)return;
+  // Some Safari versions require the request to come from the entry tap.
+  requestStoryWakeLockAtEntry();
   // Keep play() inside this real click, before imports or animation promises.
   preferences.sound=true;savePreference('sm-sound','on');syncMusic(true);syncSoundControl();
   // WebKit's load() records the entry gesture on the shared Journey player.
