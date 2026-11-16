@@ -593,9 +593,7 @@ async function playParticleIntro() {
   } catch (error) {
     if (request !== revision) return;
     console.warn('Particle intro unavailable:', error.message);
-    finishStartupCloud();
-    document.documentElement.dataset.intro = 'video';
-    playLegacyIntro();
+    playJourneyTransition();
   }
 }
 

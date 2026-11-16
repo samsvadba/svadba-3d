@@ -43,7 +43,10 @@
   }
   function apply(root,palette,mode){
     const selected=get(palette,mode);root.dataset.palette=selected.palette;root.dataset.theme=root.dataset.mode=selected.mode;root.dataset.colored=String(selected.colored);
-    for(const [name,value] of Object.entries(selected.tokens))root.style.setProperty('--'+name,value);return selected;
+    for(const [name,value] of Object.entries(selected.tokens))root.style.setProperty('--'+name,value);
+    const neutral=get('classic',selected.mode).tokens;
+    root.style.setProperty('--entry-paper',neutral.paper);root.style.setProperty('--entry-ink',neutral.ink);
+    return selected;
   }
   let initial=get();
   if(typeof document!=='undefined'){
