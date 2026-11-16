@@ -1799,7 +1799,11 @@ $('entry-screen').focus({preventScroll:true});
 
 // One monogram and one calligraphic name lockup, at every display size.
 $('entry-monogram').innerHTML=weddingMonogram();
-$('entry-title').innerHTML=names({trimPaper:true});
+const entryTitle=$('entry-title');
+const entryArtwork=document.createElement('template');
+entryArtwork.innerHTML=names({trimPaper:true});
+entryArtwork.content.querySelector('image').addEventListener('load',()=>entryTitle.classList.add('is-ready'),{once:true});
+entryTitle.replaceChildren(entryArtwork.content);
 document.querySelector('#header-home').innerHTML=weddingMonogram();
 document.querySelector('.preloader-monogram').innerHTML=weddingMonogram();
 const brandHero=document.querySelector('.title-layout h1');

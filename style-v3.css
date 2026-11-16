@@ -4,6 +4,7 @@
 #entry-monogram{width:clamp(108px,30vw,172px);line-height:0;margin-bottom:clamp(12px,2svh,20px)}
 #entry-title{width:min(74vw,440px);aspect-ratio:850 / 313.333}
 #entry-title .brand-names-art{aspect-ratio:auto}
+#entry-title:not(.is-ready) .brand-names-art{visibility:hidden}
 #entry-date{margin-top:clamp(12px,2svh,20px);font:500 clamp(18px,2vw,24px)/1.2 'Cormorant Garamond',serif}
 #entry-button{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-width:178px;min-height:44px;margin-top:clamp(24px,4svh,36px);padding:9px 18px;border:1px solid currentColor;border-radius:0;background:transparent;color:var(--entry-action);font:500 14px/1.35 'DM Sans',sans-serif}
 #entry-button svg{width:13px;height:13px;flex:none;fill:currentColor;stroke:none}
