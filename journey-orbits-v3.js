@@ -8,8 +8,8 @@ const PLANETS = [
   { body: .046, orbit: 6.7, heading: -1.02, tilt: .32, phase: .77, speed: .054, opacity: .24, desktop: true },
   { body: .055, orbit: 8.6, heading: -.38, tilt: .85, phase: -.48, speed: .027, opacity: .23, desktop: true },
 ];
-const MOBILE_STARS = 152;
-const DESKTOP_STARS = 304;
+const MOBILE_STARS = 420;
+const DESKTOP_STARS = MOBILE_STARS * 2;
 
 const planetVertex = `
   varying vec3 vNormal;
