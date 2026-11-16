@@ -7,7 +7,7 @@ import { createWedding } from './wedding-v3.js';
 import { createOrigins } from './origins-v3.js';
 import { bindGlobeInput } from './globe-input-v3.js';
 import { createGallery } from './gallery-v3.js';
-import { createDestinationBuffer, createDestinationParticles, createDestinationWatchdog, destinationVideoUrl } from './destination-media-v3.js';
+import { createDestinationBuffer, createDestinationParticles, createDestinationWatchdog, destinationVideoSources, destinationVideoUrl } from './destination-media-v3.js';
 import { createTVVideoDiagnostics } from './tv-video-diagnostics-v3.js';
 import { createVideoPlayLog } from './video-play-log-v3.js';
 import { createThemePicker } from './theme-picker-v3.js';
@@ -63,12 +63,13 @@ let tvVideoVariant=1, diagnosticPlayTimer, diagnosticAutoWaiting=false;
 // embedded TV players stuck; the visible video still preloads before its flight.
 const destinationBuffer=createDestinationBuffer(locations,{enabled:false});
 const destinationParticles=createDestinationParticles($('destination-video-particles'),{reducedMotion,getColor:()=>getParticleTheme().ink.getStyle(),getBackground:()=>getParticleTheme().paper.getStyle()});
-let destinationSourceFallback=false;
+let destinationSources=[];
 let destinationPlaybackPending=null;
 let destinationPlaybackFailed=false;
 let destinationPlaybackEpoch=0, destinationDeferredPlay=null;
 const destinationWatchdog=createDestinationWatchdog(destinationVideo,{
-  onTimeout:status=>{failFullscreenVideo('videoTimeout',!!destinationDeferredPlay&&document.hidden);tvDiagnostics.timeout(status);},
+  startupMs:tvVideoMode?15000:8000,
+  onTimeout:handleDestinationTimeout,
   onProgress:status=>{if(status.advanced>=.15)destinationParticles.reveal(destinationVideo);},
   onError:error=>{tvDiagnostics.exception('watchdog tick',error);failFullscreenVideo('videoError');},
 });
@@ -178,8 +179,10 @@ function prepareFullscreenVideo(loc) {
   destinationPlaybackPending=null;destinationPlaybackFailed=false;
   destinationVideo.muted=true;destinationVideo.defaultMuted=true;destinationVideo.volume=0;destinationVideo.playsInline=true;
   destinationVideo.autoplay=false;destinationVideo.preload='auto';
-  destinationSourceFallback=false;
-  destinationVideo.src=tvVideoMode&&tvVideoVariant!==1?loc.fullscreenVideo:destinationVideoUrl(loc.fullscreenVideo);destinationVideo.load();
+  destinationSources=tvVideoMode
+    ? [tvVideoVariant===1?destinationVideoUrl(loc.fullscreenVideo):loc.fullscreenVideo]
+    : destinationVideoSources(loc.fullscreenVideo,destinationVideo);
+  destinationVideo.src=destinationSources[0];destinationVideo.load();
   $('destination-video-title').textContent=cityName(loc);
   $('destination-video-country').textContent=loc.key==='trnava'?memoryLocation(loc):countryText(loc);
   const highlight=$('destination-video-highlight');
@@ -270,20 +273,33 @@ function playFullscreenVideo(manual=false,origin='automatic') {
       tvDiagnostics.playResult(error);
       // A cancelled load is bounded by the same watchdog, never a retry loop.
       if(error.name==='AbortError'){blocked('play rejected: AbortError; watchdog remains active');return;}
-      if(fallbackDestinationSource()){blocked('blob rejected; existing HTTPS fallback started');return;}
-      failFullscreenVideo(error.name==='NotAllowedError'?'videoTap':'videoError');
+      if(error.name==='NotAllowedError'){failFullscreenVideo('videoTap');return;}
+      if(fallbackDestinationSource())return;
+      failFullscreenVideo('videoError');
     }).catch(error=>{tvDiagnostics.exception('play-rejection-handler',error);failFullscreenVideo('videoError');})
       .finally(()=>{if(destinationPlaybackPending===attempt)destinationPlaybackPending=null;});
   }catch(error){tvDiagnostics.exception('playFullscreenVideo / '+step,error);failFullscreenVideo('videoError');}
 }
 
 function fallbackDestinationSource() {
-  if(tvVideoMode)return false; // Never silently change a controlled TV trial.
-  if(!destinationVideo.getAttribute('src')?.startsWith('blob:')||destinationSourceFallback)return false;
-  destinationSourceFallback=true;destinationPlaybackPending=null;
-  destinationVideo.src=destinationVideoUrl(locations[currentIndex].fullscreenVideo);destinationVideo.load();
-  if(fullscreenVideo.active)playFullscreenVideo();
+  if(tvVideoMode||!fullscreenVideo.active||fullscreenVideo.closing||fullscreenVideo.externalHold||destinationPlaybackFailed)return false;
+  const index=destinationSources.indexOf(destinationVideo.getAttribute('src'));
+  const next=index<0?null:destinationSources[index+1];
+  if(!next)return false;
+  destinationWatchdog.stop('source-fallback');
+  cancelDestinationPlayback('source-fallback');
+  destinationVideo.src=next;
+  destinationVideo.load();
+  playFullscreenVideo(false,'source-fallback');
   return true;
+}
+
+function handleDestinationTimeout(status) {
+  // Give a stream that never started one smaller alternative before showing
+  // retry. A video that stalled midway stays on the current source.
+  if(!status.started&&!document.hidden&&destinationVideo.getAttribute('src')===destinationSources[0]&&fallbackDestinationSource())return;
+  failFullscreenVideo('videoTimeout',!!destinationDeferredPlay&&document.hidden);
+  tvDiagnostics.timeout(status);
 }
 
 function failFullscreenVideo(message,keepDeferred=false) {
@@ -355,7 +371,7 @@ function openFullscreenVideo() {
   destinationVideo.autoplay=false; // One explicit play() path, as in the verified TV trial.
   $('destination-video-close').focus({preventScroll:true});
   if(tvVideoMode&&tvVideoVariant!==3)scheduleTVAutomaticPlayback();
-  else playFullscreenVideo(false,'scene-open');
+  else if(!destinationVideo.error||!fallbackDestinationSource())playFullscreenVideo(false,'scene-open');
 }
 
 function closeFullscreenVideo(afterOverview=null) {
@@ -380,7 +396,7 @@ destinationVideo.addEventListener('playing',()=>{
   gsap.to(destinationVideo,{opacity:1,scale:1,duration:duration(1.1),ease:'power2.out'});
 });
 destinationVideo.addEventListener('error',()=>{
-  if(!destinationVideo.hasAttribute('src'))return;
+  if(!destinationVideo.error||!destinationVideo.hasAttribute('src')||destinationPlaybackFailed)return;
   if(fallbackDestinationSource())return;
   failFullscreenVideo('videoError');
 });
@@ -411,7 +427,8 @@ $('destination-video-retry').onclick=()=>{
   }else{
     destinationPlaybackPending=null;destinationPlaybackFailed=false;
     $('destination-video-retry').hidden=true;$('destination-video-return').hidden=true;$('destination-video-status').textContent='';
-    destinationVideo.load();playFullscreenVideo(true,'retry-click');
+    if(destinationVideo.error||destinationVideo.readyState<2)destinationVideo.load();
+    playFullscreenVideo(true,'retry-click');
   }
 };
 videoScene.addEventListener('keydown',event=>{

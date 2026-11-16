@@ -7,6 +7,27 @@ export function destinationVideoUrl(source) {
   return url.href;
 }
 
+export function destinationVideoSources(source, video) {
+  const standard = destinationVideoUrl(source);
+  const url = new URL(source);
+  const upload = '/video/upload/w_1080,q_auto,f_auto/';
+  if (url.hostname !== 'res.cloudinary.com' || !url.pathname.includes(upload)) return [standard];
+
+  const smaller = 'c_limit,w_480,h_854,fps_24,q_auto:good';
+  const variant = (codec, format) => {
+    const rendition = new URL(url);
+    rendition.pathname = url.pathname.replace(upload, `/video/upload/ac_none,vc_${codec},f_${format}/${smaller}/`);
+    return rendition.href;
+  };
+  const baseline = variant('h264:baseline:3.1', 'mp4');
+  if (!video.canPlayType('video/webm; codecs="vp8"')) return [standard, baseline];
+
+  const webm = variant('vp8', 'webm');
+  return video.canPlayType('video/mp4; codecs="avc1.42E01F"')
+    ? [standard, baseline, webm]
+    : [webm, baseline];
+}
+
 // Bound both an unresolved play() and a decoder/network stall. Only advancing
 // media time counts as progress; canplay/playing/promise resolution do not.
 export function createDestinationWatchdog(video, { onTimeout, onProgress = () => {}, onError = () => {}, isHidden = () => document.hidden, now = () => performance.now(), repeat = setInterval, cancel = clearInterval, startupMs = 15000, stallMs = 10000 } = {}) {

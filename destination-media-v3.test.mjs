@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import vm from 'node:vm';
 import config from './config-v3.js';
-import { destinationVideoUrl, createDestinationBuffer, createDestinationParticles, createDestinationWatchdog } from './destination-media-v3.js';
+import { destinationVideoUrl, destinationVideoSources, createDestinationBuffer, createDestinationParticles, createDestinationWatchdog } from './destination-media-v3.js';
 
 const first=config.locations[0].fullscreenVideo;
 const silent=destinationVideoUrl(first);
@@ -37,24 +37,24 @@ assert.match(main,/destinationParticles\.reveal\(destinationVideo\)/);
 // Run the actual production preparation/open/readiness handlers. A WebKit-like
 // player rejects an invisible media element, making the old ordering fail here.
 const playback=main.slice(main.indexOf('function prepareFullscreenVideo('),main.indexOf('function closeFullscreenVideo('));
-function playerFixture({blob=false,outcomes=[],tv=false}={}) {
-  const events=new Map(),elements=new Map(),deferred=new Map(),trace=[];let plays=0,timerId=0,bufferCalls=0,stops=0;
+function playerFixture({blob=false,outcomes=[],tv=false,canPlayType=type=>type.includes('mp4')?'probably':''}={}) {
+  const events=new Map(),elements=new Map(),deferred=new Map(),trace=[];let plays=0,timerId=0,bufferCalls=0,stops=0,loads=0;
   const element=id=>{if(!elements.has(id))elements.set(id,{hidden:true,style:{removeProperty(){},setProperty(){}},setAttribute(){},focus(){}});return elements.get(id);};
-  const video={src:'',paused:true,ended:false,opacity:0,currentTime:0,load(){},pause(){this.paused=true;},getAttribute(){return this.src;},addEventListener:(type,fn)=>events.set(type,fn),
+  const video={src:'',paused:true,ended:false,opacity:0,currentTime:0,readyState:4,error:null,canPlayType,load(){loads++;this.error=null;},pause(){this.paused=true;},getAttribute(){return this.src;},addEventListener:(type,fn)=>events.set(type,fn),
     play(){plays++;assert.equal(element('scene').autoAlpha,1,'scene is visible before play');assert.equal(this.opacity,1,'video is visible beneath the particles');assert.equal(this.muted,true);assert.equal(this.playsInline,true);
       const error=outcomes.shift();if(error==='pending')return new Promise(()=>{});if(error)return Promise.reject(Object.assign(new Error(error),{name:error}));this.paused=false;return Promise.resolve();}};
   const state={active:false,closing:false,externalHold:false};
   const watch={active:false,start(){this.active=true;},stop(){this.active=false;},snapshot(){return {active:this.active};}};
-  const context=vm.createContext({destinationVideo:video,videoScene:element('scene'),fullscreenVideo:state,destinationPlaybackPending:null,destinationSourceFallback:false,
+  const context=vm.createContext({destinationVideo:video,videoScene:element('scene'),fullscreenVideo:state,destinationPlaybackPending:null,destinationSources:[],
     tvVideoMode:tv,tvVideoVariant:1,diagnosticPlayTimer:undefined,diagnosticAutoWaiting:false,destinationPlaybackFailed:false,destinationWatchdog:watch,destinationPlaybackEpoch:0,destinationDeferredPlay:null,
-    tvDiagnostics:Object.fromEntries(['open','attempt','variant','playResult','focusRetry','control','returned','timer','exception'].map(name=>[name,(...args)=>trace.push([name,...args])])),setTimeout:fn=>{deferred.set(++timerId,fn);return timerId;},clearTimeout:id=>deferred.delete(id),
+    tvDiagnostics:Object.fromEntries(['open','attempt','variant','playResult','focusRetry','control','returned','timer','exception','timeout'].map(name=>[name,(...args)=>trace.push([name,...args])])),setTimeout:fn=>{deferred.set(++timerId,fn);return timerId;},clearTimeout:id=>deferred.delete(id),
     videoPlayLog:{begin(){return {};},result(){}},
     document:{hidden:false,visibilityState:'visible',body:{dataset:{}}},window:{matchMedia:()=>({matches:false})},revision:1,currentIndex:0,locations:config.locations,reducedMotion:{matches:false},
-    destinationBuffer:{sourceFor:()=>{bufferCalls++;return blob?'blob:cached':silent;}},destinationVideoUrl,destinationParticles:{start(){},stop(){stops++;}},syncMusic(){},refreshInstagramCopy(){},
+    destinationBuffer:{sourceFor:()=>{bufferCalls++;return blob?'blob:cached':silent;}},destinationVideoUrl,destinationVideoSources,destinationParticles:{start(){},stop(){stops++;}},syncMusic(){},refreshInstagramCopy(){},
     cityName:loc=>loc.key,countryText:()=>'',t:key=>key,$:element,gsap:{set:(target,values)=>Object.assign(target,values)}});
   vm.runInContext(playback,context);
   context.prepareFullscreenVideo(config.locations[0]);assert.equal(plays,0,'preparing never plays a hidden film');
-  return {context,state,video,events,element,watch,trace,deferred,plays:()=>plays,bufferCalls:()=>bufferCalls,stops:()=>stops,open:()=>context.openFullscreenVideo(),runDeferred(){const tasks=[...deferred.values()];deferred.clear();tasks.forEach(fn=>fn());}};
+  return {context,state,video,events,element,watch,trace,deferred,plays:()=>plays,loads:()=>loads,bufferCalls:()=>bufferCalls,stops:()=>stops,open:()=>context.openFullscreenVideo(),runDeferred(){const tasks=[...deferred.values()];deferred.clear();tasks.forEach(fn=>fn());}};
 }
 const automatic=playerFixture();automatic.open();await settle();
 assert.equal(automatic.video.paused,false);assert.equal(automatic.video.autoplay,false);assert.equal(automatic.element('destination-video-retry').hidden,true);
@@ -62,6 +62,31 @@ assert.equal(automatic.plays(),1,'normal page calls play immediately, without th
 const directProduction=playerFixture({blob:true});directProduction.open();await settle();
 assert.equal(directProduction.bufferCalls(),0,'normal page bypasses blob sources just like the successful TV trial');
 assert.equal(directProduction.plays(),1);assert.equal(directProduction.video.src,silent);assert.equal(directProduction.video.paused,false);
+
+const decodeFailure=playerFixture({outcomes:['NotSupportedError']});
+decodeFailure.open();await settle();
+assert.match(decodeFailure.video.src,/vc_h264:baseline:3\.1,f_mp4\/c_limit,w_480,h_854,fps_24,q_auto:good\/IMG_1009$/);
+assert.equal(decodeFailure.plays(),2);
+assert.equal(decodeFailure.video.paused,false,'a rejected primary source plays through the baseline alternative');
+
+const preloadFailure=playerFixture();
+preloadFailure.video.error={code:4};
+preloadFailure.open();await settle();
+assert.equal(preloadFailure.plays(),1);
+assert.equal(preloadFailure.video.src,decodeFailure.video.src,'a failed preload switches sources before the first play call');
+
+const webmOnly=playerFixture({canPlayType:type=>type.includes('webm')?'probably':''});
+webmOnly.open();await settle();
+assert.match(webmOnly.video.src,/ac_none,vc_vp8,f_webm\//);
+assert.equal(webmOnly.plays(),1);
+
+const stalledStartup=playerFixture({outcomes:['pending','pending']});
+stalledStartup.open();stalledStartup.context.handleDestinationTimeout({started:false});
+assert.equal(stalledStartup.plays(),2,'a hung first play cannot block a new source');
+assert.equal(stalledStartup.video.src,decodeFailure.video.src);
+stalledStartup.context.handleDestinationTimeout({started:false});
+assert.equal(stalledStartup.plays(),2,'the startup deadline does not keep rotating through sources');
+assert.equal(stalledStartup.element('destination-video-retry').hidden,false);
 const interrupted=playerFixture({outcomes:['AbortError']});interrupted.open();await settle();
 assert.equal(interrupted.element('destination-video-retry').hidden,true,'source cancellation is not reported as gesture denial');
 interrupted.events.get('canplay')();await settle();assert.equal(interrupted.video.paused,false);
@@ -98,6 +123,12 @@ assert.equal(hung.context.destinationPlaybackPending,null,'unresolved play canno
 assert.equal(hung.element('destination-video-retry').hidden,false);assert.equal(hung.element('destination-video-return').hidden,false);
 assert.ok(hung.stops()>0,'timeout clears particles even without play rejection');
 const retryHandler=main.slice(main.indexOf("$('destination-video-retry').onclick="),main.indexOf("videoScene.addEventListener('keydown'"));
+vm.runInContext(retryHandler,blocked.context);blocked.element('destination-video-retry').onclick();
+assert.equal(blocked.plays(),2,'gesture retry calls play inside the click');
+assert.equal(blocked.loads(),1,'policy denial does not reload an already buffered video');
+assert.equal(blocked.video.src,silent,'policy denial keeps the original source');
+await settle();assert.equal(blocked.video.paused,false);
+
 vm.runInContext(retryHandler,hung.context);hung.element('destination-video-retry').onclick();
 assert.equal(hung.plays(),2,'retry immediately calls the same player after an unresolved attempt');await settle();assert.equal(hung.video.paused,false);
 
