@@ -21,10 +21,10 @@ const production=[
 assert.doesNotMatch(source,/addEventListener\([^\n]+unlockMusic/,'Ordinary interactions cannot enable audio');
 const settle=async()=>{for(let i=0;i<10;i++)await Promise.resolve();};
 
-function harness(saved={}) {
+function harness(saved={},tvVideoMode=false) {
   const storage=new Map(Object.entries(saved)),attributes=new Map(),events=new Map();
   const sound={setAttribute:(key,value)=>attributes.set(key,value),getAttribute:key=>attributes.get(key)};
-  const stats={audio:0,storyCalls:0,entries:0};
+  const stats={audio:0,storyCalls:0,entries:0,videoLoads:0};
   const entry={},entryScreen={};
   const document={hidden:false,body:{dataset:{entryPending:'true'},append(){}},addEventListener:(type,fn)=>events.set(type,fn)};
   const fullscreenVideo={active:false,closing:false,externalHold:false};
@@ -37,6 +37,7 @@ function harness(saved={}) {
   }
   const context=vm.createContext({
     Audio:AudioMock,config,themeSystem:{initial:{mode:'dark',palette:'classic'}},document,base:'/svadba-3d/',fullscreenVideo,queueMicrotask,performance:{now:()=>100},testStats:stats,duration:value=>value,
+    tvVideoMode,destinationVideo:{load(){assert.equal(stats.entries,0);stats.videoLoads++;}},
     localStorage:{getItem:key=>storage.get(key),setItem:(key,value)=>storage.set(key,value)},
     $:id=>{if(id==='entry-button')return entry;if(id==='entry-screen')return entryScreen;assert.equal(id,'utility-sound');return sound;},t:key=>key,
     pauseStory:()=>stats.storyCalls++,particleIntro:{toggle:()=>stats.storyCalls++},
@@ -83,8 +84,13 @@ for(const saved of [{},{'sm-sound':'on'},{'sm-sound':'off'}]) {
   assert.equal(app.stats.storyCalls,0);
 }
 const entry=harness();
-entry.enter();await settle();
+entry.enter();
+assert.equal(entry.stats.videoLoads,1,'entry initializes the Journey player inside the gesture');
+await settle();
 assert.equal(entry.music.paused,false,'Entry click starts music before asynchronous story work');
+const diagnosticEntry=harness({},true);
+diagnosticEntry.enter();
+assert.equal(diagnosticEntry.stats.videoLoads,0,'the controlled TV trial keeps its original media timing');
 assert.equal(entry.music.playCalls,1);assert.equal(entry.stats.entries,1);
 assert.equal(entry.preferences.theme,'dark');assert.equal(entry.preferences.palette,'classic');
 entry.enter();await settle();assert.equal(entry.stats.entries,1,'Entry is idempotent');

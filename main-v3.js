@@ -1720,6 +1720,9 @@ $('entry-button').onclick=()=>{
   if(loaded)return;
   // Keep play() inside this real click, before imports or animation promises.
   preferences.sound=true;savePreference('sm-sound','on');syncMusic(true);syncSoundControl();
+  // WebKit's load() records the entry gesture on the shared Journey player.
+  // It has no source here, so the first clip still loads after the intro.
+  if(!tvVideoMode)destinationVideo.load();
   $('entry-screen').inert=true;delete document.body.dataset.entryPending;
   gsap.to($('entry-screen'),{autoAlpha:0,duration:duration(.35),onComplete:()=>{$('entry-screen').hidden=true;}});
   finishLoading();
