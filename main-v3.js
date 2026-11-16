@@ -1655,6 +1655,11 @@ function getGalleryChapter(){
   });
   return galleryChapter;
 }
+function prepareEntryGallery(){
+  if(!document.hidden&&config.gallery.scriptUrl&&!navigator.connection?.saveData){
+    getGalleryChapter().prepareList();
+  }
+}
 $('utility-gallery').onclick=()=>getGalleryChapter().open($('utility-gallery'));
 palettePicker=createThemePicker({trigger:$('utility-palette'),container:$('utility-controls'),palettes:themeSystem.palettes,getSelection:()=>preferences.palette,onSelect:selectThemePalette,getLanguage:()=>preferences.language,getLabel:()=>t('choosePalette'),reducedMotion});
 $('utility-mood').onclick=toggleThemeMode;
@@ -1744,12 +1749,7 @@ function finishLoading() {
   if (initialView === 'journey') { finishStartupCloud(); playJourneyTransition(); }
   else if (initialView === 'wedding') { finishStartupCloud(); playWeddingTransition(); }
   else playIntroTextAnimations();
-  // Let the initial media establish itself before starting a metadata-only read.
-  if(config.gallery.scriptUrl&&!navigator.connection?.saveData){
-    setTimeout(()=>{
-      if(!document.hidden&&!fullscreenVideo.active)getGalleryChapter().prepareList();
-    },3000);
-  }
+  prepareEntryGallery();
 }
 let loadTimeout;
 $('pl-skip-btn').onclick = finishLoading;
@@ -1776,3 +1776,5 @@ document.querySelector('#header-home').innerHTML=weddingMonogram();
 document.querySelector('.preloader-monogram').innerHTML=weddingMonogram();
 const brandHero=document.querySelector('.title-layout h1');
 brandHero.classList.add('brand-names');brandHero.innerHTML=names();
+// Start on the entry screen so the network work can overlap entering the site.
+prepareEntryGallery();

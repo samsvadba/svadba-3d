@@ -167,10 +167,18 @@ export function createGallery({ config = {}, getLanguage = () => 'sk', onOpen = 
   }
   function prepareList() {
     if (!api || dialog.open || photos.length || prefetchedList) return;
-    // Stage only metadata. No image data is requested until the gallery opens.
-    const entry = { promise: api.call('list', { cursor: null }), expires: Infinity };
+    const entry = { promise: api.call('list', { cursor: null, includeThumbnails: true }), expires: Infinity };
     prefetchedList = entry;
-    entry.promise.then(() => { entry.expires = Date.now() + 60_000; }, () => {
+    entry.promise.then(page => {
+      entry.expires = Date.now() + 60_000;
+      if (!Array.isArray(page?.photos)) return;
+      for (const candidate of page.photos.slice(0, 3)) {
+        const photo = normalizePhoto(candidate);
+        // The current Apps Script returns only metadata. Share these three
+        // requests with an open gallery so clicking early doesn't fetch twice.
+        if (photo && !page.thumbnails?.[photo.id]) void media(photo, 'thumbnail').catch(() => {});
+      }
+    }, () => {
       if (prefetchedList === entry) prefetchedList = null;
     });
   }
