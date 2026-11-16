@@ -28,6 +28,37 @@ export function destinationVideoSources(source, video) {
     : [webm, baseline];
 }
 
+// Hold the screen across clips and loading gaps, then release it when viewing ends.
+export function createJourneyWakeLock({ wakeLock = navigator.wakeLock, page = window, doc = document } = {}) {
+  if (!wakeLock?.request) return () => {};
+  let viewing = false, pageActive = true, pending = false, lock = null;
+  const shouldHold = () => viewing && pageActive && !doc.hidden;
+  async function sync() {
+    if (!shouldHold()) {
+      const previous = lock;
+      lock = null;
+      try { await previous?.release(); } catch { /* The browser may already have released it. */ }
+      return;
+    }
+    if (pending || (lock && !lock.released)) return;
+    pending = true;
+    try {
+      const next = await wakeLock.request('screen');
+      if (!shouldHold()) {
+        void next.release().catch(() => {});
+      } else if (!next.released) {
+        lock = next;
+        next.addEventListener('release', () => { if (lock === next) lock = null; }, { once:true });
+      }
+    } catch { /* Power-saving and browser policies can deny the request. */ }
+    finally { pending = false; }
+  }
+  doc.addEventListener('visibilitychange', sync);
+  page.addEventListener('pagehide', () => { pageActive = false; void sync(); });
+  page.addEventListener('pageshow', () => { pageActive = true; void sync(); });
+  return active => { viewing = active; void sync(); };
+}
+
 // Bound both an unresolved play() and a decoder/network stall. Only advancing
 // media time counts as progress; canplay/playing/promise resolution do not.
 export function createDestinationWatchdog(video, { onTimeout, onProgress = () => {}, onError = () => {}, isHidden = () => document.hidden, now = () => performance.now(), repeat = setInterval, cancel = clearInterval, startupMs = 15000, stallMs = 10000 } = {}) {

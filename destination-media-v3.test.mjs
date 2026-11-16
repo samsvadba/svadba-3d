@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import vm from 'node:vm';
 import config from './config-v3.js';
-import { destinationVideoUrl, destinationVideoSources, createDestinationBuffer, createDestinationParticles, createDestinationWatchdog } from './destination-media-v3.js';
+import { destinationVideoUrl, destinationVideoSources, createDestinationBuffer, createDestinationParticles, createDestinationWatchdog, createJourneyWakeLock } from './destination-media-v3.js';
 
 const first=config.locations[0].fullscreenVideo;
 const silent=destinationVideoUrl(first);
@@ -14,6 +14,28 @@ const calls=[],created=[],revoked=[];
 const fetcher=async url=>{calls.push(url);return new Response(new Uint8Array(8),{headers:{'content-type':'video/mp4'}});};
 const objectUrls={createObjectURL:blob=>{const value=`blob:${created.length}`;created.push({value,size:blob.size});return value;},revokeObjectURL:url=>revoked.push(url)};
 const settle=async()=>{for(let i=0;i<10;i++)await new Promise(setImmediate);};
+const wakeDoc=Object.assign(new EventTarget(),{hidden:false}),wakePage=new EventTarget();
+const wakeRequests=[];
+const setWake=createJourneyWakeLock({doc:wakeDoc,page:wakePage,wakeLock:{request(kind){
+  assert.equal(kind,'screen');return new Promise(resolve=>wakeRequests.push(resolve));
+}}});
+class TestLock extends EventTarget {
+  released=false;
+  async release(){this.released=true;this.dispatchEvent(new Event('release'));}
+}
+setWake(true);setWake(true);
+assert.equal(wakeRequests.length,1,'the running story has at most one pending request');
+wakeDoc.hidden=true;wakeDoc.dispatchEvent(new Event('visibilitychange'));
+const lateLock=new TestLock();wakeRequests[0](lateLock);await settle();
+assert.equal(lateLock.released,true,'a request completing in the background cannot keep the screen on');
+wakeDoc.hidden=false;wakeDoc.dispatchEvent(new Event('visibilitychange'));
+const activeLock=new TestLock();wakeRequests[1](activeLock);await settle();
+setWake(true);
+assert.equal(wakeRequests.length,2,'transitions between clips keep the same lock');
+assert.equal(activeLock.released,false);
+setWake(false);
+assert.equal(activeLock.released,true,'stopping the story restores normal auto-lock');
+
 const buffer=createDestinationBuffer(config.locations,{fetcher,objectUrls,maxFileBytes:16,maxBytes:64});
 buffer.plan(0);await settle();
 assert.equal(calls.length,3,'exactly three upcoming films are buffered');
@@ -51,7 +73,7 @@ function playerFixture({blob=false,outcomes=[],tv=false,canPlayType=type=>type.i
     videoPlayLog:{begin(){return {};},result(){}},
     document:{hidden:false,visibilityState:'visible',body:{dataset:{}}},window:{matchMedia:()=>({matches:false})},revision:1,currentIndex:0,locations:config.locations,reducedMotion:{matches:false},
     destinationBuffer:{sourceFor:()=>{bufferCalls++;return blob?'blob:cached':silent;}},destinationVideoUrl,destinationVideoSources,destinationParticles:{start(){},stop(){stops++;}},syncMusic(){},refreshInstagramCopy(){},
-    cityName:loc=>loc.key,countryText:()=>'',t:key=>key,$:element,gsap:{set:(target,values)=>Object.assign(target,values)}});
+    cityName:loc=>loc.key,countryText:()=>'',t:key=>key,$:element,gsap:{set:(target,values)=>Object.assign(target,values)},syncJourneyWakeLock(){}});
   vm.runInContext(playback,context);
   context.prepareFullscreenVideo(config.locations[0]);assert.equal(plays,0,'preparing never plays a hidden film');
   return {context,state,video,events,element,watch,trace,deferred,plays:()=>plays,loads:()=>loads,bufferCalls:()=>bufferCalls,stops:()=>stops,open:()=>context.openFullscreenVideo(),runDeferred(){const tasks=[...deferred.values()];deferred.clear();tasks.forEach(fn=>fn());}};

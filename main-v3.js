@@ -7,7 +7,7 @@ import { createWedding } from './wedding-v3.js';
 import { createOrigins } from './origins-v3.js';
 import { bindGlobeInput } from './globe-input-v3.js';
 import { createGallery } from './gallery-v3.js';
-import { createDestinationBuffer, createDestinationParticles, createDestinationWatchdog, destinationVideoSources, destinationVideoUrl } from './destination-media-v3.js';
+import { createDestinationBuffer, createDestinationParticles, createDestinationWatchdog, createJourneyWakeLock, destinationVideoSources, destinationVideoUrl } from './destination-media-v3.js';
 import { createTVVideoDiagnostics } from './tv-video-diagnostics-v3.js';
 import { createVideoPlayLog } from './video-play-log-v3.js';
 import { createThemePicker } from './theme-picker-v3.js';
@@ -58,6 +58,7 @@ const smoothstep = (a,b,n) => {const t=clamp((n-a)/(b-a),0,1);return t*t*(3-2*t)
 const fullscreenVideo = { active:false, closing:false, timeline:null, externalHold:false, resumeStory:false };
 const videoScene=$('destination-video-scene'), destinationVideo=$('destination-video');
 const tvVideoMode=new URLSearchParams(location.search).get('tv-video')==='1';
+const setJourneyWakeLock=createJourneyWakeLock();
 let tvVideoVariant=1, diagnosticPlayTimer, diagnosticAutoWaiting=false;
 // Use the HTTPS delivery verified on TV. Blob downloads/prefetch can leave
 // embedded TV players stuck; the visible video still preloads before its flight.
@@ -158,6 +159,7 @@ function resetFullscreenVideo() {
   }
   fullscreenVideo.active=false;fullscreenVideo.closing=false;
   fullscreenVideo.externalHold=false;fullscreenVideo.resumeStory=false;
+  syncJourneyWakeLock();
   if(instagramCopy){instagramCopy.hidden=true;instagramCopy.disabled=false;instagramCopyHelp.hidden=true;instagramCopyField.hidden=true;instagramCopyField.value='';}
   delete document.body.dataset.fullscreenVideo;
   $('utility-controls').inert=false;syncMusic();
@@ -249,6 +251,7 @@ function playFullscreenVideo(manual=false,origin='automatic') {
     if(destinationPlaybackFailed){blocked('failed; explicit retry required');return;}
     if(tvVideoMode&&tvVideoVariant===3&&!manual){blocked('variant 3 awaits a real click');return;}
     if(diagnosticAutoWaiting&&!manual){blocked('6 s timer has not fired');return;}
+    syncJourneyWakeLock();
     step='watchdog-start';
     if(!destinationWatchdog.snapshot().active)destinationWatchdog.start();
     if(document.hidden){
@@ -307,6 +310,7 @@ function failFullscreenVideo(message,keepDeferred=false) {
   destinationWatchdog.stop(message);destinationParticles.stop();cancelDestinationPlayback(message,{keepDeferred});
   if(keepDeferred&&destinationDeferredPlay)destinationDeferredPlay.timedOut=true;
   destinationPlaybackFailed=true;destinationVideo.autoplay=false;destinationVideo.pause();
+  syncJourneyWakeLock();
   $('destination-video-status').textContent=t(message);
   $('destination-video-retry').textContent=t('play');$('destination-video-retry').hidden=tvVideoMode;
   $('destination-video-return').hidden=tvVideoMode;
@@ -378,6 +382,7 @@ function closeFullscreenVideo(afterOverview=null) {
   if(typeof afterOverview!=='function')afterOverview=null;
   if(!fullscreenVideo.active||fullscreenVideo.closing)return;
   fullscreenVideo.closing=true;destinationReady=false;updateDestinationNavigation();
+  syncJourneyWakeLock();
   destinationWatchdog.stop('scene-close');cancelDestinationPlayback('scene-close');tvDiagnostics.close();
   destinationVideo.autoplay=false;
   fullscreenVideo.timeline?.kill();
@@ -1389,7 +1394,16 @@ function nextMemory(){
 }
 
 
+function syncJourneyWakeLock(){
+  const activeVideo=fullscreenVideo.active&&!fullscreenVideo.closing;
+  const inJourney=state==='journey'||state==='memory';
+  setJourneyWakeLock(!tvVideoMode&&inJourney&&
+    !fullscreenVideo.externalHold&&!(activeVideo&&destinationPlaybackFailed)&&
+    (storyActive||activeVideo));
+}
+
 function syncStoryUI(){
+  syncJourneyWakeLock();
   const button=$('story-play');if(!button)return;
   if (state === 'intro' && particleIntro?.active) {
     const playing = particleIntro.mode === 'auto';
