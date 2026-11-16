@@ -98,6 +98,7 @@ export function createGallery({ config = {}, getLanguage = () => 'sk', onOpen = 
   let ready = false, loading = false, cursor = null, restoreFocus = null;
   let active = 0, selected = -1, lightboxReturn = null, loadRevision = 0, photoRevision = 0;
   let statusKey = api ? 'loading' : 'setup', photoFailed = false;
+  let prefetchedList = null;
   const mobileCamera = 'capture' in cameraInput && matchMedia('(pointer: coarse)').matches;
   cameraButton.hidden = !mobileCamera;
   const nav = document.getElementById('bottom-nav');
@@ -164,6 +165,15 @@ export function createGallery({ config = {}, getLanguage = () => 'sk', onOpen = 
     feedback.dataset.key = key; feedback.dataset.vars = JSON.stringify(vars);
     feedback.textContent = t(key, vars); feedback.hidden = false;
   }
+  function prepareList() {
+    if (!api || dialog.open || photos.length || prefetchedList) return;
+    // Stage only metadata. No image data is requested until the gallery opens.
+    const entry = { promise: api.call('list', { cursor: null }), expires: Infinity };
+    prefetchedList = entry;
+    entry.promise.then(() => { entry.expires = Date.now() + 60_000; }, () => {
+      if (prefetchedList === entry) prefetchedList = null;
+    });
+  }
   async function load(reset = false) {
     if (!api || loading) return;
     const revision = ++loadRevision;
@@ -173,7 +183,10 @@ export function createGallery({ config = {}, getLanguage = () => 'sk', onOpen = 
     try {
       const pageCursor = reset ? null : cursor;
       const firstLoad = !pageCursor && !photos.length;
-      const page = await api.call('list', { cursor: pageCursor, includeThumbnails: firstLoad });
+      const requestPage = () => api.call('list', { cursor: pageCursor, includeThumbnails: firstLoad });
+      const cached = firstLoad && prefetchedList?.expires > Date.now() ? prefetchedList.promise : null;
+      if (firstLoad) prefetchedList = null;
+      const page = await (cached ? cached.catch(requestPage) : requestPage());
       if (revision !== loadRevision) return;
       if (!Array.isArray(page.photos)) throw new Error('unavailable');
       limits.maxFileBytes = Math.min(10 * 1024 * 1024, Number(page.maxFileBytes) || limits.maxFileBytes);
@@ -383,7 +396,7 @@ export function createGallery({ config = {}, getLanguage = () => 'sk', onOpen = 
   }
   function close() { if (dialog.open) { restoreNavigation(); dialog.close(); } }
   refreshLanguage();
-  return { open, close, refreshLanguage, isOpen: () => dialog.open };
+  return { open, close, prepareList, refreshLanguage, isOpen: () => dialog.open };
 }
 
 export function uploadMime(file) {

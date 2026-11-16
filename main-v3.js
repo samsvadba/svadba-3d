@@ -1647,14 +1647,15 @@ function applyLanguage(){
   layoutDirty=true;
 }
 $('utility-sound').onclick=toggleMusic;
-$('utility-gallery').onclick=()=>{
+function getGalleryChapter(){
   if(!galleryChapter)galleryChapter=createGallery({
     config:config.gallery,getLanguage:()=>preferences.language,
     onOpen:()=>{particleIntro?.suspend('gallery');if(storyActive)pauseStory();queueMicrotask(syncJourneyWakeLock);},
     onClose:()=>{particleIntro?.resume('gallery');syncJourneyWakeLock();},
   });
-  galleryChapter.open($('utility-gallery'));
-};
+  return galleryChapter;
+}
+$('utility-gallery').onclick=()=>getGalleryChapter().open($('utility-gallery'));
 palettePicker=createThemePicker({trigger:$('utility-palette'),container:$('utility-controls'),palettes:themeSystem.palettes,getSelection:()=>preferences.palette,onSelect:selectThemePalette,getLanguage:()=>preferences.language,getLabel:()=>t('choosePalette'),reducedMotion});
 $('utility-mood').onclick=toggleThemeMode;
 $('utility-language').onclick=()=>{preferences.language=preferences.language==='sk'?'en':'sk';savePreference('sm-language',preferences.language);applyLanguage();};
@@ -1743,6 +1744,12 @@ function finishLoading() {
   if (initialView === 'journey') { finishStartupCloud(); playJourneyTransition(); }
   else if (initialView === 'wedding') { finishStartupCloud(); playWeddingTransition(); }
   else playIntroTextAnimations();
+  // Let the initial media establish itself before starting a metadata-only read.
+  if(config.gallery.scriptUrl&&!navigator.connection?.saveData){
+    setTimeout(()=>{
+      if(!document.hidden&&!fullscreenVideo.active)getGalleryChapter().prepareList();
+    },3000);
+  }
 }
 let loadTimeout;
 $('pl-skip-btn').onclick = finishLoading;
