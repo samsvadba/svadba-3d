@@ -171,17 +171,18 @@ export function createGallery({ config = {}, getLanguage = () => 'sk', onOpen = 
     if (!photos.length) setStatus('loading');
     updateControls();
     try {
-      if (!ready) {
-        const state = await api.call('status');
-        if (!state.ready) throw new Error('unavailable');
-        limits.maxFileBytes = Math.min(10 * 1024 * 1024, Number(state.maxFileBytes) || limits.maxFileBytes);
-        limits.maxBatchFiles = Math.min(20, Number(state.maxBatchFiles) || limits.maxBatchFiles);
-        ready = true;
-      }
-      const page = await api.call('list', { cursor: !reset ? cursor : null });
+      const pageCursor = reset ? null : cursor;
+      const firstLoad = !pageCursor && !photos.length;
+      const page = await api.call('list', { cursor: pageCursor, includeThumbnails: firstLoad });
       if (revision !== loadRevision) return;
       if (!Array.isArray(page.photos)) throw new Error('unavailable');
-      for (const candidate of page.photos) addPhoto(candidate);
+      limits.maxFileBytes = Math.min(10 * 1024 * 1024, Number(page.maxFileBytes) || limits.maxFileBytes);
+      limits.maxBatchFiles = Math.min(20, Number(page.maxBatchFiles) || limits.maxBatchFiles);
+      ready = true;
+      page.photos.forEach((candidate, index) => {
+        const embedded = index < 3 && firstLoad ? page.thumbnails?.[candidate?.id] : null;
+        addPhoto(candidate, false, embedded);
+      });
       cursor = typeof page.nextCursor === 'string' && page.nextCursor.length < 2048 ? page.nextCursor : null;
       setStatus(photos.length ? null : 'empty');
     } catch (error) {
@@ -222,7 +223,7 @@ export function createGallery({ config = {}, getLanguage = () => 'sk', onOpen = 
       media(photo, 'thumbnail').then(url => { entry.target.querySelector('img').src = url; }).catch(() => { entry.target.classList.add('gallery-tile-failed'); entry.target.textContent = t('photoError'); });
     }
   }, { root: $('.gallery-scroll'), rootMargin: '180px' });
-  function addPhoto(candidate, prepend = false) {
+  function addPhoto(candidate, prepend = false, embeddedThumbnail = null) {
     const photo = normalizePhoto(candidate);
     if (!photo || photoNodes.has(photo.id)) return !!photo;
     prepend ? photos.unshift(photo) : photos.push(photo);
@@ -240,6 +241,14 @@ export function createGallery({ config = {}, getLanguage = () => 'sk', onOpen = 
     button.append(image); button.onclick = () => openPhoto(photos.findIndex(value => value.id === photo.id), button);
     photoNodes.set(photo.id, button);
     prepend ? grid.prepend(button) : grid.append(button);
+    if (typeof embeddedThumbnail === 'string' && embeddedThumbnail.length <= 240000) {
+      try {
+        const url = jpegObjectUrl({ mime: 'image/jpeg', base64: embeddedThumbnail });
+        mediaCache.set(`${photo.id}:thumbnail`, Promise.resolve(url));
+        image.src = url;
+        return true;
+      } catch { /* A missing or invalid thumbnail uses the usual lazy request. */ }
+    }
     thumbnails.observe(button);
     return true;
   }

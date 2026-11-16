@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import vm from 'node:vm';
 const source = await readFile(new URL('./Code.gs',import.meta.url),'utf8');
 // Actual Apps Script source, fake Google interfaces. These tests cannot prove a live Drive save.
-const files=new Map(), props=new Map(), cache=new Map(); let next=0, failRole=null, full=false;
+const files=new Map(), props=new Map(), cache=new Map(), bulkReads=[]; let next=0, failRole=null, full=false;
 const Drive={
   About:{get:()=>({storageQuota:{limit:'1000000000',usage:full?'1000000000':'0'}})},
   Files:{
@@ -12,13 +12,26 @@ const Drive={
     update(meta,id){const file=files.get(id);Object.assign(file,meta);return structuredClone(file);},
     list(options){
       const parent=options.q.match(/^'([^']+)' in parents/)[1];
-      const filters=[...options.q.matchAll(/key='([^']+)' and value='([^']+)'/g)].map(x=>[x[1],x[2]]);
-      return {files:[...files.values()].filter(file=>!file.trashed&&file.parents?.includes(parent)&&filters.every(([k,v])=>file.appProperties[k]===v)).map(file=>structuredClone(file))};
+      const [query, uploadGroup] = options.q.split(" and (appProperties has { key='uploadId'");
+      const filters=[...query.matchAll(/key='([^']+)' and value='([^']+)'/g)].map(x=>[x[1],x[2]]);
+      const uploadIds=uploadGroup?[...uploadGroup.matchAll(/and value='([^']+)'/g)].map(x=>x[1]):null;
+      return {files:[...files.values()].filter(file=>!file.trashed&&file.parents?.includes(parent)&&filters.every(([k,v])=>file.appProperties[k]===v)&&(!uploadIds||uploadIds.includes(file.appProperties.uploadId))).slice(0,options.pageSize).map(file=>structuredClone(file))};
     }
   }
 };
+function fetchMedia(url) {
+  const id=url.match(/files\/([^?]+)/)[1];
+  return {getResponseCode:()=>200,getContent:()=>files.get(id).bytes};
+}
 function instance(){
-  const sandbox={Drive,console:{warn(){}},Utilities:{base64Decode:s=>[...Buffer.from(s,'base64')],base64Encode:b=>Buffer.from(b).toString('base64'),newBlob:(bytes,type)=>({bytes,type}),formatDate:()=>new Date().toISOString().slice(0,10)},PropertiesService:{getScriptProperties:()=>({getProperty:k=>props.get(k),setProperty:(k,v)=>props.set(k,v)})},LockService:{getScriptLock:()=>({tryLock:()=>true,releaseLock(){}})},CacheService:{getScriptCache:()=>({get:k=>cache.get(k),put:(k,v)=>cache.set(k,v)})},ScriptApp:{getOAuthToken:()=> 'test-token'},UrlFetchApp:{fetch:url=>{const id=url.match(/files\/([^?]+)/)[1];return {getResponseCode:()=>200,getContent:()=>files.get(id).bytes};}}};
+  const sandbox={Drive,console:{warn(){}},Utilities:{base64Decode:s=>[...Buffer.from(s,'base64')],base64Encode:b=>Buffer.from(b).toString('base64'),newBlob:(bytes,type)=>({bytes,type}),formatDate:()=>new Date().toISOString().slice(0,10)},PropertiesService:{getScriptProperties:()=>({getProperty:k=>props.get(k),setProperty:(k,v)=>props.set(k,v)})},LockService:{getScriptLock:()=>({tryLock:()=>true,releaseLock(){}})},CacheService:{getScriptCache:()=>({
+    get:k=>cache.get(k),put:(k,v)=>cache.set(k,v),
+    getAll:keys=>Object.fromEntries(keys.filter(k=>cache.has(k)).map(k=>[k,cache.get(k)])),
+    putAll(values){for(const [key,value] of Object.entries(values))cache.set(key,value);},
+  })},ScriptApp:{getOAuthToken:()=> 'test-token'},UrlFetchApp:{fetch:fetchMedia,fetchAll(requests){
+    bulkReads.push(requests.map(request=>files.get(request.url.match(/files\/([^?]+)/)[1])));
+    return requests.map(request=>fetchMedia(request.url));
+  }}};
   vm.createContext(sandbox);vm.runInContext(source,sandbox);return sandbox;
 }
 let app=instance();
@@ -44,6 +57,24 @@ assert.equal(app.galleryCall('uploadStatus',{id:retry.id}).result.photo,null,'pa
 assert.equal(app.galleryCall('list',{}).result.photos.length,1,'partial save is never published');
 assert.equal(app.galleryCall('upload',retry).ok,true);
 assert.equal(app.galleryCall('list',{}).result.photos.length,2);
+for (const id of ['77777777-7777-4777-8777-777777777777','88888888-8888-4888-8888-888888888888']) {
+  assert.equal(app.galleryCall('upload',{...data,id}).ok,true);
+}
+const firstPage = app.galleryCall('list',{includeThumbnails:true}).result;
+assert.equal(firstPage.photos.length,4);
+assert.deepEqual(Object.keys(firstPage.thumbnails),Array.from(firstPage.photos.slice(0,3),photo=>photo.id));
+assert.ok(Object.values(firstPage.thumbnails).every(value=>value===jpeg));
+assert.equal(bulkReads.length,1);
+assert.equal(bulkReads[0].length,2,'validated cached thumbnail skips the Drive fetch');
+assert.ok(bulkReads[0].every(file=>file.appProperties.role==='thumbnail'),'bulk list cannot read originals or previews');
+assert.equal(Object.keys(app.galleryCall('list',{includeThumbnails:true}).result.thumbnails).length,3);
+assert.equal(bulkReads.length,1,'the next visit reuses the cache');
+assert.equal(app.galleryCall('list',{cursor:'next-page',includeThumbnails:true}).result.thumbnails,undefined);
+const firstOriginal = [...files.values()].find(file=>file.appProperties.uploadId===data.id&&file.appProperties.role==='original');
+const target = firstOriginal.appProperties.thumbnail;
+firstOriginal.appProperties.thumbnail = firstOriginal.id;
+assert.equal(app.galleryCall('list',{includeThumbnails:true}).result.thumbnails[data.id],undefined,'a mismatched pointer cannot serve an original');
+firstOriginal.appProperties.thumbnail = target;
 const heic=Buffer.concat([Buffer.from([0,0,0,24]),Buffer.from('ftypheic'),Buffer.alloc(12)]);
 assert.equal(app.detect_([...heic]),'image/heic');
 props.set('GALLERY_DAILY',JSON.stringify({day:new Date().toISOString().slice(0,10),count:500}));

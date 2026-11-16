@@ -1,5 +1,5 @@
 /* Free Apps Script web app. Deploy as owner, access: Anyone. No OAuth callback server. */
-var GALLERY = { origin: 'https://samsvadba.github.io', maxBytes: 10 * 1024 * 1024, maxDaily: 500, pageSize: 18 };
+var GALLERY = { origin: 'https://samsvadba.github.io', maxBytes: 10 * 1024 * 1024, maxDaily: 500, pageSize: 18, firstRow: 3 };
 
 function doGet(e) {
   var template = HtmlService.createTemplateFromFile('Bridge');
@@ -13,7 +13,7 @@ function galleryCall(action, data) {
   try {
     data = data || {};
     if (action === 'status') { folder_(); return { ok: true, ready: true, maxFileBytes: GALLERY.maxBytes, maxBatchFiles: 20 }; }
-    if (action === 'list') return { ok: true, result: list_(data.cursor) };
+    if (action === 'list') return { ok: true, result: list_(data.cursor, data.includeThumbnails === true) };
     if (action === 'upload') return { ok: true, result: upload_(data) };
     if (action === 'uploadStatus') {
       var saved = original_(data.id, folder_());
@@ -57,10 +57,53 @@ function original_(id, folder) {
   return found[0] || null;
 }
 function photo_(file) { return { id: file.appProperties.uploadId, name: file.name }; }
-function list_(cursor) {
+function list_(cursor, includeThumbnails) {
   if (cursor && (typeof cursor !== 'string' || cursor.length > 2048)) throw Error('DENIED');
-  var result = Drive.Files.list({ q: query_(folder_(), "appProperties has { key='role' and value='original' } and appProperties has { key='state' and value='ready' }"), orderBy: 'createdTime desc', pageSize: GALLERY.pageSize, pageToken: cursor || undefined, fields: 'nextPageToken,files(id,name,createdTime,appProperties)' });
-  return { photos: (result.files || []).map(photo_), nextCursor: result.nextPageToken || null };
+  var folder = folder_();
+  var result = Drive.Files.list({ q: query_(folder, "appProperties has { key='role' and value='original' } and appProperties has { key='state' and value='ready' }"), orderBy: 'createdTime desc', pageSize: GALLERY.pageSize, pageToken: cursor || undefined, fields: 'nextPageToken,files(id,name,createdTime,appProperties)' });
+  var files = result.files || [];
+  var page = { photos: files.map(photo_), nextCursor: result.nextPageToken || null, maxFileBytes: GALLERY.maxBytes, maxBatchFiles: 20 };
+  if (!cursor && includeThumbnails && files.length) {
+    try { page.thumbnails = firstRowThumbnails_(folder, files.slice(0, GALLERY.firstRow)); }
+    catch (error) { console.warn('Gallery first-row thumbnails unavailable'); }
+  }
+  return page;
+}
+function firstRowThumbnails_(folder, originals) {
+  var expected = {}, thumbnails = {}, pending = [];
+  originals.forEach(function(file){
+    var id = file.appProperties.uploadId;
+    if (/^[a-f0-9-]{36}$/.test(id) && file.appProperties.thumbnail) expected[id] = file.appProperties.thumbnail;
+  });
+  var ids = Object.keys(expected);
+  if (!ids.length) return thumbnails;
+  var matchesIds = ids.map(function(id){ return "appProperties has { key='uploadId' and value='" + id + "' }"; }).join(' or ');
+  var matches = Drive.Files.list({
+    q: query_(folder, "appProperties has { key='role' and value='thumbnail' } and (" + matchesIds + ")"),
+    pageSize: GALLERY.firstRow,
+    fields: 'files(id,parents,mimeType,appProperties,trashed,size)'
+  }).files || [];
+  var cache = CacheService.getScriptCache();
+  var cached = cache.getAll(ids.map(function(id){ return id + ':thumbnail'; }));
+  matches.forEach(function(meta){
+    var id = (meta.appProperties || {}).uploadId, key = id + ':thumbnail';
+    if (expected[id] !== meta.id || !mediaMatches_(meta, folder, id, 'thumbnail')) return;
+    if (cached[key]) thumbnails[id] = cached[key];
+    else pending.push({ id: id, fileId: meta.id });
+  });
+  if (!pending.length) return thumbnails;
+  var token = ScriptApp.getOAuthToken(), cacheUpdates = {};
+  var responses = UrlFetchApp.fetchAll(pending.map(function(item){ return mediaRequest_(item.fileId, token); }));
+  responses.forEach(function(response, index){
+    if (response.getResponseCode() !== 200) return;
+    var bytes = response.getContent();
+    if (!bytes.length || bytes.length > 180000 || (bytes[0] & 255) !== 255 || (bytes[1] & 255) !== 216) return;
+    var id = pending[index].id, base64 = Utilities.base64Encode(bytes);
+    thumbnails[id] = base64;
+    if (base64.length < 95000) cacheUpdates[id + ':thumbnail'] = base64;
+  });
+  if (Object.keys(cacheUpdates).length) cache.putAll(cacheUpdates, 1800);
+  return thumbnails;
 }
 function bytes_(base64, limit) {
   if (typeof base64 !== 'string' || !base64 || base64.length > Math.ceil(limit / 3) * 4 || !/^[A-Za-z0-9+/]*={0,2}$/.test(base64)) throw Error('FILE_TOO_LARGE');
@@ -134,13 +177,24 @@ function media_(id, variant) {
   if (!original || original.appProperties.state !== 'ready') throw Error('NOT_FOUND');
   var fileId = original.appProperties[variant];
   var meta = Drive.Files.get(fileId, { fields: 'id,parents,mimeType,appProperties,trashed,size' });
-  if (meta.trashed || meta.parents.indexOf(folder) < 0 || meta.mimeType !== 'image/jpeg' || meta.appProperties.uploadId !== id || meta.appProperties.role !== variant || Number(meta.size) > 800000) throw Error('DENIED');
+  if (!mediaMatches_(meta, folder, id, variant)) throw Error('DENIED');
   var cache = CacheService.getScriptCache(), key = id + ':' + variant, base64 = cache.get(key);
   if (!base64) {
-    var response = UrlFetchApp.fetch('https://www.googleapis.com/drive/v3/files/' + encodeURIComponent(fileId) + '?alt=media', { headers: { Authorization: 'Bearer ' + ScriptApp.getOAuthToken() }, muteHttpExceptions: true });
+    var request = mediaRequest_(fileId, ScriptApp.getOAuthToken());
+    var response = UrlFetchApp.fetch(request.url, { headers: request.headers, muteHttpExceptions: true });
     if (response.getResponseCode() !== 200) throw Error('STORAGE');
     base64 = Utilities.base64Encode(response.getContent());
     if (base64.length < 95000) cache.put(key, base64, 1800);
   }
   return { base64: base64, mime: 'image/jpeg' };
+}
+function mediaMatches_(meta, folder, id, variant) {
+  var properties = meta && meta.appProperties, size = meta && Number(meta.size);
+  return properties && !meta.trashed && meta.parents && meta.parents.indexOf(folder) >= 0 && meta.mimeType === 'image/jpeg' &&
+    properties.weddingGallery === 'v1' && properties.uploadId === id && properties.role === variant &&
+    size > 0 && size <= (variant === 'thumbnail' ? 180000 : 800000);
+}
+function mediaRequest_(fileId, token) {
+  return { url: 'https://www.googleapis.com/drive/v3/files/' + encodeURIComponent(fileId) + '?alt=media',
+    headers: { Authorization: 'Bearer ' + token }, muteHttpExceptions: true };
 }
