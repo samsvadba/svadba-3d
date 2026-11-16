@@ -1603,7 +1603,9 @@ function applyMood(animate=true){
   gsap.to(mood,{value:preferences.theme==='dark'?1:0,palette:selected.nonClassic?1:0,revision:mood.revision+1,...themeTweenValues(selected),duration:animate?duration(.45):0,overwrite:true,onUpdate:applyGlobeTheme});
 }
 function applyLanguage(){
-  $('entry-button-text').textContent=t('enter');$('entry-button').setAttribute('aria-label',t('enterWithSound'));
+  $('entry-button-text').textContent=t('enter');
+  $('entry-date').textContent=t('wInvitationDate');
+  $('entry-wedding-text').textContent=t('enterWedding');
   originMarkers?.refreshLanguage(t('originLabel'));
   document.documentElement.lang=preferences.language;
   document.title='Simona & Martin — '+t('story');
@@ -1749,7 +1751,7 @@ $('three-canvas').addEventListener('keydown',event=>{
 window.addEventListener('pageshow', () => { if (particleIntro?.active) particleIntro.resume('page');weddingParticles?.resume('page');resumeDeferredDestinationPlay('pageshow'); });
 
 let loaded = false;
-function finishLoading() {
+function finishLoading(initialView = new URLSearchParams(location.search).get('view')) {
   if (loaded) return;
   loaded = true;
   clearTimeout(loadTimeout);
@@ -1762,7 +1764,6 @@ function finishLoading() {
   $('app').inert=false;$('utility-controls').inert=false;
   $('persistent-header').inert = $('bottom-nav').inert = false;
   syncMusic();
-  const initialView = new URLSearchParams(location.search).get('view');
   if(initialView!=='wedding')destinationBuffer.plan(0);
   if (initialView === 'journey') { finishStartupCloud(); playJourneyTransition(); }
   else if (initialView === 'wedding') { finishStartupCloud(); playWeddingTransition(); }
@@ -1770,9 +1771,14 @@ function finishLoading() {
   prepareEntryGallery();
 }
 let loadTimeout;
-$('pl-skip-btn').onclick = finishLoading;
+$('pl-skip-btn').onclick = () => finishLoading();
 $('preloader-percentage').textContent = '50%';
 $('loading-ring').style.setProperty('--p','50%');
+function dismissEntryScreen(){
+  const entry=$('entry-screen');
+  entry.inert=true;delete document.body.dataset.entryPending;
+  gsap.to(entry,{autoAlpha:0,duration:duration(.35),onComplete:()=>{entry.hidden=true;}});
+}
 $('entry-button').onclick=()=>{
   if(loaded)return;
   // Some Safari versions require the request to come from the entry tap.
@@ -1782,11 +1788,16 @@ $('entry-button').onclick=()=>{
   // WebKit's load() records the entry gesture on the shared Journey player.
   // It has no source here, so the first clip still loads after the intro.
   if(!tvVideoMode)destinationVideo.load();
-  $('entry-screen').inert=true;delete document.body.dataset.entryPending;
-  gsap.to($('entry-screen'),{autoAlpha:0,duration:duration(.35),onComplete:()=>{$('entry-screen').hidden=true;}});
+  dismissEntryScreen();
   finishLoading();
 };
-$('entry-button').focus({preventScroll:true});
+$('entry-wedding').onclick=event=>{
+  event.preventDefault();
+  if(loaded)return;
+  dismissEntryScreen();
+  finishLoading('wedding');
+};
+$('entry-screen').focus({preventScroll:true});
 
 // One monogram and one calligraphic name lockup, at every display size.
 $('entry-monogram').innerHTML=weddingMonogram();

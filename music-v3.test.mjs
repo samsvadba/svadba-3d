@@ -14,9 +14,9 @@ const production=[
   block('function syncSoundControl(){','function toast('),
   line("$('utility-sound').onclick="),
   line("document.addEventListener('visibilitychange',syncMusic)"),
-  'let loaded=false; function finishLoading(){loaded=true;testStats.entries++;}',
-  block("$('entry-button').onclick=", "$('entry-button').focus"),
-  'globalThis.player={preferences,music,syncMusic,enter:$("entry-button").onclick,recoverMusicAfterVideoFocus,armRecovery(){musicVideoRecoveryUntil=performance.now()+2000;musicVideoRecoveryUsed=false;}};',
+  'let loaded=false; function finishLoading(view){loaded=true;testStats.view=view;testStats.entries++;syncMusic();}',
+  block('function dismissEntryScreen()', "$('entry-screen').focus"),
+  'globalThis.player={preferences,music,syncMusic,enter:$("entry-button").onclick,enterWedding:$("entry-wedding").onclick,recoverMusicAfterVideoFocus,armRecovery(){musicVideoRecoveryUntil=performance.now()+2000;musicVideoRecoveryUsed=false;}};',
 ].join('\n');
 assert.doesNotMatch(source,/addEventListener\([^\n]+unlockMusic/,'Ordinary interactions cannot enable audio');
 const settle=async()=>{for(let i=0;i<10;i++)await Promise.resolve();};
@@ -25,7 +25,7 @@ function harness(saved={},tvVideoMode=false) {
   const storage=new Map(Object.entries(saved)),attributes=new Map(),events=new Map();
   const sound={setAttribute:(key,value)=>attributes.set(key,value),getAttribute:key=>attributes.get(key)};
   const stats={audio:0,storyCalls:0,entries:0,videoLoads:0,wakePrepared:0};
-  const entry={},entryScreen={};
+  const entry={},entryWedding={},entryScreen={};
   const document={hidden:false,body:{dataset:{entryPending:'true'},append(){}},addEventListener:(type,fn)=>events.set(type,fn)};
   const fullscreenVideo={active:false,closing:false,externalHold:false};
   class AudioMock {
@@ -40,7 +40,7 @@ function harness(saved={},tvVideoMode=false) {
     tvVideoMode,destinationVideo:{load(){assert.equal(stats.entries,0);stats.videoLoads++;}},
     requestStoryWakeLockAtEntry(){assert.equal(stats.entries,0);stats.wakePrepared++;},
     localStorage:{getItem:key=>storage.get(key),setItem:(key,value)=>storage.set(key,value)},
-    $:id=>{if(id==='entry-button')return entry;if(id==='entry-screen')return entryScreen;assert.equal(id,'utility-sound');return sound;},t:key=>key,
+    $:id=>({ 'entry-button':entry,'entry-wedding':entryWedding,'entry-screen':entryScreen,'utility-sound':sound })[id],t:key=>key,
     pauseStory:()=>stats.storyCalls++,particleIntro:{toggle:()=>stats.storyCalls++},
     applyLanguage(){},toast(){},
     gsap:{killTweensOf(){},to(target,options){if('volume' in options)target.volume=options.volume;options.onComplete?.();}},
@@ -96,6 +96,20 @@ assert.equal(diagnosticEntry.stats.videoLoads,0,'the controlled TV trial keeps i
 assert.equal(entry.music.playCalls,1);assert.equal(entry.stats.entries,1);
 assert.equal(entry.preferences.theme,'dark');assert.equal(entry.preferences.palette,'classic');
 entry.enter();await settle();assert.equal(entry.stats.entries,1,'Entry is idempotent');
+const wedding=harness({'sm-sound':'on'});
+let prevented=false;
+wedding.enterWedding({preventDefault(){prevented=true;}});
+assert.equal(prevented,true);
+assert.equal(wedding.stats.view,'wedding');
+assert.equal(wedding.entryScreen.hidden,true);
+assert.equal(wedding.stats.wakePrepared,0);
+assert.equal(wedding.stats.videoLoads,0);
+assert.equal(wedding.music.playCalls,0,'Wedding entry stays silent even with a previously saved sound choice');
+assert.equal(wedding.music.src,undefined);
+wedding.enter();
+assert.equal(wedding.music.playCalls,0,'Repeat activation cannot start the story after entering the wedding');
+wedding.sound.onclick();await settle();
+assert.equal(wedding.music.playCalls,1,'Guests can enable music from the wedding section');
 entry.fullscreenVideo.active=true;entry.armRecovery();entry.music.paused=true;
 entry.recoverMusicAfterVideoFocus();await settle();
 assert.equal(entry.music.paused,false,'TV decoder handover restores music');
@@ -107,4 +121,4 @@ entry.recoverMusicAfterVideoFocus();await settle();assert.equal(entry.music.play
 entry.fullscreenVideo.externalHold=false;entry.armRecovery();entry.sound.onclick();
 entry.recoverMusicAfterVideoFocus();await settle();assert.equal(entry.music.playCalls,recovered,'Explicit mute wins over recovery');
 assert.equal(entry.stats.storyCalls,0,'Entry and sound never accidentally pause Story');
-console.log('Music V3 passed: entry gesture, one player, bounded TV recovery, explicit mute/Instagram hold, loop/fade and visibility.');
+console.log('Music V3 passed: story entry gesture, silent wedding entry, one player, bounded TV recovery, explicit mute/Instagram hold, loop/fade and visibility.');
