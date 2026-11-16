@@ -1,15 +1,17 @@
 import { defineConfig } from 'vite'
 import { fileURLToPath } from 'node:url'
-import { readFileSync } from 'node:fs'
-import { rootRedirect } from './scripts/root-redirect.mjs'
 
 export default defineConfig({
   base: '/svadba-3d/',
   plugins: [{
-    name: 'v3-root-redirect',
-    generateBundle() {
-      // Keep existing root links usable without building a second experience.
-      this.emitFile({ type: 'asset', fileName: 'index.html', source: rootRedirect(readFileSync(fileURLToPath(new URL('./index-v3.html', import.meta.url)), 'utf8')) })
+    name: 'v3-root-entry',
+    generateBundle: {
+      order: 'post',
+      handler(_options, bundle) {
+        const page = bundle['index-v3.html']
+        if (page?.type !== 'asset') this.error('Missing built V3 page')
+        this.emitFile({ type: 'asset', fileName: 'index.html', source: page.source })
+      }
     }
   }],
   build: {

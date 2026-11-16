@@ -70,6 +70,7 @@ let destinationPlaybackFailed=false;
 let destinationPlaybackEpoch=0, destinationDeferredPlay=null;
 const destinationWatchdog=createDestinationWatchdog(destinationVideo,{
   startupMs:tvVideoMode?15000:8000,
+  pauseWhenHidden:!tvVideoMode,
   onTimeout:handleDestinationTimeout,
   onProgress:status=>{if(status.advanced>=.15)destinationParticles.reveal(destinationVideo);},
   onError:error=>{tvDiagnostics.exception('watchdog tick',error);failFullscreenVideo('videoError');},
@@ -111,6 +112,7 @@ function holdInstagramDestination(){
   destinationVideo.autoplay=false;
   pauseStory();destinationVideo.pause();
   // Return/focus never reopens Instagram or resumes the story; playback is explicit.
+  $('destination-video-status').textContent='';
   $('destination-video-retry').textContent=t('videoResume');
   $('destination-video-retry').hidden=false;
 }
@@ -196,7 +198,6 @@ function prepareFullscreenVideo(loc) {
   $('destination-video-status').textContent='';
   $('destination-video-retry').textContent=t('play');
   $('destination-video-retry').hidden=true;
-  $('destination-video-return').hidden=true;
   // Safari must see a visible muted video; the full-screen particle canvas
   // covers its first frame instead of hiding the media element with opacity:0.
   gsap.set(destinationVideo,{opacity:1,scale:reducedMotion.matches?1:1.035});
@@ -231,9 +232,10 @@ function resumeDeferredDestinationPlay(origin) {
   if(!destinationTicketCurrent(ticket)||!fullscreenVideo.active||fullscreenVideo.closing||fullscreenVideo.externalHold){
     tvDiagnostics.returned(origin,'deferred attempt cancelled: destination changed / scene closed / Instagram hold');return;
   }
+  if(ticket.resume&&(destinationPlaybackPending||!destinationVideo.paused||destinationVideo.ended))return;
   if(ticket.timedOut){
     destinationPlaybackFailed=false;
-    $('destination-video-status').textContent='';$('destination-video-retry').hidden=true;$('destination-video-return').hidden=true;
+    $('destination-video-status').textContent='';$('destination-video-retry').hidden=true;
   }
   tvDiagnostics.control('deferred-resumed',origin);
   destinationWatchdog.stop('deferred-resume');
@@ -275,7 +277,10 @@ function playFullscreenVideo(manual=false,origin='automatic') {
       if(destinationPlaybackPending!==attempt||!destinationTicketCurrent(ticket)||!fullscreenVideo.active||fullscreenVideo.closing||fullscreenVideo.externalHold){blocked('stale play rejection; scene/attempt changed');return;}
       tvDiagnostics.playResult(error);
       // A cancelled load is bounded by the same watchdog, never a retry loop.
-      if(error.name==='AbortError'){blocked('play rejected: AbortError; watchdog remains active');return;}
+      if(error.name==='AbortError'){
+        if(!tvVideoMode&&document.hidden)destinationDeferredPlay={...ticket,resume:true};
+        blocked('play rejected: AbortError; watchdog remains active');return;
+      }
       if(error.name==='NotAllowedError'){failFullscreenVideo('videoTap');return;}
       if(fallbackDestinationSource())return;
       failFullscreenVideo('videoError');
@@ -312,8 +317,8 @@ function failFullscreenVideo(message,keepDeferred=false) {
   destinationPlaybackFailed=true;destinationVideo.autoplay=false;destinationVideo.pause();
   syncJourneyWakeLock();
   $('destination-video-status').textContent=t(message);
-  $('destination-video-retry').textContent=t('play');$('destination-video-retry').hidden=tvVideoMode;
-  $('destination-video-return').hidden=tvVideoMode;
+  $('destination-video-retry').textContent=t(destinationVideo.currentTime>.02?'videoResume':'play');
+  $('destination-video-retry').hidden=tvVideoMode;
   if(tvVideoMode)tvDiagnostics.focusRetry();else $('destination-video-retry').focus({preventScroll:true});
 }
 
@@ -350,7 +355,7 @@ function playTVVideoDirectly() {
   tvVideoVariant=3;tvDiagnostics.variant(3);destinationVideo.autoplay=false;
   destinationWatchdog.stop('direct-click');cancelDestinationPlayback('direct-click');destinationPlaybackFailed=false;
   destinationVideo.pause();
-  $('destination-video-retry').hidden=true;$('destination-video-return').hidden=true;$('destination-video-status').textContent='';
+  $('destination-video-retry').hidden=true;$('destination-video-status').textContent='';
   if(destinationVideo.error)destinationVideo.load();
   playFullscreenVideo(true,'direct-click'); // Real button click -> play(), no await/animation.
 }
@@ -394,7 +399,6 @@ function closeFullscreenVideo(afterOverview=null) {
 destinationVideo.addEventListener('playing',()=>{
   if(!fullscreenVideo.active||fullscreenVideo.closing||fullscreenVideo.externalHold||destinationPlaybackFailed){destinationVideo.pause();return;}
   $('destination-video-status').textContent='';$('destination-video-retry').hidden=true;
-  $('destination-video-return').hidden=true;
   if(!destinationWatchdog.snapshot().active)destinationWatchdog.start();
   musicVideoRecoveryUntil=performance.now()+2000;musicVideoRecoveryUsed=false;
   syncMusic();
@@ -406,7 +410,6 @@ destinationVideo.addEventListener('error',()=>{
   failFullscreenVideo('videoError');
 });
 $('destination-video-close').onclick=()=>{pauseStory();closeFullscreenVideo();};
-$('destination-video-return').onclick=()=>{pauseStory();closeFullscreenVideo();};
 // Native external navigation only: never reopen Instagram on focus/visibility/pageshow.
 $('destination-video-highlight').addEventListener('click',event=>{
   if(!fullscreenVideo.active||fullscreenVideo.closing||!locations[currentIndex]?.instagramHighlight){event.preventDefault();return;}
@@ -431,7 +434,7 @@ $('destination-video-retry').onclick=()=>{
     playFullscreenVideo(true,'Instagram-resume-click');
   }else{
     destinationPlaybackPending=null;destinationPlaybackFailed=false;
-    $('destination-video-retry').hidden=true;$('destination-video-return').hidden=true;$('destination-video-status').textContent='';
+    $('destination-video-retry').hidden=true;$('destination-video-status').textContent='';
     if(destinationVideo.error||destinationVideo.readyState<2)destinationVideo.load();
     playFullscreenVideo(true,'retry-click');
   }
@@ -439,7 +442,7 @@ $('destination-video-retry').onclick=()=>{
 videoScene.addEventListener('keydown',event=>{
   if(event.key!=='Tab')return;
   const diagnosticButtons=tvVideoMode?[...videoScene.querySelectorAll('#tv-video-diagnostics button')]:[];
-  const focusable=[...diagnosticButtons,$('destination-video-highlight'),instagramCopy,instagramCopyField,$('destination-video-next'),$('destination-video-close'),$('destination-video-retry'),$('destination-video-return')].filter(el=>el&&!el.hidden&&!el.disabled);
+  const focusable=[...diagnosticButtons,$('destination-video-highlight'),instagramCopy,instagramCopyField,$('destination-video-next'),$('destination-video-close'),$('destination-video-retry')].filter(el=>el&&!el.hidden&&!el.disabled);
   const first=focusable[0],last=focusable[focusable.length-1];
   if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus();}
   else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}
@@ -1110,19 +1113,23 @@ function animate(time) {
   if(detailLayers.length)detailReady+=(1-detailReady)*(1-Math.exp(-dt*3));
   const mix=detail*detailReady;
   applyGlobeTheme();
-  overviewMaterial.opacity=.26*(1-mix*.86);
+  const night=mood.value;
+  const overviewOpacity=.46-.08*night;
+  const borderOpacity=detail*(.50-.12*night);
+  const selectedOpacity=.76+detail*.19;
+  overviewMaterial.opacity=overviewOpacity*(1-mix*.90);
   wireMaterial.opacity=.08*(1-detail*.94);
   const selectedCountry=currentIndex>=0?countryByCity[locations[currentIndex].key]:null;
   const geographyInk=getParticleTheme().ink;
   for(const layer of detailLayers){
     const target=layer.iso===selectedCountry?journeyMotion.focus:0;
     layer.emphasis+=(target-layer.emphasis)*(1-Math.exp(-dt*5));
-    // The existing vector contour becomes dark; neighbors remain light, without fills.
-    const night=mood.value,e=layer.emphasis;
+    // Keep the selected contour distinct without making it opaque.
+    const e=layer.emphasis;
     layer.material.color.setRGB((.392-.27*e)*(1-night)+(.69+.23*e)*night,(.408-.28*e)*(1-night)+(.70+.20*e)*night,(.373-.26*e)*(1-night)+(.65+.22*e)*night);
     // Emphasis uses opacity; coloured boundaries share the palette foreground.
     layer.material.color.lerp(geographyInk,mood.palette);
-    layer.material.opacity=detailReady*(detail*.19+layer.emphasis*.76);
+    layer.material.opacity=detailReady*(borderOpacity+(selectedOpacity-borderOpacity)*e);
     layer.line.visible=layer.material.opacity>.002;
   }
   updateGeographicLabels(dt);
@@ -1614,8 +1621,8 @@ function applyLanguage(){
   document.querySelector('#journey-instruction p').firstChild.textContent=t('journey1');text('#journey-instruction p span','journey2');
   text('#transition-screen .trans-line:first-child','journeyEntry');text('#transition-screen .trans-line:last-child','journey2');
   text('#globe-fallback','fallback');attr('three-canvas','canvas');attr('header-home','home');attr('bottom-nav','navigation');attr('label-layer','cities');
-  attr('destination-video-close','back');attr('video-stop-btn','close');text('#destination-video-retry',fullscreenVideo.externalHold?'videoResume':'play');
-  text('#destination-video-return','videoReturn');
+  attr('destination-video-close','videoReturn');attr('video-stop-btn','close');
+  text('#destination-video-retry',fullscreenVideo.externalHold||destinationVideo.currentTime>.02?'videoResume':'play');
   refreshInstagramCopy();
   updateDestinationNavigation();syncStoryUI();
   weddingChapter?.refreshLanguage();
@@ -1665,7 +1672,18 @@ palettePicker=createThemePicker({trigger:$('utility-palette'),container:$('utili
 $('utility-mood').onclick=toggleThemeMode;
 $('utility-language').onclick=()=>{preferences.language=preferences.language==='sk'?'en':'sk';savePreference('sm-language',preferences.language);applyLanguage();};
 document.addEventListener('visibilitychange',syncMusic);
-document.addEventListener('visibilitychange',()=>{destinationBuffer.pause(document.hidden);destinationParticles.visibility();resumeDeferredDestinationPlay('visibilitychange');destinationWatchdog.visibility();});
+function handleDestinationVisibility(){
+  destinationBuffer.pause(document.hidden);
+  destinationParticles.visibility();
+  if(document.hidden&&!tvVideoMode&&fullscreenVideo.active&&!fullscreenVideo.closing&&
+    !fullscreenVideo.externalHold&&!destinationPlaybackFailed&&!destinationVideo.ended&&
+    (!destinationVideo.paused||destinationVideo.currentTime>.02||destinationWatchdog.snapshot().started)){
+    destinationDeferredPlay??={...destinationPlaybackTicket(),resume:true};
+  }
+  resumeDeferredDestinationPlay('visibilitychange');
+  destinationWatchdog.visibility();
+}
+document.addEventListener('visibilitychange',handleDestinationVisibility);
 window.addEventListener('focus',()=>resumeDeferredDestinationPlay('focus'));
 document.addEventListener('visibilitychange',()=>{
   if(document.hidden)weddingParticles?.suspend('visibility');else weddingParticles?.resume('visibility');

@@ -52,6 +52,9 @@ assert.equal(oversized.sourceFor(config.locations[0]),silent,'normal streaming r
 const disabled=createDestinationBuffer(config.locations,{fetcher,objectUrls,enabled:false});
 const before=calls.length;disabled.plan(0);await settle();assert.equal(calls.length,before,'data saver disables speculative transfers');
 const main=await readFile(new URL('./main-v3.js',import.meta.url),'utf8');
+const html=await readFile(new URL('./index-v3.html',import.meta.url),'utf8');
+assert.match(html, /id="destination-video-close"/,'video retains an independent exit control');
+assert.doesNotMatch(html, /id="destination-video-return"/,'recovery uses one action, with the existing close button');
 assert.ok(main.indexOf('if(loc.fullscreenVideo)prepareFullscreenVideo(loc);')<main.indexOf('flyCamera(loc.lat, loc.lon, memoryDistance(), 1.3'));
 assert.doesNotMatch(main,/textContent=t\('videoLoading'\)/);
 assert.match(main,/destinationParticles\.reveal\(destinationVideo\)/);
@@ -66,13 +69,13 @@ function playerFixture({blob=false,outcomes=[],tv=false,canPlayType=type=>type.i
     play(){plays++;assert.equal(element('scene').autoAlpha,1,'scene is visible before play');assert.equal(this.opacity,1,'video is visible beneath the particles');assert.equal(this.muted,true);assert.equal(this.playsInline,true);
       const error=outcomes.shift();if(error==='pending')return new Promise(()=>{});if(error)return Promise.reject(Object.assign(new Error(error),{name:error}));this.paused=false;return Promise.resolve();}};
   const state={active:false,closing:false,externalHold:false};
-  const watch={active:false,start(){this.active=true;},stop(){this.active=false;},snapshot(){return {active:this.active};}};
+  const watch={active:false,started:false,start(){this.active=true;},stop(){this.active=false;},visibility(){},snapshot(){return {active:this.active,started:this.started};}};
   const context=vm.createContext({destinationVideo:video,videoScene:element('scene'),fullscreenVideo:state,destinationPlaybackPending:null,destinationSources:[],
     tvVideoMode:tv,tvVideoVariant:1,diagnosticPlayTimer:undefined,diagnosticAutoWaiting:false,destinationPlaybackFailed:false,destinationWatchdog:watch,destinationPlaybackEpoch:0,destinationDeferredPlay:null,
     tvDiagnostics:Object.fromEntries(['open','attempt','variant','playResult','focusRetry','control','returned','timer','exception','timeout'].map(name=>[name,(...args)=>trace.push([name,...args])])),setTimeout:fn=>{deferred.set(++timerId,fn);return timerId;},clearTimeout:id=>deferred.delete(id),
     videoPlayLog:{begin(){return {};},result(){}},
     document:{hidden:false,visibilityState:'visible',body:{dataset:{}}},window:{matchMedia:()=>({matches:false})},revision:1,currentIndex:0,locations:config.locations,reducedMotion:{matches:false},
-    destinationBuffer:{sourceFor:()=>{bufferCalls++;return blob?'blob:cached':silent;}},destinationVideoUrl,destinationVideoSources,destinationParticles:{start(){},stop(){stops++;}},syncMusic(){},refreshInstagramCopy(){},
+    destinationBuffer:{sourceFor:()=>{bufferCalls++;return blob?'blob:cached':silent;},pause(){}},destinationVideoUrl,destinationVideoSources,destinationParticles:{start(){},stop(){stops++;},visibility(){}},syncMusic(){},refreshInstagramCopy(){},
     cityName:loc=>loc.key,countryText:()=>'',t:key=>key,$:element,gsap:{set:(target,values)=>Object.assign(target,values)},syncJourneyWakeLock(){}});
   vm.runInContext(playback,context);
   context.prepareFullscreenVideo(config.locations[0]);assert.equal(plays,0,'preparing never plays a hidden film');
@@ -114,7 +117,7 @@ assert.equal(interrupted.element('destination-video-retry').hidden,true,'source 
 interrupted.events.get('canplay')();await settle();assert.equal(interrupted.video.paused,false);
 const blocked=playerFixture({outcomes:['NotAllowedError']});blocked.open();await settle();blocked.events.get('canplay')();await settle();
 assert.equal(blocked.plays(),1,'a real policy denial does not create a retry loop');assert.equal(blocked.element('destination-video-retry').hidden,false);
-assert.equal(blocked.element('destination-video-return').hidden,false);assert.ok(blocked.stops()>0,'denial clears the particle overlay');
+assert.ok(blocked.stops()>0,'denial clears the particle overlay');
 for(const reason of ['externalHold','closing']){
   const held=playerFixture({outcomes:['AbortError']});held.open();held.state[reason]=true;await settle();held.events.get('canplay')();await settle();
   assert.equal(held.plays(),1,`${reason} cannot restart playback`);
@@ -142,7 +145,7 @@ const manualNext=playerFixture({tv:true});manualNext.context.tvVideoVariant=3;ma
 assert.equal(manualNext.plays(),0);assert.ok(manualNext.stops()>0,'waiting for the explicit TV button never leaves an endless particle overlay');
 const hung=playerFixture({outcomes:['pending']});hung.open();hung.context.failFullscreenVideo('videoTimeout');
 assert.equal(hung.context.destinationPlaybackPending,null,'unresolved play cannot lock retry');assert.equal(hung.video.paused,true);
-assert.equal(hung.element('destination-video-retry').hidden,false);assert.equal(hung.element('destination-video-return').hidden,false);
+assert.equal(hung.element('destination-video-retry').hidden,false);
 assert.ok(hung.stops()>0,'timeout clears particles even without play rejection');
 const retryHandler=main.slice(main.indexOf("$('destination-video-retry').onclick="),main.indexOf("videoScene.addEventListener('keydown'"));
 vm.runInContext(retryHandler,blocked.context);blocked.element('destination-video-retry').onclick();
@@ -180,6 +183,21 @@ for(const change of ['closing','externalHold','inactive','city','revision','sour
 }
 const hiddenOpen=playerFixture();hiddenOpen.context.document.hidden=true;hiddenOpen.open();
 assert.equal(hiddenOpen.watch.active,true,'normal hidden scene also has a watchdog before play is called');
+const visibilityHandler=main.slice(main.indexOf('function handleDestinationVisibility('),main.indexOf("document.addEventListener('visibilitychange',handleDestinationVisibility)"));
+for (const externalHold of [false,true]) {
+  const returning=playerFixture();returning.open();await settle();
+  vm.runInContext(visibilityHandler,returning.context);
+  returning.watch.started=true;returning.state.externalHold=externalHold;
+  returning.video.currentTime=1.2;returning.video.pause();
+  returning.context.document.hidden=true;returning.context.handleDestinationVisibility();
+  assert.equal(returning.plays(),1,'a backgrounded film stays paused while hidden');
+  returning.context.document.hidden=false;returning.context.handleDestinationVisibility();
+  returning.context.resumeDeferredDestinationPlay('focus');
+  assert.equal(returning.plays(),externalHold?1:2,'foreground resumes once except after leaving for Instagram');
+  assert.equal(returning.video.currentTime,1.2);
+  assert.equal(returning.loads(),1,'resuming never reloads the video source');
+  await settle();
+}
 const cancelledTimer=playerFixture({tv:true});cancelledTimer.open();const stale=[...cancelledTimer.deferred.values()][0];
 cancelledTimer.context.cancelDestinationPlayback('Instagram-hold');stale();assert.equal(cancelledTimer.plays(),0);
 assert.ok(cancelledTimer.trace.some(e=>e[0]==='timer'&&e[1]==='cancelled'&&e[2]==='Instagram-hold'));
@@ -210,6 +228,19 @@ assert.equal(guard.snapshot().status,'ended');assert.equal(guard.snapshot().stop
 let watchError;watched.ended=false;watched.paused=false;watched.currentTime=0;
 const errorGuard=createDestinationWatchdog(watched,{now:()=>clock,isHidden:()=>false,repeat:fn=>{tickWatch=fn;return 1;},cancel(){},onProgress(){throw Error('test progress exception');},onError:error=>watchError=error});
 errorGuard.start();clock+=500;watched.currentTime=1;tickWatch();assert.equal(errorGuard.snapshot().active,false);assert.equal(watchError.message,'test progress exception');
+let hiddenTimeouts=0;
+const foregroundGuard=createDestinationWatchdog(watched,{
+  now:()=>clock,isHidden:()=>hidden,repeat:fn=>{tickWatch=fn;return 1;},cancel(){},
+  pauseWhenHidden:true,startupMs:8000,onTimeout:()=>hiddenTimeouts++,
+});
+watched.paused=true;hidden=false;clock=0;foregroundGuard.start();
+clock=1000;hidden=true;foregroundGuard.visibility();
+clock=61000;tickWatch();
+assert.equal(hiddenTimeouts,0,'locking a phone does not count as a video stall');
+assert.equal(foregroundGuard.snapshot().remainingMs,7000);
+hidden=false;foregroundGuard.visibility();
+clock=67999;tickWatch();assert.equal(hiddenTimeouts,0);
+clock=68000;tickWatch();assert.equal(hiddenTimeouts,1,'visible stalls retain a deadline');
 
 // The portrait transition must span both viewport axes, including after the
 // cloud has gathered, rather than fitting a small 9:16 frame at the centre.

@@ -53,11 +53,8 @@ body[data-state="memory"] #label-layer .city-label{visibility:visible}
 .destination-video-caption p{font:400 11px 'DM Sans',sans-serif;letter-spacing:.18em;margin:0}
 #destination-video-close{position:absolute;right:max(5vw,20px);top:max(24px,calc(env(safe-area-inset-top) + 12px));width:48px;height:48px;color:var(--video-ink);filter:var(--video-control-shadow)}
 #destination-video-close svg{stroke:currentColor}
-#destination-video-status,#destination-video-retry{position:absolute;left:50%;top:45%;transform:translate(-50%,-50%);text-align:center;font:12px 'DM Sans',sans-serif;color:var(--ink)}
-#destination-video-retry{top:53%;padding:12px 18px;background:var(--paper);border:1px solid var(--line)}
-#destination-video-status{max-width:calc(100vw - 48px);padding:10px;background:var(--paper);color:var(--ink)}
-#destination-video-status:empty{display:none}
-#destination-video-return{position:absolute;left:50%;top:calc(53% + 64px);transform:translateX(-50%);padding:12px 18px;background:var(--paper);color:var(--ink);border:1px solid var(--line)}
+#destination-video-retry{position:absolute;z-index:2;left:50%;top:46%;transform:translate(-50%,-50%);display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:46px;max-width:calc(100% - 32px);padding:10px 18px;border:1px solid #ffffff75;border-radius:999px;background:#171916dc;color:#fff;font:500 13px/1.35 'DM Sans',sans-serif;text-align:center;box-shadow:0 2px 18px #0004;backdrop-filter:blur(8px)}
+#destination-video-retry::before{content:'';flex:0 0 11px;height:12px;background:currentColor;clip-path:polygon(0 0,100% 50%,0 100%)}
 #tv-video-diagnostics{position:absolute;z-index:4;top:max(20px,env(safe-area-inset-top));left:24px;right:88px;max-height:70dvh;overflow:auto;padding:18px 22px;background:var(--paper);color:var(--ink);border:1px solid var(--line);font:clamp(14px,1.4vw,24px)/1.4 'DM Sans',sans-serif}
 #tv-video-diagnostics h2{font:inherit;letter-spacing:.12em;margin:0 0 8px}
 #tv-video-diagnostics pre{font:inherit;white-space:pre-wrap;overflow-wrap:anywhere;margin:10px 0}

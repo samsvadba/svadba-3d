@@ -2,7 +2,7 @@
 
 Produkcia: https://samsvadba.github.io/svadba-3d/
 
-Hlavná aplikácia je `index-v3.html`. Kratší odkaz na koreň webu presmeruje na V3 a používa rovnaký náhľad pri zdieľaní. Úvod, Cesta, svadobné informácie, RSVP a galéria zostávajú jednou aplikáciou.
+Hlavná aplikácia je `index-v3.html`. Kratšia adresa v produkcii načíta tú istú aplikáciu priamo a používa rovnaký náhľad pri zdieľaní. Úvod, Cesta, svadobné informácie, RSVP a galéria zostávajú jednou aplikáciou.
 
 ## Lokálne spustenie
 

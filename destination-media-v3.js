@@ -61,14 +61,15 @@ export function createJourneyWakeLock({ wakeLock = navigator.wakeLock, page = wi
 
 // Bound both an unresolved play() and a decoder/network stall. Only advancing
 // media time counts as progress; canplay/playing/promise resolution do not.
-export function createDestinationWatchdog(video, { onTimeout, onProgress = () => {}, onError = () => {}, isHidden = () => document.hidden, now = () => performance.now(), repeat = setInterval, cancel = clearInterval, startupMs = 15000, stallMs = 10000 } = {}) {
+export function createDestinationWatchdog(video, { onTimeout, onProgress = () => {}, onError = () => {}, isHidden = () => document.hidden, now = () => performance.now(), repeat = setInterval, cancel = clearInterval, startupMs = 15000, stallMs = 10000, pauseWhenHidden = false } = {}) {
   let timer = null, lastAt = 0, lastTime = 0, advanced = 0, started = false, status = 'idle';
-  let beganAt = null, stoppedAt = null, lastTickAt = null, ticks = 0, stopReason = 'not-started';
+  let beganAt = null, stoppedAt = null, lastTickAt = null, hiddenAt = null, ticks = 0, stopReason = 'not-started';
   const snapshot = () => {
     const at = timer !== null ? now() : stoppedAt ?? beganAt ?? now(), budget = started ? stallMs : startupMs;
+    const idleMs = beganAt === null ? 0 : (hiddenAt ?? at)-lastAt;
     return { active:timer !== null, advanced, started, status, hidden:isHidden(), ticks, stopReason,
-      elapsedMs:beganAt === null ? 0 : at-beganAt, idleMs:beganAt === null ? 0 : at-lastAt,
-      remainingMs:beganAt === null ? startupMs : Math.max(0,budget-(at-lastAt)),
+      elapsedMs:beganAt === null ? 0 : at-beganAt, idleMs,
+      remainingMs:beganAt === null ? startupMs : Math.max(0,budget-idleMs),
       lastTickAgoMs:lastTickAt === null ? null : now()-lastTickAt };
   };
   function stop(reason='stopped') { if (timer !== null) cancel(timer);timer = null;stoppedAt = now();stopReason = reason; }
@@ -76,8 +77,14 @@ export function createDestinationWatchdog(video, { onTimeout, onProgress = () =>
     if (timer === null) return;
     try {
     ticks++;lastTickAt = now();
-    // Visibility is not media progress. Resetting lastAt on each hidden tick
-    // previously made a paused TV wait forever without ever reaching timeout.
+    if (pauseWhenHidden && isHidden()) {
+      hiddenAt ??= lastTickAt;
+      return;
+    }
+    if (hiddenAt !== null) {
+      lastAt += lastTickAt - hiddenAt;
+      hiddenAt = null;
+    }
     if (video.ended) { status = 'ended';stop('ended');return; }
     const time = video.currentTime || 0, delta = time-lastTime;
     if (!video.paused && !video.seeking && delta > .02) {
@@ -90,7 +97,7 @@ export function createDestinationWatchdog(video, { onTimeout, onProgress = () =>
     } catch(error) { status = 'exception';stop('exception');onError(error); }
   }
   return {
-    start() { stop('restart');lastAt = beganAt = now();stoppedAt = lastTickAt = null;ticks = 0;stopReason = '';lastTime = video.currentTime || 0;advanced = 0;started = false;status = 'waiting';timer = repeat(tick,500); },
+    start() { stop('restart');lastAt = beganAt = now();stoppedAt = lastTickAt = null;hiddenAt = pauseWhenHidden && isHidden() ? beganAt : null;ticks = 0;stopReason = '';lastTime = video.currentTime || 0;advanced = 0;started = false;status = 'waiting';timer = repeat(tick,500); },
     stop,
     visibility() { if (timer !== null) tick(); },
     snapshot,
