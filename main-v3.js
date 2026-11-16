@@ -1799,6 +1799,7 @@ $('entry-screen').focus({preventScroll:true});
 
 // One monogram and one calligraphic name lockup, at every display size.
 $('entry-monogram').innerHTML=weddingMonogram();
+$('entry-title').innerHTML=names({trimPaper:true});
 document.querySelector('#header-home').innerHTML=weddingMonogram();
 document.querySelector('.preloader-monogram').innerHTML=weddingMonogram();
 const brandHero=document.querySelector('.title-layout h1');

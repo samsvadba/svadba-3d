@@ -26,7 +26,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400&family=Allura&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <style>html{--paper:#f5f4f0;--ink:#292a28}html[data-theme="dark"]{--paper:#20221f;--ink:#ece9df}html[data-palette="olive"]{--paper:#F4EBDC;--ink:#303D29}html[data-palette="olive"][data-theme="dark"]{--paper:#303D29;--ink:#F4EBDC}body{margin:0;background:var(--paper);color:var(--ink)}#interactive-preloader{position:fixed;inset:0;z-index:100;background:var(--paper);display:grid;place-content:center}[hidden]{display:none!important}
-#entry-screen{position:fixed;inset:0;z-index:110;display:grid;overflow:auto;background:var(--entry-paper,var(--paper));color:var(--entry-ink,var(--ink))}body[data-entry-pending] #persistent-header,body[data-entry-pending] #bottom-nav,body[data-entry-pending] #utility-controls{visibility:hidden}
+#entry-screen{position:fixed;inset:0;z-index:110;display:grid;overflow:auto;background:#fff;color:var(--entry-ink,var(--ink));--entry-action:var(--olive)}html[data-theme="dark"] #entry-screen{background:var(--entry-paper,var(--paper));--entry-action:var(--entry-ink,var(--ink))}body[data-entry-pending] #persistent-header,body[data-entry-pending] #bottom-nav,body[data-entry-pending] #utility-controls{visibility:hidden}
 html[data-intro="particles"]{--intro-ink:var(--ink);--intro-muted:var(--ink)}html[data-intro="particles"] #interactive-preloader{display:none}#story-startup-cloud{position:fixed;inset:0;display:block;width:100%;height:100%;z-index:20;pointer-events:none;background:var(--paper);opacity:1;transition:opacity .45s ease}#story-startup-cloud.is-ready{opacity:0}@media(prefers-reduced-motion:reduce){#story-startup-cloud{transition:none}}
 </style>
 </head>
@@ -34,7 +34,7 @@ html[data-intro="particles"]{--intro-ink:var(--ink);--intro-muted:var(--ink)}htm
 <section id="entry-screen" role="dialog" aria-modal="true" aria-labelledby="entry-title" tabindex="-1">
   <div class="entry-content">
     <div id="entry-monogram" aria-hidden="true"></div>
-    <h1 id="entry-title">Simona &amp; Martin</h1>
+    <h1 id="entry-title" class="brand-names"><span class="sr-only">Simona Šarmírová a Martin Fabian</span></h1>
     <time id="entry-date" datetime="2027-04-30">30. apríla 2027</time>
     <button id="entry-button" type="button"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5 13 8 4 13.5Z"/></svg><span id="entry-button-text">Prehrať náš príbeh</span></button>
     <a id="entry-wedding" href="#wedding-scene"><span id="entry-wedding-text">Informácie o svadbe</span> <span aria-hidden="true">→</span></a>
