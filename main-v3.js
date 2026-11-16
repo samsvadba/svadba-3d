@@ -46,13 +46,14 @@ const visited = new Set(), markerData = [];
 const framing = { x: 0, y: 0 };
 const connector = $('memory-connector');
 const view = { width: 0, height: 0 };
-const journeyMotion = { focus: 0, spin: 0 };
+const journeyMotion = { focus: 0, spin: 0, glass: 1 };
 const entranceSweep = Math.PI * 1.65;
 let globeFlight, lastFrame = 0, idleSince = 0, dragging = false, layoutDirty = true;
 let globeMesh, globeMaterial, overviewMaterial, overviewGeometry, wireMaterial, detailPromise, detailReady = 0;
 let journeyOrbits;
 const orbitFrame = {};
 const detailLayers = [];
+const rearGlobeLines = [];
 const countryByCity=Object.fromEntries(locations.map(loc=>[loc.key,loc.countryCode]));
 const layout = { minY:100, maxY:500, margin:20, modal:null };
 let worldPoint, projectedPoint, surfaceNormal, cameraDirection, centerPoint;
@@ -454,6 +455,9 @@ videoScene.addEventListener('keydown',event=>{
 function setState(next) {
   state = next;
   if(next!=='journey')journeyOrbits?.hide();
+  if(!['journey','transition','memory'].includes(next)) {
+    for(const { back } of rearGlobeLines) back.visible=false;
+  }
   if(next==='wedding')destinationBuffer.clear();
   if(next==='intro'||next==='wedding'){pauseStory();}
   syncStoryUI();
@@ -515,6 +519,7 @@ function killActiveSectionTransition() {
   gsap.killTweensOf(framing);
   globeFlight?.kill();
   gsap.killTweensOf(journeyMotion);
+  journeyMotion.glass = 1;
   dragging = false; journeyMotion.spin = 0;
   if (camera) gsap.killTweensOf(camera.position);
   cameraMoving = false;
@@ -611,6 +616,8 @@ function enterJourneyFromIntro() {
   autoStoryPending = !reducedMotion.matches;
   journeyMotion.focus = 0; framing.x = 0; framing.y = offsetY;
   setState('journey'); setActiveNav('journey'); layoutDirty = true;
+  journeyMotion.glass=reducedMotion.matches?1:0;
+  gsap.to(journeyMotion,{glass:1,duration:duration(.65),ease:'sine.inOut'});
   gsap.to(framing, {y:.065, duration:duration(.7), ease:'sine.inOut'});
   gsap.set([$ ('label-layer'), $('city-connectors'), $('journey-instruction')], {autoAlpha:0});
   activeSectionTimeline = gsap.timeline()
@@ -950,7 +957,8 @@ async function ensureGlobeScene() {
       originMarkers=createOrigins(globeSurface,config.origins,{THREE,gsap,reducedMotion,radius:GLOBE_RADIUS+.17});
       originMarkers.refreshLanguage(t('originLabel'));
       globeMesh = new THREE.Mesh(new THREE.SphereGeometry(GLOBE_RADIUS, 128, 96), (globeMaterial=new THREE.MeshBasicMaterial({color: 0xf8f8f8})));
-      globeGroup.add(globeMesh);
+      // Paint the translucent surface first so its depth separates the hemispheres.
+      globeMesh.renderOrder=-2;globeGroup.add(globeMesh);
       journeyOrbits=createJourneyOrbits(THREE,scene,GLOBE_RADIUS);
       wireMaterial=new THREE.LineBasicMaterial({color:0x8e918c,transparent:true,opacity:.08,depthWrite:false});
       const netSource=new THREE.IcosahedronGeometry(GLOBE_RADIUS,3);
@@ -966,7 +974,7 @@ async function ensureGlobeScene() {
       }
       const netGeometry=new THREE.BufferGeometry();
       netGeometry.setAttribute('position',new THREE.Float32BufferAttribute(netPoints,3));
-      globeGroup.add(new THREE.LineSegments(netGeometry,wireMaterial));
+      addGlobeLines(netGeometry,wireMaterial,.46);
       netEdges.dispose();netSource.dispose();
       const pointGeometry = new THREE.SphereGeometry(.13, 12, 10);
       const pointMaterial = new THREE.MeshBasicMaterial({color: 0x252724,transparent:true,depthWrite:false});
@@ -978,7 +986,7 @@ async function ensureGlobeScene() {
       });
       overviewMaterial=new THREE.LineBasicMaterial({color:0x64685f,transparent:true,opacity:.26,depthWrite:false});
       overviewGeometry = boundaryGeometry(countries);
-      globeGroup.add(new THREE.LineSegments(overviewGeometry,overviewMaterial));
+      addGlobeLines(overviewGeometry,overviewMaterial,.34);
       loadGeographicDetail();
       const measureObserver=new ResizeObserver(()=>{layoutDirty=true;});
       markerData.forEach(item=>measureObserver.observe(item.element));
@@ -1007,6 +1015,28 @@ async function ensureGlobeScene() {
 
 function applyFraming() {
   camera.setViewOffset(view.width, view.height, view.width * framing.x, view.height * framing.y, view.width, view.height);
+}
+
+function addGlobeLines(geometry, material, rearStrength) {
+  const back=new THREE.LineSegments(geometry, material.clone());
+  back.material.depthFunc=THREE.GreaterDepth;
+  back.renderOrder=-1;
+  back.visible=false;
+  globeGroup.add(back,new THREE.LineSegments(geometry,material));
+  rearGlobeLines.push({back,front:material,rearStrength});
+}
+
+function updateJourneyGlobe(glass) {
+  if(!globeMaterial.transparent){
+    globeMaterial.transparent=true;
+    globeMaterial.needsUpdate=true;
+  }
+  globeMaterial.opacity=1-.94*glass;
+  for(const {back,front,rearStrength} of rearGlobeLines) {
+    back.material.color.copy(front.color);
+    back.material.opacity=front.opacity*rearStrength*glass;
+    back.visible=back.material.opacity>.002;
+  }
 }
 
 function boundaryGeometry(rings) {
@@ -1118,11 +1148,13 @@ function animate(time) {
   const mix=detail*detailReady;
   applyGlobeTheme();
   const night=mood.value;
-  const overviewOpacity=.46-.08*night;
+  const glass=smoothstep(26,52,distance)*journeyMotion.glass;
+  const overviewOpacity=.46-.08*night-.09*glass;
   const borderOpacity=detail*(.50-.12*night);
   const selectedOpacity=.76+detail*.19;
   overviewMaterial.opacity=overviewOpacity*(1-mix*.90);
   wireMaterial.opacity=.08*(1-detail*.94);
+  updateJourneyGlobe(glass);
   const selectedCountry=currentIndex>=0?countryByCity[locations[currentIndex].key]:null;
   const theme=getParticleTheme();
   const geographyInk=theme.ink;
